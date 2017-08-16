@@ -21,40 +21,42 @@
 #include "RiaApplication.h"
 #include "RiaLogging.h"
 
-#include "RimProject.h"
-#include "RimWellPath.h"
-#include "RimWellPathCollection.h"
-#include "RimFishbonesMultipleSubs.h"
-#include "RimFishbonesCollection.h"
+#include "RicExportCompletionDataSettingsUi.h"
+#include "RicExportFeatureImpl.h"
+#include "RicFishbonesTransmissibilityCalculationFeatureImp.h"
+
+#include "RigActiveCellInfo.h"
+#include "RigEclipseCaseData.h"
+#include "RigMainGrid.h"
+#include "RigResultAccessorFactory.h"
+#include "RigTransmissibilityEquations.h"
+#include "RigWellLogExtractionTools.h"
+#include "RigWellPath.h"
+#include "RigWellPathIntersectionTools.h"
+
 #include "RimFishboneWellPath.h"
 #include "RimFishboneWellPathCollection.h"
-#include "RimPerforationInterval.h"
+#include "RimFishbonesCollection.h"
+#include "RimFishbonesMultipleSubs.h"
 #include "RimPerforationCollection.h"
+#include "RimPerforationInterval.h"
+#include "RimProject.h"
 #include "RimReservoirCellResultsStorage.h"
+#include "RimWellPath.h"
+#include "RimWellPathCollection.h"
 #include "RimWellPathCompletions.h"
-
-#include "RicExportCompletionDataSettingsUi.h"
 
 #include "RiuMainWindow.h"
 
-#include "RigWellLogExtractionTools.h"
-#include "RigWellPathIntersectionTools.h"
-#include "RigEclipseCaseData.h"
-#include "RigMainGrid.h"
-#include "RigWellPath.h"
-#include "RigResultAccessorFactory.h"
-#include "RigTransmissibilityEquations.h"
-
-#include "cafSelectionManager.h"
 #include "cafPdmUiPropertyViewDialog.h"
+#include "cafSelectionManager.h"
 
 #include "cvfPlane.h"
 
 #include <QAction>
+#include <QDir>
 #include <QFileDialog>
 #include <QMessageBox>
-#include "RicFishbonesTransmissibilityCalculationFeatureImp.h"
-#include "RigActiveCellInfo.h"
 
 CAF_CMD_SOURCE_INIT(RicWellPathExportCompletionDataFeature, "RicWellPathExportCompletionDataFeature");
 
@@ -98,6 +100,8 @@ void RicWellPathExportCompletionDataFeature::onActionTriggered(bool isChecked)
     exportSettings.folder = defaultDir;
 
     caf::PdmUiPropertyViewDialog propertyDialog(RiuMainWindow::instance(), &exportSettings, "Export Completion Data", "");
+    RicExportFeatureImpl::configureForExport(&propertyDialog);
+
     if (propertyDialog.exec() == QDialog::Accepted)
     {
         RiaApplication::instance()->setLastUsedDialogDirectory("COMPLETIONS", exportSettings.folder);
@@ -218,20 +222,16 @@ void RicWellPathExportCompletionDataFeature::exportCompletions(const std::vector
         }
     }
 
-    std::vector<RigCompletionData> completions;
-    //std::map < IJKCellIndex, std::map<QString, RigCompletionData >> combinedCompletionDataPerEclipseCell; 
-    //Should be moved to map instead of vector
-
-    for (auto& data : completionsPerEclipseCell)
-    {
-        completions.push_back(combineEclipseCellCompletions(data.second, exportSettings));
-
-    }
-
     const QString eclipseCaseName = exportSettings.caseToApply->caseUserDescription();
 
     if (exportSettings.fileSplit == RicExportCompletionDataSettingsUi::UNIFIED_FILE)
     {
+        std::vector<RigCompletionData> completions;
+        for (auto& data : completionsPerEclipseCell)
+        {
+            completions.push_back(combineEclipseCellCompletions(data.second, exportSettings));
+        }
+
         const QString fileName = QString("UnifiedCompletions_%1").arg(eclipseCaseName);
         printCompletionsToFile(exportSettings.folder, fileName, completions, exportSettings.compdatExport);
     }
@@ -239,6 +239,12 @@ void RicWellPathExportCompletionDataFeature::exportCompletions(const std::vector
     {
         for (auto wellPath : usedWellPaths)
         {
+            std::map<IJKCellIndex, std::vector<RigCompletionData> > filteredWellCompletions = getCompletionsForWell(completionsPerEclipseCell, wellPath->completions()->wellNameForExport());
+            std::vector<RigCompletionData> completions;
+            for (auto& data : filteredWellCompletions)
+            {
+                completions.push_back(combineEclipseCellCompletions(data.second, exportSettings));
+            }
             std::vector<RigCompletionData> wellCompletions;
             for (auto completion : completions)
             {
@@ -256,6 +262,12 @@ void RicWellPathExportCompletionDataFeature::exportCompletions(const std::vector
     {
         for (auto wellPath : usedWellPaths)
         {
+            std::map<IJKCellIndex, std::vector<RigCompletionData> > filteredWellCompletions = getCompletionsForWell(completionsPerEclipseCell, wellPath->completions()->wellNameForExport());
+            std::vector<RigCompletionData> completions;
+            for (auto& data : filteredWellCompletions)
+            {
+                completions.push_back(combineEclipseCellCompletions(data.second, exportSettings));
+            }
             {
                 std::vector<RigCompletionData> fishbonesCompletions = getCompletionsForWellAndCompletionType(completions, wellPath->completions()->wellNameForExport(), RigCompletionData::FISHBONES);
                 QString fileName = QString("%1_Fishbones_%2").arg(wellPath->name()).arg(eclipseCaseName);
@@ -366,13 +378,22 @@ RigCompletionData RicWellPathExportCompletionDataFeature::combineEclipseCellComp
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicWellPathExportCompletionDataFeature::printCompletionsToFile(const QString& exportFolder, const QString& fileName, std::vector<RigCompletionData>& completions, RicExportCompletionDataSettingsUi::CompdatExportType exportType)
+void RicWellPathExportCompletionDataFeature::printCompletionsToFile(const QString& folderName, const QString& fileName, std::vector<RigCompletionData>& completions, RicExportCompletionDataSettingsUi::CompdatExportType exportType)
 {
     //TODO: Check that completion is ready for export
 
-    QString filePath = QDir(exportFolder).filePath(fileName);
+    QDir exportFolder = QDir(folderName);
+
+    if (!exportFolder.exists())
+    {
+        bool createdPath = exportFolder.mkpath(folderName);
+        if (createdPath) RiaLogging::info("Created export folder " + folderName);
+        else RiaLogging::error("Selected output folder does not exist, and could not be created.");
+    }
+
+    QString filePath = exportFolder.filePath(fileName);
     QFile exportFile(filePath);
-    if (!exportFile.open(QIODevice::WriteOnly))
+        if (!exportFile.open(QIODevice::WriteOnly))
     {
         RiaLogging::error(QString("Export Completions Data: Could not open the file: %1").arg(filePath));
         return;
@@ -417,6 +438,27 @@ std::vector<RigCompletionData> RicWellPathExportCompletionDataFeature::getComple
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+std::map<IJKCellIndex, std::vector<RigCompletionData> > RicWellPathExportCompletionDataFeature::getCompletionsForWell(const std::map<IJKCellIndex, std::vector<RigCompletionData>>& cellToCompletionMap, const QString& wellName)
+{
+    std::map<IJKCellIndex, std::vector<RigCompletionData> > wellCompletions;
+
+    for (const auto& it : cellToCompletionMap)
+    {
+        for (auto& completion : it.second)
+        {
+            if (completion.wellName() == wellName)
+            {
+                wellCompletions[it.first].push_back(completion);
+            }
+        }
+    }
+
+    return wellCompletions;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RicWellPathExportCompletionDataFeature::generateCompdatTable(RifEclipseDataTableFormatter& formatter, const std::vector<RigCompletionData>& completionData)
 {
     std::vector<RifEclipseOutputTableColumn> header = {
@@ -427,7 +469,7 @@ void RicWellPathExportCompletionDataFeature::generateCompdatTable(RifEclipseData
         RifEclipseOutputTableColumn("K2"),
         RifEclipseOutputTableColumn("Status"),
         RifEclipseOutputTableColumn("SAT"),
-        RifEclipseOutputTableColumn("TR", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::SCIENTIFIC)),
+        RifEclipseOutputTableColumn("TR", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
         RifEclipseOutputTableColumn("DIAM"),
         RifEclipseOutputTableColumn("KH"),
         RifEclipseOutputTableColumn("S"),
@@ -540,7 +582,7 @@ std::vector<RigCompletionData> RicWellPathExportCompletionDataFeature::generateP
     RiaEclipseUnitTools::UnitSystem unitSystem = settings.caseToApply->eclipseCaseData()->unitsType();
 
     std::vector<RigCompletionData> completionData;
-    const RigActiveCellInfo* activeCellInfo = settings.caseToApply->eclipseCaseData()->activeCellInfo(RifReaderInterface::MATRIX_RESULTS);
+    const RigActiveCellInfo* activeCellInfo = settings.caseToApply->eclipseCaseData()->activeCellInfo(RiaDefines::MATRIX_MODEL);
 
 
     for (const RimPerforationInterval* interval : wellPath->perforationIntervalCollection()->perforations())
@@ -572,7 +614,7 @@ std::vector<RigCompletionData> RicWellPathExportCompletionDataFeature::generateP
                                                                        interval->skinFactor(), 
                                                                        interval->diameter(unitSystem),
                                                                        direction);
-            completion.addMetadata("Perforation", QString("StartMD: %1 - EndMD: %2").arg(interval->startMD()).arg(interval->endMD() + QString(" : ") + QString::number(transmissibility)));
+            completion.addMetadata("Perforation", QString("StartMD: %1 - EndMD: %2").arg(interval->startMD()).arg(interval->endMD()) + QString(" : ") + QString::number(transmissibility));
             completionData.push_back(completion);
         }
     }
@@ -771,12 +813,12 @@ CellDirection RicWellPathExportCompletionDataFeature::calculateDirectionInCell(R
 {
     RigEclipseCaseData* eclipseCaseData = eclipseCase->eclipseCaseData();
 
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
-    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DX");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
-    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DY");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
-    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DZ");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
+    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DX");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
+    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DY");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
+    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DZ");
 
     double xLengthFraction = abs(lengthsInCell.x() / dxAccessObject->cellScalarGlobIdx(cellIndex));
     double yLengthFraction = abs(lengthsInCell.y() / dyAccessObject->cellScalarGlobIdx(cellIndex));
@@ -810,19 +852,19 @@ double RicWellPathExportCompletionDataFeature::calculateTransmissibility(RimEcli
 {
     RigEclipseCaseData* eclipseCaseData = eclipseCase->eclipseCaseData();
 
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
-    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DX");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
-    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DY");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
-    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DZ");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
+    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DX");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
+    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DY");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
+    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DZ");
 
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMX");
-    cvf::ref<RigResultAccessor> permxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMX");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMY");
-    cvf::ref<RigResultAccessor> permyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMY");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMZ");
-    cvf::ref<RigResultAccessor> permzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMZ");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMX");
+    cvf::ref<RigResultAccessor> permxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMX");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMY");
+    cvf::ref<RigResultAccessor> permyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMY");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMZ");
+    cvf::ref<RigResultAccessor> permzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMZ");
 
     double dx = dxAccessObject->cellScalarGlobIdx(cellIndex);
     double dy = dyAccessObject->cellScalarGlobIdx(cellIndex);
@@ -859,19 +901,19 @@ double RicWellPathExportCompletionDataFeature::calculateTransmissibilityAsEclips
 {
     RigEclipseCaseData* eclipseCaseData = eclipseCase->eclipseCaseData();
 
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
-    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DX");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
-    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DY");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
-    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "DZ");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DX");
+    cvf::ref<RigResultAccessor> dxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DX");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DY");
+    cvf::ref<RigResultAccessor> dyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DY");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "DZ");
+    cvf::ref<RigResultAccessor> dzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "DZ");
 
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMX");
-    cvf::ref<RigResultAccessor> permxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMX");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMY");
-    cvf::ref<RigResultAccessor> permyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMY");
-    eclipseCase->results(RifReaderInterface::MATRIX_RESULTS)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMZ");
-    cvf::ref<RigResultAccessor> permzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RifReaderInterface::MATRIX_RESULTS, 0, "PERMZ");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMX");
+    cvf::ref<RigResultAccessor> permxAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMX");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMY");
+    cvf::ref<RigResultAccessor> permyAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMY");
+    eclipseCase->results(RiaDefines::MATRIX_MODEL)->findOrLoadScalarResult(RiaDefines::STATIC_NATIVE, "PERMZ");
+    cvf::ref<RigResultAccessor> permzAccessObject = RigResultAccessorFactory::createFromUiResultName(eclipseCaseData, 0, RiaDefines::MATRIX_MODEL, 0, "PERMZ");
 
     double dx = dxAccessObject->cellScalarGlobIdx(cellIndex);
     double dy = dyAccessObject->cellScalarGlobIdx(cellIndex);

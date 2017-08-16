@@ -73,7 +73,7 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
     CAF_PDM_InitField(&m_lateralOpenHoleRoghnessFactor, "LateralOpenHoleRoghnessFactor", 0.001,   "Open Hole Roghness Factor [m]", "", "", "");
     CAF_PDM_InitField(&m_lateralTubingRoghnessFactor,   "LateralTubingRoghnessFactor", 1e-5,      "Tubing Roghness Factor [m]", "", "", "");
 
-    CAF_PDM_InitField(&m_lateralInstallSuccessFraction, "LateralInstallSuccessFraction", 0.7,     "Install Success Rate [0..1]", "", "", "");
+    CAF_PDM_InitField(&m_lateralInstallSuccessFraction, "LateralInstallSuccessFraction", 1.0,     "Install Success Rate [0..1]", "", "", "");
 
     CAF_PDM_InitField(&m_icdCount,                      "IcdCount", size_t(2),              "ICDs per Sub", "", "", "");
     CAF_PDM_InitField(&m_icdOrificeDiameter,            "IcdOrificeDiameter", 7.0,          "ICD Orifice Diameter [mm]", "", "", "");
@@ -669,7 +669,9 @@ void RimFishbonesMultipleSubs::computeSubLateralIndices()
     m_subLateralIndices.clear();
     for (size_t subIndex = 0; subIndex < m_locationOfSubs().size(); ++subIndex)
     {
-        SubLateralIndex subLateralIndex{ subIndex };
+        SubLateralIndex subLateralIndex;
+        subLateralIndex.subIndex = subIndex;
+
         for (size_t lateralIndex = 0; lateralIndex < m_lateralCountPerSub(); ++lateralIndex)
         {
             subLateralIndex.lateralIndices.push_back(lateralIndex);
@@ -711,9 +713,16 @@ std::vector<double> RimFishbonesMultipleSubs::locationsFromStartSpacingAndCount(
 //--------------------------------------------------------------------------------------------------
 int RimFishbonesMultipleSubs::randomValueFromRange(int min, int max)
 {
+    // See http://www.cplusplus.com/reference/cstdlib/rand/ 
+
     int range = abs(max - min);
     int random_integer = min + int(range*rand() / (RAND_MAX + 1.0));
-    
+
     return random_integer;
+    int randomNumberInRange = rand() % range;
+
+    int randomValue = min + randomNumberInRange;
+
+    return randomValue;
 }
 

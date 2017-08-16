@@ -18,19 +18,21 @@
 
 #include "RicFishbonesTransmissibilityCalculationFeatureImp.h"
 
-#include "RigEclipseCaseData.h"
 #include "RicExportCompletionDataSettingsUi.h"
 #include "RicWellPathExportCompletionDataFeature.h"
-#include "RimWellPath.h"
-#include "RigWellPath.h"
-#include "RimFishboneWellPath.h"
-#include "RimFishbonesCollection.h"
+
 #include "RigActiveCellInfo.h"
-#include "RigMainGrid.h"
-#include "RimFishbonesMultipleSubs.h"
-#include "RimFishboneWellPathCollection.h"
-#include "RimWellPathCompletions.h"
 #include "RigCompletionData.h"
+#include "RigEclipseCaseData.h"
+#include "RigMainGrid.h"
+#include "RigWellPath.h"
+
+#include "RimFishboneWellPath.h"
+#include "RimFishboneWellPathCollection.h"
+#include "RimFishbonesCollection.h"
+#include "RimFishbonesMultipleSubs.h"
+#include "RimWellPath.h"
+#include "RimWellPathCompletions.h"
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -77,12 +79,16 @@ std::vector<RigCompletionData> RicFishbonesTransmissibilityCalculationFeatureImp
     std::map<size_t, std::vector<WellBorePartForTransCalc> > wellBorePartsInCells; //wellBore = main bore or fishbone lateral
     findFishboneLateralsWellBoreParts(wellBorePartsInCells, wellPath, settings);
     findFishboneImportedLateralsWellBoreParts(wellBorePartsInCells, wellPath, settings);
-    findMainWellBoreParts(wellBorePartsInCells, wellPath, settings);
+    if (!wellBorePartsInCells.empty())
+    {
+        //Don't include main bore if there are no fishbones
+        findMainWellBoreParts(wellBorePartsInCells, wellPath, settings);
+    }
 
     std::vector<RigCompletionData> completionData;
 
     RigMainGrid* grid = settings.caseToApply->eclipseCaseData()->mainGrid();
-    const RigActiveCellInfo* activeCellInfo = settings.caseToApply->eclipseCaseData()->activeCellInfo(RifReaderInterface::MATRIX_RESULTS);
+    const RigActiveCellInfo* activeCellInfo = settings.caseToApply->eclipseCaseData()->activeCellInfo(RiaDefines::MATRIX_MODEL);
 
     for (auto cellAndWellBoreParts : wellBorePartsInCells)
     {
@@ -212,7 +218,7 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findMainWellBoreParts(st
 
     for (auto& cell : intersectedCellsIntersectionInfo)
     {
-        double skinFactor = wellPath->fishbonesCollection()->wellPathCollection()->skinFactor();
+        double skinFactor = wellPath->fishbonesCollection()->mainBoreSkinFactor();
         QString completionMetaData = wellPath->name() + " main bore";
         WellBorePartForTransCalc wellBorePart = WellBorePartForTransCalc(cell.internalCellLengths,
                                                                          holeDiameter / 2,

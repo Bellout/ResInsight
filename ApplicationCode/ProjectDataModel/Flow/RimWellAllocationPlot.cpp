@@ -41,6 +41,7 @@
 #include "RimWellLogPlot.h"
 #include "RimWellLogTrack.h"
 #include "RimWellAllocationPlotLegend.h"
+#include "RimTofAccumulatedPhaseFractionsPlot.h"
 
 #include "RiuMainPlotWindow.h"
 #include "RiuWellAllocationPlot.h"
@@ -102,6 +103,10 @@ RimWellAllocationPlot::RimWellAllocationPlot()
     m_wellAllocationPlotLegend.uiCapability()->setUiHidden(true);
     m_wellAllocationPlotLegend = new RimWellAllocationPlotLegend;
 
+    CAF_PDM_InitFieldNoDefault(&m_tofAccumulatedPhaseFractionsPlot, "TofAccumulatedPhaseFractionsPlot", "TOF Accumulated Phase Fractions", "", "", "");
+    m_tofAccumulatedPhaseFractionsPlot.uiCapability()->setUiHidden(true);
+    m_tofAccumulatedPhaseFractionsPlot = new RimTofAccumulatedPhaseFractionsPlot;
+
     this->setAsPlotMdiWindow();
 }
 
@@ -114,6 +119,7 @@ RimWellAllocationPlot::~RimWellAllocationPlot()
     
     delete m_accumulatedWellFlowPlot();
     delete m_totalWellAllocationPlot();
+    delete m_tofAccumulatedPhaseFractionsPlot();
 
     deleteViewWidget();
 }
@@ -209,7 +215,7 @@ void RimWellAllocationPlot::updateFromWell()
     {
         bool isProducer = (    wellResults->wellProductionType(m_timeStep) == RigWellResultFrame::PRODUCER 
                             || wellResults->wellProductionType(m_timeStep) == RigWellResultFrame::UNDEFINED_PRODUCTION_TYPE );
-        RigEclCellIndexCalculator cellIdxCalc(m_case->eclipseCaseData()->mainGrid(), m_case->eclipseCaseData()->activeCellInfo(RifReaderInterface::MATRIX_RESULTS));
+        RigEclCellIndexCalculator cellIdxCalc(m_case->eclipseCaseData()->mainGrid(), m_case->eclipseCaseData()->activeCellInfo(RiaDefines::MATRIX_MODEL));
         wfCalculator.reset(new RigAccWellFlowCalculator(pipeBranchesCLCoords,
                                                         pipeBranchesCellIds,
                                                         tracerFractionCellValues,
@@ -311,6 +317,10 @@ void RimWellAllocationPlot::updateFromWell()
     m_totalWellAllocationPlot->updateConnectedEditors();
 
     accumulatedWellFlowPlot()->updateConnectedEditors();
+
+    m_tofAccumulatedPhaseFractionsPlot->reloadFromWell();
+    m_tofAccumulatedPhaseFractionsPlot->updateConnectedEditors();
+
     if (m_wellAllocationPlotWidget) m_wellAllocationPlotWidget->updateGeometry();
 }
 
@@ -341,7 +351,7 @@ std::map<QString, const std::vector<double> *> RimWellAllocationPlot::findReleva
         {
             if ( m_flowDiagSolution->tracerStatusInTimeStep(tracerName, m_timeStep) == requestedTracerType )
             {
-                RigFlowDiagResultAddress resAddr(RIG_FLD_CELL_FRACTION_RESNAME, tracerName.toStdString());
+                RigFlowDiagResultAddress resAddr(RIG_FLD_CELL_FRACTION_RESNAME, RigFlowDiagResultAddress::PHASE_ALL, tracerName.toStdString());
                 const std::vector<double>* tracerCellFractions = m_flowDiagSolution->flowDiagResults()->resultValues(resAddr, m_timeStep);
                 if (tracerCellFractions) tracerCellFractionValues[tracerName] = tracerCellFractions;
             }
@@ -521,6 +531,14 @@ RimWellLogPlot* RimWellAllocationPlot::accumulatedWellFlowPlot()
 RimTotalWellAllocationPlot* RimWellAllocationPlot::totalWellFlowPlot()
 {
     return m_totalWellAllocationPlot();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RimTofAccumulatedPhaseFractionsPlot * RimWellAllocationPlot::tofAccumulatedPhaseFractionsPlot()
+{
+    return m_tofAccumulatedPhaseFractionsPlot();
 }
 
 //--------------------------------------------------------------------------------------------------

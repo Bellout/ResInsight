@@ -10,6 +10,7 @@ set (SOURCE_GROUP_HEADER_FILES
 set (SOURCE_GROUP_SOURCE_FILES
 ${CEE_CURRENT_LIST_DIR}cvfGeometryTools-Test.cpp
 ${CEE_CURRENT_LIST_DIR}Ert-Test.cpp
+${CEE_CURRENT_LIST_DIR}RifcCommandCore-Test.cpp
 ${CEE_CURRENT_LIST_DIR}RifEclipseInputFileTools-Test.cpp
 ${CEE_CURRENT_LIST_DIR}RifReaderEclipseOutput-Test.cpp
 ${CEE_CURRENT_LIST_DIR}RifReaderEclipseSummary-Test.cpp
@@ -23,6 +24,7 @@ ${CEE_CURRENT_LIST_DIR}RivTernaryScalarMapper-Test.cpp
 ${CEE_CURRENT_LIST_DIR}ScalarMapper-Test.cpp
 ${CEE_CURRENT_LIST_DIR}WellPathAsciiFileReader-Test.cpp
 ${CEE_CURRENT_LIST_DIR}opm-flowdiagnostics-Test.cpp
+${CEE_CURRENT_LIST_DIR}RigTofAccumulatedPhaseFractionsCalculator-Test.cpp
 )
 
 list(APPEND CODE_HEADER_FILES

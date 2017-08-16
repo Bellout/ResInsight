@@ -28,14 +28,9 @@ ${CEE_CURRENT_LIST_DIR}RicReloadFormationNamesFeature.h
 ${CEE_CURRENT_LIST_DIR}RicWellLogsImportFileFeature.h
 
 ${CEE_CURRENT_LIST_DIR}RicTogglePerspectiveViewFeature.h
-${CEE_CURRENT_LIST_DIR}RicExportToLasFileFeature.h
-${CEE_CURRENT_LIST_DIR}RicExportToLasFileResampleUi.h
-${CEE_CURRENT_LIST_DIR}RicSnapshotViewToClipboardFeature.h
 ${CEE_CURRENT_LIST_DIR}RicImportGeoMechCaseFeature.h
 ${CEE_CURRENT_LIST_DIR}RicImportSummaryCaseFeature.h
-
-${CEE_CURRENT_LIST_DIR}RicExportFaultsFeature.h
-${CEE_CURRENT_LIST_DIR}RicExportMultipleSnapshotsFeature.h
+${CEE_CURRENT_LIST_DIR}RicExportFeatureImpl.h
 
 
 # General delete of any object in a child array field
@@ -71,14 +66,10 @@ ${CEE_CURRENT_LIST_DIR}RicImportFormationNamesFeature.cpp
 ${CEE_CURRENT_LIST_DIR}RicReloadFormationNamesFeature.cpp
 
 ${CEE_CURRENT_LIST_DIR}RicTogglePerspectiveViewFeature.cpp
-${CEE_CURRENT_LIST_DIR}RicExportToLasFileFeature.cpp
-${CEE_CURRENT_LIST_DIR}RicExportToLasFileResampleUi.cpp
-${CEE_CURRENT_LIST_DIR}RicSnapshotViewToClipboardFeature.cpp
 ${CEE_CURRENT_LIST_DIR}RicImportGeoMechCaseFeature.cpp
 ${CEE_CURRENT_LIST_DIR}RicImportSummaryCaseFeature.cpp
+${CEE_CURRENT_LIST_DIR}RicExportFeatureImpl.cpp
 
-${CEE_CURRENT_LIST_DIR}RicExportFaultsFeature.cpp
-${CEE_CURRENT_LIST_DIR}RicExportMultipleSnapshotsFeature.cpp
 
 # General delete of any object in a child array field
 ${CEE_CURRENT_LIST_DIR}RicDeleteItemExec.cpp
