@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 
 include (CheckCSourceCompiles)
-project (ResInsight)
+project (ResInsight-src)
 
 set (VIZ_MODULES_FOLDER_NAME Fwk/VizFwk)
 
@@ -24,7 +24,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(CMAKE_CXX_FLAGS 		"-DCVF_LINUX -pipe -Wextra -Woverloaded-virtual -Wformat -std=c++0x")
     set(CMAKE_CXX_FLAGS_DEBUG 	"-ggdb -g3 -O0 -DDEBUG -D_DEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNO_DEBUG")
-endif() 
+endif()
 
 
 ################################################################################
@@ -51,7 +51,7 @@ include (ResInsightVersion.cmake)
 
 
 ################################################################################
-# cotire 
+# cotire
 # Fully automated CMake module for build speedup
 # https://github.com/sakra/cotire
 ################################################################################
@@ -90,7 +90,7 @@ if (RESINSIGHT_ERT_EXTERNAL_LIB_ROOT OR RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT)
 	${RESINSIGHT_ERT_EXTERNAL_LIB_ROOT}/libert_geometry.so
 	${RESINSIGHT_ERT_EXTERNAL_LIB_ROOT}/libert_util.so
   )
-  
+
 else()
 
     # Disable install of ERT libs and headers, as Ert code is compiled and linked directly
@@ -101,14 +101,14 @@ else()
 
     # Remember original state
     set(ORIGINAL_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-    
+
     if (MSVC)
       # Force static linking on Windows
       set(BUILD_SHARED_LIBS OFF)
       set(ERT_HAVE_UNISTD OFF) #If anyone has mingw installed
     else ()
       set(RESINSIGHT_ERT_EXTERNAL_SOURCE_ROOT "" CACHE STRING "Path to ERT CMakeList.txt (source path)")
-       
+
       # Force dynamic linking on other platforms
       # Copy of libraries into install folder of ResInsight is done a bit further down in this file
       set(BUILD_SHARED_LIBS ON)
@@ -134,37 +134,37 @@ else()
     )
 
     list(APPEND ERT_LIBRARIES
-	        ecl 
+	        ecl
 	        eclxx
-	        ecl_well 
-	        ert_geometry 
-	        ert_util  
+	        ecl_well
+	        ert_geometry
+	        ert_util
     )
 
     if (MSVC)
-      set_property(TARGET  
+      set_property(TARGET
           ${ERT_LIBRARIES}
           ecl_lfs
 	      PROPERTY FOLDER "Thirdparty/ERT"
       )
     endif()
-    
+
     # Restore original state
     set(BUILD_SHARED_LIBS ${ORIGINAL_BUILD_SHARED_LIBS})
-    
+
 endif(RESINSIGHT_ERT_EXTERNAL_LIB_ROOT OR RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT)
 
 
-################################################################################ 
-# Subset of Boost, used by NRLib and flow diagnostics application 
-################################################################################ 
- 
+################################################################################
+# Subset of Boost, used by NRLib and flow diagnostics application
+################################################################################
+
 if(MSVC)
     # stop MSVC from trying to auto-link libs
-    add_definitions("-DBOOST_ALL_NO_LIB") 
-endif() 
- 
-add_subdirectory(ThirdParty/boost-Subset) 
+    add_definitions("-DBOOST_ALL_NO_LIB")
+endif()
+
+add_subdirectory(ThirdParty/boost-Subset)
 
 list(APPEND THIRD_PARTY_LIBRARIES
     boost-Subset
@@ -182,7 +182,7 @@ list(APPEND OPM_LIBRARIES
     custom-opm-flowdiag-app
 )
 
-set_property(TARGET  
+set_property(TARGET
     ${OPM_LIBRARIES}
 	PROPERTY FOLDER "Thirdparty/OPM"
 )
@@ -241,7 +241,7 @@ list(APPEND THIRD_PARTY_LIBRARIES
 ################################################################################
 # Thirdparty libraries are put in ThirdParty solution folder
 ################################################################################
-set_property(TARGET  
+set_property(TARGET
     ${THIRD_PARTY_LIBRARIES}
 	PROPERTY FOLDER "Thirdparty"
 )
@@ -252,7 +252,7 @@ set_property(TARGET
 
 # Allow use of non-threadsafe reference counter in cvf::Object on systems with no atomics support
 if (CMAKE_COMPILER_IS_GNUCC)
- 
+
     if (NOT DEFINED HAVE_GCC_SYNC_FUNCTIONS)
         check_c_source_compiles("int main(int argc, char **argv) {
             int a;
@@ -261,14 +261,14 @@ if (CMAKE_COMPILER_IS_GNUCC)
             __sync_sub_and_fetch(&a, 1);
             __sync_fetch_and_sub(&a, 1); }" HAVE_GCC_SYNC_FUNCTIONS)
     endif()
- 
+
     if (HAVE_GCC_SYNC_FUNCTIONS)
         message("GCC synchronization functions detected")
     else()
         message("GCC synchronization functions NOT detected, fallback to non threadsafe reference counting")
         add_definitions(-DCVF_USE_NON_THREADSAFE_REFERENCE_COUNT)
     endif()
- 
+
 endif()
 
 add_subdirectory(${VIZ_MODULES_FOLDER_NAME}/LibCore)
@@ -293,7 +293,7 @@ list(APPEND VIZ_FWK_LIBRARIES
     LibCore
 )
 
-set_property(TARGET  
+set_property(TARGET
     ${VIZ_FWK_LIBRARIES}
 	PROPERTY FOLDER "VizFwk"
 )
@@ -326,7 +326,7 @@ list(APPEND APP_FWK_LIBRARIES
     cafPdmUiCore
     cafPdmXml
     cafProjectDataModel
-    
+
     cafUserInterface
     cafViewer
     cafAnimControl
@@ -338,7 +338,7 @@ list(APPEND APP_FWK_LIBRARIES
     cafVizExtensions
 )
 
-set_property(TARGET  
+set_property(TARGET
     ${APP_FWK_LIBRARIES}
 	PROPERTY FOLDER "AppFwk"
 )
@@ -354,12 +354,12 @@ set (RESINSIGHT_INSTALL_FOLDER ".")
 option (RESINSIGHT_PRIVATE_INSTALL "Install as an independent bundle including the neccesary Qt libraries" ON)
 if (RESINSIGHT_PRIVATE_INSTALL)
     set (CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/Install/)
-    
+
     ################################################################################
     # ERT shared library files
     # Install procedure will copy so-files from ERT into same install folder as ResInsight
     ################################################################################
-    
+
     if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
         set(ERT_SHARED_LIB_FILES
             ${CMAKE_BINARY_DIR}/ThirdParty/Ert/${CMAKE_INSTALL_LIBDIR}/libecl.so
@@ -378,15 +378,15 @@ if (RESINSIGHT_PRIVATE_INSTALL)
             ${CMAKE_BINARY_DIR}/ThirdParty/Ert/${CMAKE_INSTALL_LIBDIR}/libert_util.so.2
             ${CMAKE_BINARY_DIR}/ThirdParty/Ert/${CMAKE_INSTALL_LIBDIR}/libert_util.so.2.2
         )
-      
+
       install(FILES ${ERT_SHARED_LIB_FILES} DESTINATION ${RESINSIGHT_INSTALL_FOLDER} )
     endif()
-    
+
 endif (RESINSIGHT_PRIVATE_INSTALL)
 
 
 ################################################################################
-# Application 
+# Application
 ################################################################################
 add_subdirectory(ApplicationCode)
 add_subdirectory(OctavePlugin)
@@ -398,14 +398,14 @@ option(RESINSIGHT_BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API 
 if(RESINSIGHT_BUILD_DOCUMENTATION)
   FIND_PACKAGE(Doxygen)
   if (NOT DOXYGEN_FOUND)
-    message(FATAL_ERROR 
+    message(FATAL_ERROR
       "Doxygen is needed to build the documentation. Please install it correctly")
   endif()
   #-- Configure the Template Doxyfile for our specific project
-  configure_file(Doxyfile.in 
+  configure_file(Doxyfile.in
                  ${PROJECT_BINARY_DIR}/Doxyfile  @ONLY IMMEDIATE)
   #-- Add a custom target to run Doxygen when ever the project is built
-  add_custom_target (Docs ALL 
+  add_custom_target (Docs ALL
   					COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
   					SOURCES ${PROJECT_BINARY_DIR}/Doxyfile)
   # IF you do NOT want the documentation to be generated EVERY time you build the project
@@ -422,9 +422,9 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set(CPACK_GENERATOR ZIP)
 endif()
 
-if(RESINSIGHT_OCTAVE_PLUGIN_MKOCTFILE) 
+if(RESINSIGHT_OCTAVE_PLUGIN_MKOCTFILE)
     get_filename_component(RESINSIGHT_OCTAVE_DIRECTORY ${RESINSIGHT_OCTAVE_PLUGIN_MKOCTFILE} DIRECTORY)
-    
+
     execute_process (COMMAND octave-config -v
         WORKING_DIRECTORY ${RESINSIGHT_OCTAVE_DIRECTORY}
                     OUTPUT_VARIABLE OCTAVE_VERSION_STRING
