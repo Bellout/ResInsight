@@ -18,16 +18,19 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "RicRangeFilterFeatureImpl.h"
+
 #include "RicRangeFilterNewExec.h"
+
+#include "RiaApplication.h"
 
 #include "RimCellRangeFilter.h"
 #include "RimCellRangeFilterCollection.h"
+#include "RimGridView.h"
+#include "RimViewController.h"
 
 #include "cafSelectionManager.h"
 
 #include <vector>
-#include "RimView.h"
-#include "RimViewController.h"
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -37,7 +40,7 @@ bool RicRangeFilterFeatureImpl::isRangeFilterCommandAvailable()
     RimCellRangeFilterCollection* rangeFilterCollection = findRangeFilterCollection();
     if (!rangeFilterCollection) return false;
 
-    RimView* view;
+    RimGridView* view;
     rangeFilterCollection->firstAncestorOrThisOfType(view);
     if (view)
     {
@@ -66,7 +69,7 @@ RicRangeFilterNewExec* RicRangeFilterFeatureImpl::createRangeFilterExecCommand()
 //--------------------------------------------------------------------------------------------------
 RimCellRangeFilterCollection* RicRangeFilterFeatureImpl::findRangeFilterCollection()
 {
-    RimCellRangeFilterCollection* rangeFilterCollection = NULL;
+    RimCellRangeFilterCollection* rangeFilterCollection = nullptr;
     
     std::vector<RimCellRangeFilter*> selectedRangeFilter;
     caf::SelectionManager::instance()->objectsByType(&selectedRangeFilter);
@@ -83,10 +86,13 @@ RimCellRangeFilterCollection* RicRangeFilterFeatureImpl::findRangeFilterCollecti
         selectedRangeFilter[0]->firstAncestorOrThisOfType(rangeFilterCollection);
     }
 
+    RimGridView* view = RiaApplication::instance()->activeGridView();
+    if (view)
+    {
+        rangeFilterCollection = view->rangeFilterCollection();
+    }
+    
     assert(rangeFilterCollection);
-
-    // TODO : When a menu is created in the 3D view, add code to find collection based on a RimView
-    // See RiuViewerCommands
 
     return rangeFilterCollection;
 }

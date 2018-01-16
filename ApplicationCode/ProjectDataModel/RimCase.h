@@ -29,7 +29,7 @@
 
 #include <vector>
 
-class RimView;
+class Rim3dView;
 class RimFormationNames;
 class RimTimeStepFilter;
 
@@ -49,7 +49,7 @@ public:
 
     caf::PdmPtrField<RimFormationNames*>        activeFormationNames;
 
-    virtual std::vector<RimView*>               views() = 0;
+    virtual std::vector<Rim3dView*>               views() = 0;
 
     virtual void                                updateFilePathsFromProjectPath(const QString& projectPath, const QString& oldProjectPath) = 0;
 
@@ -63,8 +63,11 @@ public:
     virtual cvf::Vec3d                          displayModelOffset() const;
 
     virtual void                                updateFormationNamesData() = 0;
+    virtual void                                setFormationNames(RimFormationNames* formationNames);
 
     virtual double                              characteristicCellSize() const = 0;
+
+    size_t                                      uiToNativeTimeStepIndex(size_t uiTimeStepIndex);
 
 protected:
     virtual QList<caf::PdmOptionItemInfo>       calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool * useOptionsOnly) override;

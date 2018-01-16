@@ -36,7 +36,7 @@ ${CEE_CURRENT_LIST_DIR}RigLocalGrid.h
 ${CEE_CURRENT_LIST_DIR}RigMainGrid.h
 ${CEE_CURRENT_LIST_DIR}RigReservoirBuilderMock.h
 ${CEE_CURRENT_LIST_DIR}RigCaseCellResultsData.h
-${CEE_CURRENT_LIST_DIR}RigSingleWellResultsData.h
+${CEE_CURRENT_LIST_DIR}RigSimWellData.h
 ${CEE_CURRENT_LIST_DIR}RigWellPath.h
 ${CEE_CURRENT_LIST_DIR}RigFault.h
 ${CEE_CURRENT_LIST_DIR}RigNNCData.h
@@ -52,17 +52,34 @@ ${CEE_CURRENT_LIST_DIR}RigWellLogExtractionTools.h
 ${CEE_CURRENT_LIST_DIR}RigHexIntersectionTools.h
 ${CEE_CURRENT_LIST_DIR}RigTimeHistoryResultAccessor.h
 ${CEE_CURRENT_LIST_DIR}RigCurveDataTools.h
-${CEE_CURRENT_LIST_DIR}RigSummaryCaseData.h
+${CEE_CURRENT_LIST_DIR}RigObservedData.h
 ${CEE_CURRENT_LIST_DIR}RigLasFileExporter.h
 ${CEE_CURRENT_LIST_DIR}RigSimulationWellCoordsAndMD.h
 ${CEE_CURRENT_LIST_DIR}RigFishbonesGeometry.h
+${CEE_CURRENT_LIST_DIR}RigTesselatorTools.h
+${CEE_CURRENT_LIST_DIR}RigCellGeometryTools.h
 ${CEE_CURRENT_LIST_DIR}RigWellPathIntersectionTools.h
-${CEE_CURRENT_LIST_DIR}RigTransmissibilityEquations.h
 ${CEE_CURRENT_LIST_DIR}RigEclipseResultInfo.h
 ${CEE_CURRENT_LIST_DIR}RigTofAccumulatedPhaseFractionsCalculator.h
-
-
+${CEE_CURRENT_LIST_DIR}RigTransmissibilityEquations.h
+${CEE_CURRENT_LIST_DIR}RigNumberOfFloodedPoreVolumesCalculator.h
+${CEE_CURRENT_LIST_DIR}RigWeightedMeanCalc.h
+${CEE_CURRENT_LIST_DIR}RigTimeHistoryCurveMerger.h
+${CEE_CURRENT_LIST_DIR}RigWellPathFormations.h
 )
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+    list (APPEND SOURCE_GROUP_HEADER_FILES
+        ${CEE_CURRENT_LIST_DIR}RigEclipseToStimPlanCellTransmissibilityCalculator.h
+        ${CEE_CURRENT_LIST_DIR}RigTransmissibilityCondenser.h
+        ${CEE_CURRENT_LIST_DIR}RigFractureTransmissibilityEquations.h
+        ${CEE_CURRENT_LIST_DIR}RigStimPlanFractureDefinition.h
+        ${CEE_CURRENT_LIST_DIR}RigFractureGrid.h
+        ${CEE_CURRENT_LIST_DIR}RigFractureCell.h
+        ${CEE_CURRENT_LIST_DIR}RigWellPathStimplanIntersector.h
+    )
+endif()
+
 
 set (SOURCE_GROUP_SOURCE_FILES
 ${CEE_CURRENT_LIST_DIR}RigActiveCellInfo.cpp
@@ -94,7 +111,7 @@ ${CEE_CURRENT_LIST_DIR}RigLocalGrid.cpp
 ${CEE_CURRENT_LIST_DIR}RigMainGrid.cpp
 ${CEE_CURRENT_LIST_DIR}RigReservoirBuilderMock.cpp
 ${CEE_CURRENT_LIST_DIR}RigCaseCellResultsData.cpp
-${CEE_CURRENT_LIST_DIR}RigSingleWellResultsData.cpp
+${CEE_CURRENT_LIST_DIR}RigSimWellData.cpp
 ${CEE_CURRENT_LIST_DIR}RigWellPath.cpp
 ${CEE_CURRENT_LIST_DIR}RigFault.cpp
 ${CEE_CURRENT_LIST_DIR}RigNNCData.cpp
@@ -107,16 +124,34 @@ ${CEE_CURRENT_LIST_DIR}RigWellLogCurveData.cpp
 ${CEE_CURRENT_LIST_DIR}RigHexIntersectionTools.cpp
 ${CEE_CURRENT_LIST_DIR}RigTimeHistoryResultAccessor.cpp
 ${CEE_CURRENT_LIST_DIR}RigCurveDataTools.cpp    
-${CEE_CURRENT_LIST_DIR}RigSummaryCaseData.cpp
+${CEE_CURRENT_LIST_DIR}RigObservedData.cpp
 ${CEE_CURRENT_LIST_DIR}RigLasFileExporter.cpp
 ${CEE_CURRENT_LIST_DIR}RigSimulationWellCoordsAndMD.cpp
 ${CEE_CURRENT_LIST_DIR}RigFishbonesGeometry.cpp
+${CEE_CURRENT_LIST_DIR}RigTesselatorTools.cpp
+${CEE_CURRENT_LIST_DIR}RigCellGeometryTools.cpp
 ${CEE_CURRENT_LIST_DIR}RigWellPathIntersectionTools.cpp
-${CEE_CURRENT_LIST_DIR}RigTransmissibilityEquations.cpp
 ${CEE_CURRENT_LIST_DIR}RigEclipseResultInfo.cpp
 ${CEE_CURRENT_LIST_DIR}RigTofAccumulatedPhaseFractionsCalculator.cpp
-
+${CEE_CURRENT_LIST_DIR}RigTransmissibilityEquations.cpp
+${CEE_CURRENT_LIST_DIR}RigNumberOfFloodedPoreVolumesCalculator.cpp
+${CEE_CURRENT_LIST_DIR}RigWeightedMeanCalc.cpp
+${CEE_CURRENT_LIST_DIR}RigTimeHistoryCurveMerger.cpp
+${CEE_CURRENT_LIST_DIR}RigWellPathFormations.cpp
 )
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+    list (APPEND SOURCE_GROUP_SOURCE_FILES
+        ${CEE_CURRENT_LIST_DIR}RigEclipseToStimPlanCellTransmissibilityCalculator.cpp
+        ${CEE_CURRENT_LIST_DIR}RigTransmissibilityCondenser.cpp
+        ${CEE_CURRENT_LIST_DIR}RigFractureTransmissibilityEquations.cpp
+        ${CEE_CURRENT_LIST_DIR}RigStimPlanFractureDefinition.cpp
+        ${CEE_CURRENT_LIST_DIR}RigFractureGrid.cpp
+        ${CEE_CURRENT_LIST_DIR}RigFractureCell.cpp
+        ${CEE_CURRENT_LIST_DIR}RigWellPathStimplanIntersector.cpp
+    )
+endif()
+
 
 list(APPEND CODE_HEADER_FILES
 ${SOURCE_GROUP_HEADER_FILES}

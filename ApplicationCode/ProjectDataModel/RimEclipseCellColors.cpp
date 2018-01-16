@@ -29,9 +29,9 @@
 #include "RimEclipseCase.h"
 #include "RimEclipseFaultColors.h"
 #include "RimEclipseView.h"
-#include "RimEclipseWell.h"
-#include "RimEclipseWellCollection.h"
 #include "RimLegendConfig.h"
+#include "RimSimWellInView.h"
+#include "RimSimWellInViewCollection.h"
 #include "RimTernaryLegendConfig.h"
 #include "RimViewController.h"
 #include "RimViewLinker.h"
@@ -273,7 +273,7 @@ public :
 //--------------------------------------------------------------------------------------------------
 void RimEclipseCellColors::updateLegendData(size_t currentTimeStep)
 {
-    if (this->resultType() == RiaDefines::FLOW_DIAGNOSTICS)
+    if (this->isFlowDiagOrInjectionFlooding())
     {
         double globalMin, globalMax;
         double globalPosClosestToZero, globalNegClosestToZero;
@@ -316,7 +316,7 @@ void RimEclipseCellColors::updateLegendData(size_t currentTimeStep)
             int tracerIndex = 0;
             for (const auto& tracerName : tracerNames)
             {
-                RimEclipseWell* well = m_reservoirView->wellCollection()->findWell(RimFlowDiagSolution::removeCrossFlowEnding(tracerName));
+                RimSimWellInView* well = m_reservoirView->wellCollection()->findWell(RimFlowDiagSolution::removeCrossFlowEnding(tracerName));
                 cvf::Color3ub color(cvf::Color3::GRAY);
                 if (well) color = cvf::Color3ub(well->wellPipeColor());
 
@@ -388,10 +388,12 @@ void RimEclipseCellColors::updateLegendData(size_t currentTimeStep)
                 caf::AppEnum<RiaDefines::CompletionType> wellPath(RiaDefines::WELL_PATH);
                 caf::AppEnum<RiaDefines::CompletionType> fishbone(RiaDefines::FISHBONES);
                 caf::AppEnum<RiaDefines::CompletionType> perforationInterval(RiaDefines::PERFORATION_INTERVAL);
+                caf::AppEnum<RiaDefines::CompletionType> fracture(RiaDefines::FRACTURE);
 
                 categories.push_back(std::make_tuple(wellPath.uiText(),             static_cast<int>(wellPath.index()),             cvf::Color3::RED));
                 categories.push_back(std::make_tuple(fishbone.uiText(),             static_cast<int>(fishbone.index()),             cvf::Color3::DARK_GREEN));
                 categories.push_back(std::make_tuple(perforationInterval.uiText(),  static_cast<int>(perforationInterval.index()),  cvf::Color3::GREEN));
+                categories.push_back(std::make_tuple(fracture.uiText(),             static_cast<int>(fracture.index()),             cvf::Color3::YELLOW_GREEN));
 
                 legendConfig()->setCategoryItems(categories);
             }

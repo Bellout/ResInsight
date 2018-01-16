@@ -4,6 +4,10 @@ if (${CMAKE_VERSION} VERSION_GREATER "2.8.2")
     set(CEE_CURRENT_LIST_DIR  ${CMAKE_CURRENT_LIST_DIR}/)
 endif()
 
+CONFIGURE_FILE( ${CEE_CURRENT_LIST_DIR}RiaTestDataDirectory.h.cmake
+				${CMAKE_BINARY_DIR}/Generated/RiaTestDataDirectory.h
+)
+
 set (SOURCE_GROUP_HEADER_FILES
 )
 
@@ -25,7 +29,25 @@ ${CEE_CURRENT_LIST_DIR}ScalarMapper-Test.cpp
 ${CEE_CURRENT_LIST_DIR}WellPathAsciiFileReader-Test.cpp
 ${CEE_CURRENT_LIST_DIR}opm-flowdiagnostics-Test.cpp
 ${CEE_CURRENT_LIST_DIR}RigTofAccumulatedPhaseFractionsCalculator-Test.cpp
+${CEE_CURRENT_LIST_DIR}HDF5FileReader-Test.cpp
+${CEE_CURRENT_LIST_DIR}RigCellGeometryTools-Test.cpp
+${CEE_CURRENT_LIST_DIR}RigHexIntersectionTools-Test.cpp
+${CEE_CURRENT_LIST_DIR}ObservedDataParser-Test.cpp
+${CEE_CURRENT_LIST_DIR}EclipseRftReader-Test.cpp
+${CEE_CURRENT_LIST_DIR}RicExpressionParser-Test.cpp
+${CEE_CURRENT_LIST_DIR}RiuSummaryVectorDescriptionMap-Test.cpp
+${CEE_CURRENT_LIST_DIR}FixedWidthDataParser-Test.cpp
+${CEE_CURRENT_LIST_DIR}RigTimeCurveHistoryMerger-Test.cpp
+${CEE_CURRENT_LIST_DIR}ListKeywordsForObjectsAndFields-Test.cpp
+${CEE_CURRENT_LIST_DIR}RiaProjectFileVersionTools-Test.cpp
+${CEE_CURRENT_LIST_DIR}RifElementPropertyTableReader-Test.cpp
 )
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+    list (APPEND SOURCE_GROUP_SOURCE_FILES
+        ${CEE_CURRENT_LIST_DIR}RigTransmissibilityCondenser-Test.cpp
+    )
+endif()
 
 list(APPEND CODE_HEADER_FILES
 ${SOURCE_GROUP_HEADER_FILES}

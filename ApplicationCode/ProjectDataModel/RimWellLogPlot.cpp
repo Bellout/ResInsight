@@ -26,6 +26,8 @@
 #include "RimWellAllocationPlot.h"
 #include "RimWellLogCurve.h"
 #include "RimWellLogTrack.h"
+#include "RimWellRftPlot.h"
+#include "RimWellPltPlot.h"
 
 #include "RiuMainPlotWindow.h"
 #include "RiuWellLogPlot.h"
@@ -124,6 +126,7 @@ void RimWellLogPlot::fieldChangedByUi(const caf::PdmFieldHandle* changedField, c
         RimWellAllocationPlot* wellAllocPlot;
         firstAncestorOrThisOfType(wellAllocPlot);
         if (wellAllocPlot) wellAllocPlot->loadDataAndUpdate();
+        else if (isRftPlotChild()) rftPlot()->loadDataAndUpdate();
         else updateTracks();
     }
     if ( changedField == &m_depthUnit)
@@ -136,7 +139,14 @@ void RimWellLogPlot::fieldChangedByUi(const caf::PdmFieldHandle* changedField, c
         updateTracks();
         if (m_viewer) m_viewer->updateChildrenLayout();
     }
-    
+
+    RimWellRftPlot* rftPlot(nullptr);
+    this->firstAncestorOrThisOfType(rftPlot);
+
+    if (rftPlot)
+    {
+        rftPlot->updateConnectedEditors();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -152,6 +162,7 @@ QList<caf::PdmOptionItemInfo> RimWellLogPlot::calculateValueOptions(const caf::P
         for (size_t i = 0; i < DepthAppEnum::size(); ++i)
         {
             DepthTypeEnum enumVal = DepthAppEnum::fromIndex(i);
+
             if (m_disabledDepthTypes.count( enumVal) == 0) 
             {
                 options.push_back(caf::PdmOptionItemInfo(DepthAppEnum::uiText(enumVal), enumVal));
@@ -420,9 +431,11 @@ QString RimWellLogPlot::asciiDataForPlotExport() const
 
         for (RimWellLogCurve* curve : curves)
         {
-            curveNames.push_back(curve->curveName());
+            if (!curve->isCurveVisible()) continue;
+
             const RigWellLogCurveData* curveData = curve->curveData();
-            if (!curveData) return out;
+            if (!curveData) continue;
+            curveNames.push_back(curve->curveName());
 
             if (curveNames.size() == 1)
             {
@@ -437,7 +450,16 @@ QString RimWellLogPlot::asciiDataForPlotExport() const
             }
 
             std::vector<double> xPlotValues = curveData->xPlotValues();
-            if (!(curveDepths.size() == xPlotValues.size())) return out;
+            if (curveDepths.size() != xPlotValues.size() || xPlotValues.empty())
+            {
+                curveNames.pop_back();
+
+                if (curveNames.empty())
+                {
+                    curveDepths.clear();
+                }
+                continue;
+            }
             curvesPlotXValues.push_back(xPlotValues);
         }
 
@@ -474,6 +496,77 @@ QString RimWellLogPlot::asciiDataForPlotExport() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+RimWellRftPlot* RimWellLogPlot::rftPlot() const
+{
+    RimWellRftPlot* rftPlot;
+    firstAncestorOrThisOfType(rftPlot);
+    return rftPlot;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RimWellLogPlot::isRftPlotChild() const
+{
+    return rftPlot() != nullptr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RimWellPltPlot* RimWellLogPlot::pltPlot() const
+{
+    RimWellPltPlot* pltPlot;
+    firstAncestorOrThisOfType(pltPlot);
+    return pltPlot;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RimWellLogPlot::isPltPlotChild() const
+{
+    return pltPlot() != nullptr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimWellLogPlot::uiOrderingForVisibleDepthRange(caf::PdmUiOrdering& uiOrdering)
+{
+    caf::PdmUiGroup* gridGroup = uiOrdering.addNewGroup("Visible Depth Range");
+    gridGroup->add(&m_isAutoScaleDepthEnabled);
+    gridGroup->add(&m_minVisibleDepth);
+    gridGroup->add(&m_maxVisibleDepth);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimWellLogPlot::uiOrderingForPlot(caf::PdmUiOrdering& uiOrdering)
+{
+    RimWellRftPlot* rftp;
+    firstAncestorOrThisOfType(rftp);
+
+    if (!rftp)
+    {
+        uiOrdering.add(&m_depthType);
+    }
+
+    RimWellAllocationPlot* wap;
+    firstAncestorOrThisOfType(wap);
+
+    if (!(wap || rftp))
+    {
+        uiOrdering.add(&m_depthUnit);
+    }
+
+    uiOrdering.add(&m_showTrackLegends);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimWellLogPlot::depthZoomMinMax(double* minimumDepth, double* maximumDepth) const
 {
     *minimumDepth = m_minVisibleDepth;
@@ -487,22 +580,8 @@ void RimWellLogPlot::depthZoomMinMax(double* minimumDepth, double* maximumDepth)
 void RimWellLogPlot::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
 {
     uiOrdering.add(&m_userName);
-    uiOrdering.add(&m_depthType);
-
-    RimWellAllocationPlot* wap;
-    firstAncestorOrThisOfType(wap);
-    if (!wap)
-    {
-        uiOrdering.add(&m_depthUnit);
-    }
-
-    uiOrdering.add(&m_showTrackLegends);
-
-    caf::PdmUiGroup* gridGroup = uiOrdering.addNewGroup("Visible Depth Range");
-    gridGroup->add(&m_isAutoScaleDepthEnabled);
-    gridGroup->add(&m_minVisibleDepth);
-    gridGroup->add(&m_maxVisibleDepth);
-
+    uiOrderingForPlot(uiOrdering);
+    uiOrderingForVisibleDepthRange(uiOrdering);
 
     uiOrdering.skipRemainingFields(true);
 }
@@ -511,10 +590,15 @@ void RimWellLogPlot::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimWellLogPlot::loadDataAndUpdate()
+void RimWellLogPlot::onLoadDataAndUpdate()
 {
     updateMdiWindowVisibility();
+
+    bool tempAutoScale = m_isAutoScaleDepthEnabled;
+    m_isAutoScaleDepthEnabled = false;
     updateTracks();
+
+    m_isAutoScaleDepthEnabled = tempAutoScale;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -776,6 +860,17 @@ void RimWellLogPlot::updateDisabledDepthTypes()
         {
             m_depthType = CONNECTION_NUMBER;
         }
+    }
+    else if (isRftPlotChild())
+    {
+        m_disabledDepthTypes.insert(MEASURED_DEPTH);
+        m_disabledDepthTypes.insert(PSEUDO_LENGTH);
+        m_disabledDepthTypes.insert(CONNECTION_NUMBER);
+    }
+    else if (isPltPlotChild())
+    {
+        m_disabledDepthTypes.insert(TRUE_VERTICAL_DEPTH);
+        m_disabledDepthTypes.insert(CONNECTION_NUMBER);
     }
     else
     {

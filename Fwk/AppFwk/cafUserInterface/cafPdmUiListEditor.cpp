@@ -162,19 +162,7 @@ void PdmUiListEditor::configureAndUpdateUi(const QString& uiConfigName)
     CAF_ASSERT(!m_label.isNull());
     CAF_ASSERT(m_listView->selectionModel());
 
-    QIcon ic = field()->uiIcon(uiConfigName);
-    if (!ic.isNull())
-    {
-        m_label->setPixmap(ic.pixmap(ic.actualSize(QSize(64, 64))));
-    }
-    else
-    {
-        QString uiName = field()->uiName(uiConfigName);
-        m_label->setText(uiName);
-    }
-
-    m_label->setEnabled(!field()->isUiReadOnly(uiConfigName));
-    m_label->setToolTip(field()->uiToolTip(uiConfigName));
+    PdmUiFieldEditorHandle::updateLabelFromField(m_label, uiConfigName);
 
     m_listView->setEnabled(!field()->isUiReadOnly(uiConfigName));
     m_listView->setToolTip(field()->uiToolTip(uiConfigName));
@@ -383,15 +371,7 @@ void PdmUiListEditor::slotListItemEdited(const QModelIndex&, const QModelIndex&)
 
     QStringList uiList = m_model->stringList();
 
-    // Remove dummy elements specifically at the  end of list.
-    
-    QStringList result;
-    foreach (const QString &str, uiList) 
-    {
-        if (str != "" && str != " ") result += str;
-    }
-
-    this->setValueToField(result);
+    trimAndSetValuesToField(uiList);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -418,7 +398,21 @@ void PdmUiListEditor::pasteFromString(const QString& content)
 {
     QStringList strList = content.split("\n");
 
-    this->setValueToField(strList);
+    trimAndSetValuesToField(strList);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void PdmUiListEditor::trimAndSetValuesToField(const QStringList& stringList)
+{
+    QStringList result;
+    for (const auto& str : stringList)
+    {
+        if (str != "" && str != " ") result += str;
+    }
+
+    this->setValueToField(result);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -470,14 +464,7 @@ bool PdmUiListEditor::eventFilter(QObject* object, QEvent * event)
                 {
                     QStringList uiList = m_model->stringList();
 
-                    // Remove dummy elements specifically at the  end of list.
-
-                    QStringList result;
-                    foreach (const QString &str, uiList) 
-                    {
-                        if (str != "" && str != " ") result += str;
-                    }
-                    this->setValueToField(result);
+                    trimAndSetValuesToField(uiList);
                 }
                 return true;
             }

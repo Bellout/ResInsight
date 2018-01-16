@@ -18,13 +18,15 @@
 
 #pragma once
 
+#include "RigSimWellData.h"
+
 #include "cvfBase.h"
 #include "cvfObject.h"
 #include "cvfVector3.h"
 
 #include "cafPdmPointer.h"
+
 #include <list>
-#include "RigSingleWellResultsData.h"
 
 namespace cvf
 {
@@ -37,12 +39,12 @@ namespace cvf
 
 class RivPipeGeometryGenerator;
 class RimEclipseView;
-class RimEclipseWell;
+class RimSimWellInView;
 
 class RivSimWellPipesPartMgr : public cvf::Object
 {
 public:
-    RivSimWellPipesPartMgr(RimEclipseView* reservoirView, RimEclipseWell* well);
+    RivSimWellPipesPartMgr(RimEclipseView* reservoirView, RimSimWellInView* well);
     ~RivSimWellPipesPartMgr();
 
     void setScaleTransform(cvf::Transform * scaleTransform) { m_scaleTransform = scaleTransform; scheduleGeometryRegen();}
@@ -56,7 +58,7 @@ public:
 
 private:
     caf::PdmPointer<RimEclipseView>   m_rimReservoirView;
-    caf::PdmPointer<RimEclipseWell>            m_rimWell;
+    caf::PdmPointer<RimSimWellInView>            m_rimWell;
     
     cvf::ref<cvf::Transform>    m_scaleTransform; 
     bool                        m_needsTransformUpdate;

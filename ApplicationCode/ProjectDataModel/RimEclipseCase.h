@@ -37,6 +37,7 @@
 class QString;
 
 class RigEclipseCaseData;
+class RigCaseCellResultsData;
 class RigGridBase;
 class RimCaseCollection;
 class RimIdenticalGridCaseGroup;
@@ -73,13 +74,16 @@ public:
     const RigEclipseCaseData*                   eclipseCaseData() const;
     cvf::Color3f                                defaultWellColor(const QString& wellName);
 
-    RimReservoirCellResultsStorage*             results(RiaDefines::PorosityModelType porosityModel);
-    const RimReservoirCellResultsStorage*       results(RiaDefines::PorosityModelType porosityModel) const;
+    RigCaseCellResultsData*                     results(RiaDefines::PorosityModelType porosityModel);
+    const RigCaseCellResultsData*               results(RiaDefines::PorosityModelType porosityModel) const;
+
+    RimReservoirCellResultsStorage*             resultsStorage(RiaDefines::PorosityModelType porosityModel);
+    const RimReservoirCellResultsStorage*       resultsStorage(RiaDefines::PorosityModelType porosityModel) const;
                                                       
     RimEclipseView*                             createAndAddReservoirView();
     RimEclipseView*                             createCopyAndAddView(const RimEclipseView* sourceView);
 
-    void                                        removeEclipseResultAndScheduleRedrawAllViews(RiaDefines::ResultCatType type, const QString& resultName);
+    void                                        recalculateCompletionTypeAndRedrawAllViews();
 
     virtual QString                             locationOnDisc() const      { return QString(); }
     virtual QString                             gridFileName() const      { return QString(); }
@@ -87,7 +91,7 @@ public:
 
     RimCaseCollection*                          parentCaseCollection();
                                                      
-    virtual std::vector<RimView*>               views();
+    virtual std::vector<Rim3dView*>               views();
     virtual QStringList                         timeStepStrings() const override;
     virtual QString                             timeStepName(int frameIdx) const override;
     virtual std::vector<QDateTime>              timeStepDates() const override;
@@ -102,6 +106,8 @@ public:
 
 
     virtual double                              characteristicCellSize() const override;
+
+    virtual void                                setFormationNames(RimFormationNames* formationNames) override;
 
 protected:
     virtual void                                initAfterRead();
@@ -129,7 +135,7 @@ private:
 
     // Obsolete fields
 protected:
-    caf::PdmField<QString>                      caseName;
+    caf::PdmField<QString>                      m_caseName_OBSOLETE;
 private:
     caf::PdmField<std::vector<QString> >        m_filesContainingFaults_OBSOLETE;
 

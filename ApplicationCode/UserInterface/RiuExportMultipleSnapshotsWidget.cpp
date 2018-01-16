@@ -27,7 +27,9 @@
 #include "RimEclipseView.h"
 #include "RimMultiSnapshotDefinition.h"
 #include "RimProject.h"
-#include "RimView.h"
+#include "Rim3dView.h"
+
+#include "RiuTools.h"
 
 #include "cafCmdFeatureManager.h"
 #include "cafPdmUiTableView.h"
@@ -51,7 +53,7 @@
 /// 
 //--------------------------------------------------------------------------------------------------
 RiuExportMultipleSnapshotsWidget::RiuExportMultipleSnapshotsWidget(QWidget* parent, RimProject* project)
-    : QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    : QDialog(parent, RiuTools::defaultDialogFlags()),
     m_rimProject(project)
 {
     setWindowTitle("Export Multiple Snapshots");
@@ -136,7 +138,7 @@ void RiuExportMultipleSnapshotsWidget::addSnapshotItemFromActiveView()
 {
     if (!m_rimProject) return;
 
-    RimView* activeView = RiaApplication::instance()->activeReservoirView();
+    Rim3dView* activeView = RiaApplication::instance()->activeReservoirView();
     if (activeView)
     {
         RimMultiSnapshotDefinition* multiSnapshot = new RimMultiSnapshotDefinition();

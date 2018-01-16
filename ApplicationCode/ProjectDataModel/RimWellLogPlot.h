@@ -31,6 +31,8 @@
 
 class RiuWellLogPlot;
 class RimWellLogTrack;
+class RimWellRftPlot;
+class RimWellPltPlot;
 
 
 //==================================================================================================
@@ -82,7 +84,6 @@ public:
 
     RimWellLogTrack*                                trackByIndex(size_t index);
 
-    virtual void                                    loadDataAndUpdate() override;
     void                                            updateTracks();
     void                                            updateTrackNames();
 
@@ -101,13 +102,22 @@ public:
 
     QString                                         asciiDataForPlotExport() const;
 
+    RimWellRftPlot*                                 rftPlot() const;
+    bool                                            isRftPlotChild() const;
+    RimWellPltPlot*                                 pltPlot() const;
+    bool                                            isPltPlotChild() const;
+
+    void                                            uiOrderingForVisibleDepthRange(caf::PdmUiOrdering& uiOrdering);
+    void                                            uiOrderingForPlot(caf::PdmUiOrdering& uiOrdering);
+
 protected:
 
     // Overridden PDM methods
-    virtual void                                    fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue);
-    virtual void                                    defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering);
-    virtual caf::PdmFieldHandle*                    userDescriptionField()  { return &m_userName; }
+    virtual void                                    fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue) override;
+    virtual void                                    defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) override;
+    virtual caf::PdmFieldHandle*                    userDescriptionField() override { return &m_userName; }
     virtual QList<caf::PdmOptionItemInfo>           calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool* useOptionsOnly) override;
+    virtual void                                    onLoadDataAndUpdate() override;
 
     virtual QImage                                  snapshotWindowContent() override;
 

@@ -21,7 +21,7 @@
 #include "RimCase.h"
 #include "RimIntersectionBox.h"
 #include "RimIntersectionCollection.h"
-#include "RimView.h"
+#include "RimGridView.h"
 #include "RiuMainWindow.h"
 
 #include "cafCmdExecCommandManager.h"
@@ -63,13 +63,9 @@ void RicAppendIntersectionBoxFeature::onActionTriggered(bool isChecked)
         coll->updateConnectedEditors();
         RiuMainWindow::instance()->selectAsCurrentItem(intersectionBox);
 
-        RimView* rimView = NULL;
-        coll->firstAncestorOrThisOfType(rimView);
-        if (rimView)
-        {
-            rimView->showGridCells(false);
-            rimView->scheduleCreateDisplayModelAndRedraw();
-        }
+        RimGridView* rimView = nullptr;
+        coll->firstAncestorOrThisOfTypeAsserted(rimView);
+        rimView->showGridCells(false);
     }
 }
 

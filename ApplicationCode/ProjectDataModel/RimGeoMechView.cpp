@@ -103,7 +103,7 @@ RimGeoMechView::~RimGeoMechView(void)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimGeoMechView::loadDataAndUpdate()
+void RimGeoMechView::onLoadDataAndUpdate()
 {
     caf::ProgressInfo progress(7, "");
     progress.setNextProgressIncrement(5);
@@ -221,7 +221,7 @@ void RimGeoMechView::createDisplayModel()
    // Cross sections
 
    m_crossSectionVizModel->removeAllParts();
-   crossSectionCollection->appendPartsToModel(m_crossSectionVizModel.p(), scaleTransform());
+   m_crossSectionCollection->appendPartsToModel(m_crossSectionVizModel.p(), scaleTransform());
    m_viewer->addStaticModelOnce(m_crossSectionVizModel.p());
 
    // If the animation was active before recreating everything, make viewer view current frame
@@ -234,7 +234,7 @@ void RimGeoMechView::createDisplayModel()
    {
        updateLegends();
        m_vizLogic->updateStaticCellColors(-1);
-       crossSectionCollection->applySingleColorEffect();
+       m_crossSectionCollection->applySingleColorEffect();
 
        m_overlayInfoConfig()->update3DInfo();
    }
@@ -290,18 +290,18 @@ void RimGeoMechView::updateCurrentTimeStep()
 
         if (this->cellResult()->hasResult())
         {
-            crossSectionCollection->updateCellResultColor(m_currentTimeStep);
+            m_crossSectionCollection->updateCellResultColor(m_currentTimeStep);
         }
         else
         {
-            crossSectionCollection->applySingleColorEffect();
+            m_crossSectionCollection->applySingleColorEffect();
         }
 
     }
     else
     {
         m_vizLogic->updateStaticCellColors(-1);
-        crossSectionCollection->applySingleColorEffect();
+        m_crossSectionCollection->applySingleColorEffect();
 
         m_viewer->animationControl()->slotPause(); // To avoid animation timer spinning in the background
     }
@@ -490,7 +490,7 @@ cvf::Transform* RimGeoMechView::scaleTransform()
 //--------------------------------------------------------------------------------------------------
 void RimGeoMechView::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
 {
-    RimView::fieldChangedByUi(changedField, oldValue, newValue);
+    Rim3dView::fieldChangedByUi(changedField, oldValue, newValue);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -507,7 +507,7 @@ void RimGeoMechView::initAfterRead()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimCase* RimGeoMechView::ownerCase()
+RimCase* RimGeoMechView::ownerCase() const
 {
     return m_geomechCase;
 }
@@ -573,9 +573,9 @@ const RimGeoMechPropertyFilterCollection* RimGeoMechView::geoMechPropertyFilterC
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimGeoMechView::calculateCurrentTotalCellVisibility(cvf::UByteArray* totalVisibility)
+void RimGeoMechView::calculateCurrentTotalCellVisibility(cvf::UByteArray* totalVisibility, int timeStep)
 {
-    m_vizLogic->calculateCurrentTotalCellVisibility(totalVisibility, m_currentTimeStep);
+    m_vizLogic->calculateCurrentTotalCellVisibility(totalVisibility, timeStep);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -650,7 +650,7 @@ void RimGeoMechView::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering
 
     uiTreeOrdering.add(cellResult());
 
-    uiTreeOrdering.add(crossSectionCollection());
+    uiTreeOrdering.add(m_crossSectionCollection());
     
     uiTreeOrdering.add(m_rangeFilterCollection());
     uiTreeOrdering.add(m_propertyFilterCollection());

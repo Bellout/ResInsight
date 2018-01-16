@@ -2,6 +2,12 @@ cmake_minimum_required (VERSION 2.8)
 
 project (CeeApp)
 
+if (MSVC AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.11))
+  # VS 2017 : Disable warnings from from gtest code, using deprecated code related to TR1 
+  add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+  message("Add flag to disable warings from gtest -  _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
+endif()
+
 
 find_package (Qt4 COMPONENTS QtCore QtGui QtMain QtOpenGl REQUIRED)
 include (${QT_USE_FILE})
@@ -9,6 +15,11 @@ include (${QT_USE_FILE})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(CMAKE_CXX_FLAGS "-std=c++0x")
 endif() 
+
+if(MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+endif()
+
 
 # Improvement Cmake 3.x
 # If we have compiler requirements for this library, list them
@@ -37,6 +48,7 @@ endif()
 add_subdirectory (cafProjectDataModel/cafPdmCore/cafPdmCore_UnitTests)
 add_subdirectory (cafProjectDataModel/cafPdmXml/cafPdmXml_UnitTests)
 add_subdirectory (cafProjectDataModel/cafProjectDataModel_UnitTests)
+add_subdirectory (cafUserInterface/cafUserInterface_UnitTests)
 
 # Organize sub-projects into folders on Visual Studio
 # Turn on using solution folders

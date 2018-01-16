@@ -29,6 +29,13 @@
 class RigFemResultAddress
 {
 public:
+    RigFemResultAddress()
+    {
+        resultPosType = RIG_NODAL;
+        fieldName = "";
+        componentName = "";
+    }
+
     RigFemResultAddress(RigFemResultPosEnum resPosType,
                         const std::string& aFieldName,
                         const std::string& aComponentName)
@@ -66,7 +73,8 @@ public:
                             || resultPosType == RIG_ELEMENT_NODAL 
                             || resultPosType == RIG_INTEGRATION_POINT
                             || resultPosType == RIG_ELEMENT_NODAL_FACE
-                            || resultPosType == RIG_FORMATION_NAMES;
+                            || resultPosType == RIG_FORMATION_NAMES
+                            || resultPosType == RIG_ELEMENT;
         bool isFieldValid = fieldName != "";
 
         return isTypeValid && isFieldValid;
@@ -90,6 +98,19 @@ public:
         }
  
         return (componentName <  other.componentName);
+  }
+
+    bool operator== (const RigFemResultAddress& other) const 
+    {
+        if ( resultPosType != other.resultPosType
+            || fieldName != other.fieldName
+            || componentName != other.componentName
+            || timeLapseBaseFrameIdx != other.timeLapseBaseFrameIdx)
+        {
+            return false;
+        }
+
+        return true;
     }
 };
 

@@ -48,9 +48,10 @@ class RigEclipseCaseData;
 class RimCommandObject;
 class RimEclipseCase;
 class RimEclipseView;
+class RimGridView;
 class RimProject;
 class RimSummaryPlot;
-class RimView;
+class Rim3dView;
 class RimViewWindow;
 class RimWellLogPlot;
 class RimWellAllocationPlot;
@@ -58,6 +59,7 @@ class RimWellAllocationPlot;
 class RiuMainWindowBase;
 class RiuMainPlotWindow;
 class RiuRecentFileActionProvider;
+class RiaArgumentParser;
 
 namespace caf
 {
@@ -96,15 +98,14 @@ public:
     int                     parseArgumentsAndRunUnitTestsIfRequested();
     bool                    parseArguments();
 
-    void                    executeRegressionTests(const QString& regressionTestPath);
+    void                    executeRegressionTests(const QString& regressionTestPath, QStringList* testFilter = nullptr);
 
-    void                    setActiveReservoirView(RimView*);
-    RimView*                activeReservoirView();
-    const RimView*          activeReservoirView() const;
+    void                    setActiveReservoirView(Rim3dView*);
+    Rim3dView*                activeReservoirView();
+    const Rim3dView*          activeReservoirView() const;
+    RimGridView*              activeGridView();
 
     RimViewWindow*          activePlotWindow() const;
-
-    void                scheduleDisplayModelUpdateAndRedraw(RimView* resViewToUpdate);
 
     RimProject*         project(); 
 
@@ -119,10 +120,6 @@ public:
     void                setLastUsedDialogDirectory(const QString& dialogName, const QString& directory);
 
     bool                openFile(const QString& fileName);
-    bool                openEclipseCaseFromFile(const QString& fileName);
-    bool                openEclipseCase(const QString& caseName, const QString& caseFileName);
-    bool                addEclipseCases(const QStringList& fileNames);
-    bool                openInputEclipseCaseFromFileNames(const QStringList& fileNames);
 
     bool                openOdbCaseFromFile(const QString& fileName);
 
@@ -139,10 +136,11 @@ public:
     void                closeProject();
     
     void                addWellPathsToModel(QList<QString> wellPathFilePaths);
+    void                addWellPathFormationsToModel(QList<QString> wellPathFilePaths);
     void                addWellLogsToModel(const QList<QString>& wellLogFilePaths);
 
     void                runMultiCaseSnapshots(const QString& templateProjectFileName, std::vector<QString> gridFileNames, const QString& snapshotFolderName);
-    void                runRegressionTest(const QString& testRootPath);
+    void                runRegressionTest(const QString& testRootPath, QStringList* testFilter = nullptr);
 
     void                processNonGuiEvents();
 
@@ -205,7 +203,6 @@ public:
 
     static std::vector<QString> readFileListFromTextFile(QString listFileName);
 
-    void                    clearViewsScheduledForUpdate();
 
 private:
 
@@ -224,23 +221,19 @@ private:
     void                    regressionTestConfigureProject();
     static QSize            regressionDefaultImageSize();
 
+    friend RiaArgumentParser;
+    void                    setHelpText(const QString& helpText);
+
 private slots:
     void                slotWorkerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-    void                slotUpdateScheduledDisplayModels();
 
-    // Friend classes required to have access to slotUpdateScheduledDisplayModels
-    // As snapshots are produced fast in sequence, the feature must have access to force redraw
-    // of scheduled redraws
-    friend class RimView;
-    friend class RicExportMultipleSnapshotsFeature;
+ 
 
 private:
-    caf::PdmPointer<RimView>            m_activeReservoirView;
+    caf::PdmPointer<Rim3dView>            m_activeReservoirView;
 
     caf::PdmPointer<RimProject>         m_project;
 
-    std::vector<caf::PdmPointer<RimView> > m_resViewsToUpdate;
-    QTimer*                             m_resViewUpdateTimer;
 
     RiaSocketServer*                    m_socketServer;
 

@@ -20,6 +20,7 @@
 
 #pragma once
 
+#include "RiaDefines.h"
 #include "RiaPorosityModel.h"
 
 #include "cvfBase.h"
@@ -29,9 +30,9 @@
 
 #include <QString>
 #include <QStringList>
-#include <QDateTime>
 
 #include <vector>
+#include <set>
 
 
 class RigEclipseCaseData;
@@ -49,15 +50,12 @@ public:
     RifReaderInterface()            { }
     virtual ~RifReaderInterface()   { }
 
-    void                        setReaderSetting(RifReaderSettings* settings);
-
     bool                        isFaultImportEnabled();
     bool                        isImportOfCompleteMswDataEnabled();
     bool                        isNNCsEnabled();
     const QString               faultIncludeFileAbsolutePathPrefix();
 
     virtual bool                open(const QString& fileName, RigEclipseCaseData* eclipseCase) = 0;
-    virtual void                close() = 0;
    
     virtual bool                staticResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, std::vector<double>* values) = 0;
     virtual bool                dynamicResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, size_t stepIndex, std::vector<double>* values) = 0;
@@ -67,13 +65,17 @@ public:
 
     void                        setTimeStepFilter(const std::vector<size_t>& fileTimeStepIndices);
 
+    virtual std::set<RiaDefines::PhaseType>  availablePhases() const;
+
 protected:
     bool                        isTimeStepIncludedByFilter(size_t timeStepIndex) const;
     size_t                      timeStepIndexOnFile(size_t timeStepIndex) const;
 
 private:
-    std::vector<QString>                m_filenamesWithFaults;
-    caf::PdmPointer<RifReaderSettings>  m_settings;
+    const RifReaderSettings*    readerSettings() const;
+
+private:
+    std::vector<QString>        m_filenamesWithFaults;
     
-    std::vector<size_t>                 m_fileTimeStepIndices;
+    std::vector<size_t>         m_fileTimeStepIndices;
 };

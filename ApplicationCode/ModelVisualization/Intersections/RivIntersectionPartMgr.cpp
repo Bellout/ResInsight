@@ -63,7 +63,7 @@
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RivIntersectionPartMgr::RivIntersectionPartMgr(const RimIntersection* rimCrossSection)
+RivIntersectionPartMgr::RivIntersectionPartMgr(RimIntersection* rimCrossSection)
     : m_rimCrossSection(rimCrossSection),
     m_defaultColor(cvf::Color3::WHITE)
 {
@@ -94,7 +94,7 @@ void RivIntersectionPartMgr::updateCellResultColor(size_t timeStepIndex)
 
     if (!m_crossSectionGenerator->isAnyGeometryPresent()) return;
 
-    RimEclipseView* eclipseView;
+    RimEclipseView* eclipseView = nullptr;
     m_rimCrossSection->firstAncestorOrThisOfType(eclipseView);
 
     if (eclipseView)
@@ -168,39 +168,35 @@ void RivIntersectionPartMgr::updateCellResultColor(size_t timeStepIndex)
 
         RigFemResultAddress      resVarAddress = cellResultColors->resultAddress();
 
-        const std::vector<RivIntersectionVertexWeights> &vertexWeights = m_crossSectionGenerator->triangleVxToCellCornerInterpolationWeights();
-        const cvf::ScalarMapper* mapper                    = cellResultColors->legendConfig()->scalarMapper();
+        const cvf::ScalarMapper* mapper                                = cellResultColors->legendConfig()->scalarMapper();
 
-        if(!(resVarAddress.resultPosType == RIG_ELEMENT_NODAL_FACE) )
+        if (resVarAddress.resultPosType == RIG_ELEMENT)
         {
-            // Do a "Hack" to show elm nodal and not nodal POR results
-            if(resVarAddress.resultPosType == RIG_NODAL && resVarAddress.fieldName == "POR-Bar") resVarAddress.resultPosType = RIG_ELEMENT_NODAL;
+            const std::vector<float>& resultValues          = caseData->femPartResults()->resultValues(resVarAddress, 0, (int)timeStepIndex);
+            const std::vector<size_t>& triangleToCellIdx    = m_crossSectionGenerator->triangleToCellIndex();
 
-            const std::vector<float>& resultValues             = caseData->femPartResults()->resultValues(resVarAddress, 0, (int)timeStepIndex);
-            RigFemPart* femPart                                = caseData->femParts()->part(0);
-            bool isElementNodalResult                          = !(resVarAddress.resultPosType == RIG_NODAL);
+            RivIntersectionPartMgr::calculateElementBasedGeoMechTextureCoords(m_crossSectionFacesTextureCoords.p(),
+                                                                              resultValues,
+                                                                              triangleToCellIdx,
+                                                                              mapper);
 
-            RivIntersectionPartMgr::calculateGeoMechTextureCoords(m_crossSectionFacesTextureCoords.p(),
-                                                                  vertexWeights,
-                                                                  resultValues,
-                                                                  isElementNodalResult,
-                                                                  femPart,
-                                                                  mapper);
         }
-        else
+        else if(resVarAddress.resultPosType == RIG_ELEMENT_NODAL_FACE)
         {
             // Special direction sensitive result calculation
             const cvf::Vec3fArray* triangelVxes = m_crossSectionGenerator->triangleVxes();
 
-            if ( resVarAddress.componentName == "Pazi" || resVarAddress.componentName == "Pinc" )
+            if (resVarAddress.componentName == "Pazi" || resVarAddress.componentName == "Pinc")
             {
                 RivIntersectionPartMgr::calculatePlaneAngleTextureCoords(m_crossSectionFacesTextureCoords.p(),
-                                                                         triangelVxes, 
+                                                                         triangelVxes,
                                                                          resVarAddress,
                                                                          mapper);
             }
             else
             {
+                const std::vector<RivIntersectionVertexWeights> &vertexWeights = m_crossSectionGenerator->triangleVxToCellCornerInterpolationWeights();
+
                 RivIntersectionPartMgr::calculateGeoMechTensorXfTextureCoords(m_crossSectionFacesTextureCoords.p(),
                                                                               triangelVxes,
                                                                               vertexWeights,
@@ -209,6 +205,23 @@ void RivIntersectionPartMgr::updateCellResultColor(size_t timeStepIndex)
                                                                               (int)timeStepIndex,
                                                                               mapper);
             }
+        }
+        else
+        {
+            // Do a "Hack" to show elm nodal and not nodal POR results
+            if (resVarAddress.resultPosType == RIG_NODAL && resVarAddress.fieldName == "POR-Bar") resVarAddress.resultPosType = RIG_ELEMENT_NODAL;
+
+            const std::vector<float>& resultValues = caseData->femPartResults()->resultValues(resVarAddress, 0, (int)timeStepIndex);
+            RigFemPart* femPart = caseData->femParts()->part(0);
+            bool isElementNodalResult = !(resVarAddress.resultPosType == RIG_NODAL);
+            const std::vector<RivIntersectionVertexWeights> &vertexWeights = m_crossSectionGenerator->triangleVxToCellCornerInterpolationWeights();
+
+            RivIntersectionPartMgr::calculateNodeOrElementNodeBasedGeoMechTextureCoords(m_crossSectionFacesTextureCoords.p(),
+                                                                                        vertexWeights,
+                                                                                        resultValues,
+                                                                                        isElementNodalResult,
+                                                                                        femPart,
+                                                                                        mapper);
         }
 
         RivScalarMapperUtils::applyTextureResultsToPart(m_crossSectionFaces.p(), 
@@ -224,12 +237,12 @@ void RivIntersectionPartMgr::updateCellResultColor(size_t timeStepIndex)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RivIntersectionPartMgr::calculateGeoMechTextureCoords(cvf::Vec2fArray* textureCoords, 
-                                                           const std::vector<RivIntersectionVertexWeights> &vertexWeights, 
-                                                           const std::vector<float> &resultValues, 
-                                                           bool isElementNodalResult, 
-                                                           const RigFemPart* femPart, 
-                                                           const cvf::ScalarMapper* mapper)
+void RivIntersectionPartMgr::calculateNodeOrElementNodeBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords, 
+                                                                                 const std::vector<RivIntersectionVertexWeights> &vertexWeights,
+                                                                                 const std::vector<float> &resultValues,
+                                                                                 bool isElementNodalResult,
+                                                                                 const RigFemPart* femPart,
+                                                                                 const cvf::ScalarMapper* mapper)
 {
     textureCoords->resize(vertexWeights.size());
 
@@ -250,8 +263,16 @@ void RivIntersectionPartMgr::calculateGeoMechTextureCoords(cvf::Vec2fArray* text
             int weightCount = vertexWeights[triangleVxIdx].size();
             for (int wIdx = 0; wIdx < weightCount; ++wIdx)
             {
-                size_t resIdx = isElementNodalResult ? vertexWeights[triangleVxIdx].vxId(wIdx) :
-                    femPart->nodeIdxFromElementNodeResultIdx(vertexWeights[triangleVxIdx].vxId(wIdx));
+                size_t resIdx;
+                if (isElementNodalResult)
+                {
+                    resIdx = vertexWeights[triangleVxIdx].vxId(wIdx);
+                }
+                else
+                {
+                    resIdx = femPart->nodeIdxFromElementNodeResultIdx(vertexWeights[triangleVxIdx].vxId(wIdx));
+                }
+                    
                 resValue += resultValues[resIdx] * vertexWeights[triangleVxIdx].weight(wIdx);
             }
 
@@ -262,6 +283,47 @@ void RivIntersectionPartMgr::calculateGeoMechTextureCoords(cvf::Vec2fArray* text
             else
             {
                 rawPtr[triangleVxIdx] = mapper->mapToTextureCoord(resValue);
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RivIntersectionPartMgr::calculateElementBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords,
+                                                                       const std::vector<float> &resultValues,
+                                                                       const std::vector<size_t>& triangleToCellIdx,
+                                                                       const cvf::ScalarMapper* mapper)
+{
+    textureCoords->resize(triangleToCellIdx.size()*3);
+
+    if (resultValues.size() == 0)
+    {
+        textureCoords->setAll(cvf::Vec2f(0.0, 1.0f));
+    }
+    else
+    {
+        cvf::Vec2f* rawPtr = textureCoords->ptr();
+
+        for (size_t triangleIdx = 0; triangleIdx < triangleToCellIdx.size(); triangleIdx++)
+        {
+            size_t resIdx = triangleToCellIdx[triangleIdx];
+            float resValue = resultValues[resIdx];
+
+            size_t triangleVxIdx = triangleIdx * 3;
+            
+            if (resValue == HUGE_VAL || resValue != resValue) // a != a is true for NAN's
+            {
+                rawPtr[triangleVxIdx][1] = 1.0f;
+                rawPtr[triangleVxIdx + 1][1] = 1.0f;
+                rawPtr[triangleVxIdx + 2][1] = 1.0f;
+            }
+            else
+            {
+                rawPtr[triangleVxIdx] = mapper->mapToTextureCoord(resValue);
+                rawPtr[triangleVxIdx + 1] = mapper->mapToTextureCoord(resValue);
+                rawPtr[triangleVxIdx + 2] = mapper->mapToTextureCoord(resValue);
             }
         }
     }
@@ -455,10 +517,10 @@ void RivIntersectionPartMgr::createPolyLineParts(bool useBufferObjects)
 {
     // Highlight line
 
-    m_highlightLineAlongPolyline = NULL;
-    m_highlightPointsForPolyline = NULL;
+    m_highlightLineAlongPolyline = nullptr;
+    m_highlightPointsForPolyline = nullptr;
 
-    if (m_rimCrossSection->type == RimIntersection::CS_POLYLINE)
+    if (m_rimCrossSection->type == RimIntersection::CS_POLYLINE || m_rimCrossSection->type == RimIntersection::CS_AZIMUTHLINE)
     {
         {
             cvf::ref<cvf::DrawableGeo> polylineGeo = m_crossSectionGenerator->createLineAlongPolylineDrawable();
@@ -711,6 +773,21 @@ void RivIntersectionPartMgr::appendPolylinePartsToModel(cvf::ModelBasicList* mod
             model->addPart(m_highlightPointsForExtrusionDir.p());
         }
     }
+
+    if (m_rimCrossSection->inputTwoAzimuthPointsFromViewerEnabled)
+    {
+        if (m_highlightLineAlongPolyline.notNull())
+        {
+            m_highlightLineAlongPolyline->setTransform(scaleTransform);
+            model->addPart(m_highlightLineAlongPolyline.p());
+        }
+
+        if (m_highlightPointsForPolyline.notNull())
+        {
+            m_highlightPointsForPolyline->setTransform(scaleTransform);
+            model->addPart(m_highlightPointsForPolyline.p());
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -748,6 +825,6 @@ cvf::ref<RivIntersectionHexGridInterface> RivIntersectionPartMgr::createHexGridI
         return new RivFemIntersectionGrid(femPart);
     }
 
-    return NULL;
+    return nullptr;
 }
 

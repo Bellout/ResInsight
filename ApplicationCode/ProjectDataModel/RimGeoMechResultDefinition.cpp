@@ -45,6 +45,7 @@ void caf::AppEnum< RigFemResultPosEnum >::setUp()
     addItem(RIG_INTEGRATION_POINT,"INTEGRATION_POINT","Integration Point");
     addItem(RIG_ELEMENT_NODAL_FACE, "ELEMENT_NODAL_FACE", "Element Nodal On Face");
     addItem(RIG_FORMATION_NAMES, "FORMATION_NAMES", "Formation Names");
+    addItem(RIG_ELEMENT, "ELEMENT", "Element");
     setDefault(RIG_NODAL);
 }
 }
@@ -138,6 +139,7 @@ QList<caf::PdmOptionItemInfo> RimGeoMechResultDefinition::calculateValueOptions(
         if (&m_resultVariableUiField == fieldNeedingOptions)
         {
             std::map<std::string, std::vector<std::string> >  fieldCompNames = getResultMetaDataForUIFieldSetting();
+
             QStringList uiVarNames;
             QStringList varNames;
             bool isNeedingTimeLapseStrings =  m_isTimeLapseResultUiField() && (m_resultPositionTypeUiField() != RIG_FORMATION_NAMES);
@@ -212,7 +214,7 @@ void RimGeoMechResultDefinition::fieldChangedByUi(const caf::PdmFieldHandle* cha
 
     // Get the possible property filter owner
     RimGeoMechPropertyFilter* propFilter = dynamic_cast<RimGeoMechPropertyFilter*>(this->parentField()->ownerObject());
-    RimView* view = nullptr;
+    Rim3dView* view = nullptr;
     this->firstAncestorOrThisOfType(view);
     RimPlotCurve* curve = nullptr;
     this->firstAncestorOrThisOfType(curve);
@@ -277,7 +279,7 @@ void RimGeoMechResultDefinition::fieldChangedByUi(const caf::PdmFieldHandle* cha
 
             if (curve)
             {
-                curve->loadDataAndUpdate();
+                curve->loadDataAndUpdate(true);
             }
         }
     }
@@ -434,6 +436,8 @@ QString RimGeoMechResultDefinition::convertToUiResultFieldName(QString resultFie
     if (resultFieldName == "S") newName =  "NativeAbaqus Stress";
     if (resultFieldName == "NE") newName =  "E"; // Make NE and NS appear as E and SE
     if (resultFieldName == "POR-Bar") newName =  "POR"; // POR-Bar appear as POR
+    if (resultFieldName == "MODULUS") newName = "Young's Modulus";
+    if (resultFieldName == "RATIO") newName = "Poisson's Ratio";
 
     if (isTimeLapseResultList) newName += "_D" + QString::number(baseFrameIdx);
 

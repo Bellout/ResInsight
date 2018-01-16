@@ -32,6 +32,8 @@
 
 #include "RifEclipseInputFileTools.h"
 
+#include "cafUtils.h"
+
 #include <QDir>
 
 CAF_PDM_SOURCE_INIT(RicfExportProperty, "exportProperty");
@@ -41,12 +43,13 @@ CAF_PDM_SOURCE_INIT(RicfExportProperty, "exportProperty");
 //--------------------------------------------------------------------------------------------------
 RicfExportProperty::RicfExportProperty()
 {
-    RICF_InitField(&m_caseId,         "caseId",         -1,        "Case ID", "", "", "");
-    RICF_InitField(&m_timeStepIndex,  "timeStep",       -1,        "Time Step Index", "", "", "");
-    RICF_InitField(&m_propertyName,   "property",       QString(), "Property Name", "", "", "");
-    RICF_InitField(&m_eclipseKeyword, "eclipseKeyword", QString(), "Eclipse Keyword", "", "", "");
-    RICF_InitField(&m_undefinedValue, "undefinedValue", 0.0,       "Undefined Value", "", "", "");
-    RICF_InitField(&m_path,           "exportFile",     QString(), "Export File", "", "", "");
+    RICF_InitField(&m_caseId,         "caseId",         -1,                                                                  "Case ID", "", "", "");
+    RICF_InitField(&m_timeStepIndex,  "timeStep",       -1,                                                                  "Time Step Index", "", "", "");
+    RICF_InitField(&m_propertyName,   "property",       QString(),                                                           "Property Name", "", "", "");
+    RICF_InitField(&m_type,           "type",           caf::AppEnum<RiaDefines::ResultCatType>(RiaDefines::DYNAMIC_NATIVE), "Property type", "", "", "");
+    RICF_InitField(&m_eclipseKeyword, "eclipseKeyword", QString(),                                                           "Eclipse Keyword", "", "", "");
+    RICF_InitField(&m_undefinedValue, "undefinedValue", 0.0,                                                                 "Undefined Value", "", "", "");
+    RICF_InitField(&m_path,           "exportFile",     QString(),                                                           "Export File", "", "", "");
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -54,15 +57,8 @@ RicfExportProperty::RicfExportProperty()
 //--------------------------------------------------------------------------------------------------
 void RicfExportProperty::execute()
 {
-    QString fileName = m_path;
-    if (fileName.isNull())
-    {
-        QDir propertiesDir(RicfCommandFileExecutor::instance()->getExportPath(RicfCommandFileExecutor::PROPERTIES));
-        fileName = propertiesDir.filePath(m_propertyName);
-    }
 
     RimEclipseCase* eclipseCase;
-
     {
         bool foundCase = false;
         for (RimEclipseCase* c : RiaApplication::instance()->project()->activeOilField()->analysisModels()->cases)
@@ -81,9 +77,18 @@ void RicfExportProperty::execute()
         }
     }
 
+    QString filePath = m_path;
+    if (filePath.isNull())
+    {
+        QDir propertiesDir(RicfCommandFileExecutor::instance()->getExportPath(RicfCommandFileExecutor::PROPERTIES));
+        QString fileName = QString("%1-%2").arg(eclipseCase->caseUserDescription()).arg(m_propertyName);
+        fileName = caf::Utils::makeValidFileBasename(fileName);
+        filePath = propertiesDir.filePath(fileName);
+    }
+
     // FIXME : Select correct view?
     RimEclipseView* view;
-    for (RimView* v : eclipseCase->views())
+    for (Rim3dView* v : eclipseCase->views())
     {
         view = dynamic_cast<RimEclipseView*>(v);
         if (view) break;
@@ -99,8 +104,9 @@ void RicfExportProperty::execute()
         m_eclipseKeyword = m_propertyName;
     }
 
-    view->cellResult->setResultVariable(m_propertyName);
+    view->cellResult->setResultType(m_type());
+    view->cellResult->setResultVariable(m_propertyName());
     view->loadDataAndUpdate();
 
-    RifEclipseInputFileTools::writeBinaryResultToTextFile(fileName, eclipseCase->eclipseCaseData(), m_timeStepIndex, view->cellResult, m_eclipseKeyword, m_undefinedValue);
+    RifEclipseInputFileTools::writeBinaryResultToTextFile(filePath, eclipseCase->eclipseCaseData(), m_timeStepIndex, view->cellResult, m_eclipseKeyword, m_undefinedValue);
 }

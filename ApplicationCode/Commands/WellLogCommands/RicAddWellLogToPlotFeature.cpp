@@ -88,7 +88,7 @@ void RicAddWellLogToPlotFeature::onActionTriggered(bool isChecked)
 
             plotTrack->addCurve(curve);
 
-            RigWellLogFile* wellLogDataFile = wellLogFile->wellLogFile();
+            RigWellLogFile* wellLogDataFile = wellLogFile->wellLogFileData();
             CVF_ASSERT(wellLogDataFile);
 
             if (wlIdx == 0)
@@ -99,21 +99,18 @@ void RicAddWellLogToPlotFeature::onActionTriggered(bool isChecked)
 
             curve->setWellPath(wellPath);
             curve->setWellLogChannelName(wellLog->name());
+            curve->setWellLogFile(wellLogFile);
 
-            curve->loadDataAndUpdate();
+            curve->loadDataAndUpdate(true);
         }        
     }
-
     plot->calculateAvailableDepthRange();
     plot->updateDepthZoom();
     plotTrack->viewer()->replot();
 
-    // Make sure the summary plot window is created and visible
-    RiuMainPlotWindow* plotwindow = RiaApplication::instance()->getOrCreateAndShowMainPlotWindow();
-
     RiaApplication::instance()->project()->updateConnectedEditors();
-
-    plotwindow->selectAsCurrentItem(selection.back());
+    RiaApplication::instance()->getOrCreateAndShowMainPlotWindow()->selectAsCurrentItem(plot);
+    RiaApplication::instance()->getOrCreateAndShowMainPlotWindow()->setExpanded(plotTrack);
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -8,6 +8,11 @@ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/ApplicationCode/Adm/RiaVersionInfo.h.cmake
                 ${CMAKE_BINARY_DIR}/Generated/RiaVersionInfo.h
 )
 
+if (MSVC AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.11))
+  # VS 2017 : Disable warnings from from gtest code, using deprecated code related to TR1 
+  add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
+  message("Add flag to disable warings from gtest -  _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
+endif()
 
 include_directories(
     ${cafPdmCore_SOURCE_DIR}
@@ -27,7 +32,6 @@ include_directories(
 	${ResInsight_SOURCE_DIR}/ThirdParty
     ${ResInsight_SOURCE_DIR}/ThirdParty/NRLib/nrlib/well
     ${ResInsight_SOURCE_DIR}/ThirdParty/Qwt/src
-	${ERT_INCLUDE_DIRS}
 
     ${boost-Subset_SOURCE_DIR}
     ${custom-opm-flowdiagnostics_SOURCE_DIR}/opm-flowdiagnostics/
@@ -77,6 +81,7 @@ set( SOCKET_INTERFACE_FILES
     SocketInterface/RiaProjectInfoCommands.cpp
     SocketInterface/RiaCaseInfoCommands.cpp
     SocketInterface/RiaGeometryCommands.cpp
+    SocketInterface/RiaNNCCommands.cpp
     SocketInterface/RiaPropertyDataCommands.cpp
     SocketInterface/RiaWellDataCommands.cpp
     SocketInterface/RiaSocketTools.cpp
@@ -164,7 +169,7 @@ add_subdirectory(ResultStatisticsCache)
 #
 # Odb api
 #
-set(RESINSIGHT_ODB_API_DIR "" CACHE PATH "Path to the ODB api from Simulia")
+set(RESINSIGHT_ODB_API_DIR "" CACHE PATH "Optional path to the ABAQUS ODB API from Simulia. Needed for support of geomechanical models")
 if(NOT ${RESINSIGHT_ODB_API_DIR} EQUAL "") 
 	add_definitions(-DUSE_ODB_API)
 	add_subdirectory(GeoMech/OdbReader)
@@ -173,6 +178,30 @@ if(NOT ${RESINSIGHT_ODB_API_DIR} EQUAL "")
 endif()
 
 add_subdirectory(GeoMech/GeoMechDataModel)
+
+# 
+# HDF5  
+#
+if (RESINSIGHT_FOUND_HDF5)
+    list( APPEND CPP_SOURCES
+        FileInterface/RifHdf5Reader.h
+        FileInterface/RifHdf5Reader.cpp
+    )
+
+    source_group( "FileInterface" FILES FileInterface/RifHdf5Reader.h FileInterface/RifHdf5Reader.cpp )
+
+	add_definitions(-DUSE_HDF5)
+endif()
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING)
+    add_definitions(-DENABLE_SOURING)
+endif()
+
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+	add_definitions(-DUSE_PROTOTYPE_FEATURE_FRACTURES)
+endif()
+
 
 #############################################################################
 # Qt specifics: Moc, ui, resources
@@ -251,6 +280,9 @@ set( EXE_FILES
 
 add_executable( ResInsight ${EXE_FILES} )
 
+if (MSVC) 
+    set_target_properties(ResInsight PROPERTIES COMPILE_FLAGS "/wd4190") 
+endif() 
 
 #############################################################################
 # Application icon for MacOS X bundle
@@ -283,20 +315,15 @@ set( LINK_LIBRARIES
     ${APP_FWK_LIBRARIES}
     ${VIZ_FWK_LIBRARIES}
     
-    ${ERT_LIBRARIES}
-    
     ${THIRD_PARTY_LIBRARIES}
 
     ${OPENGL_LIBRARIES}
     ${QT_LIBRARIES}
 )
 
-set( EXTERNAL_LINK_LIBRARIES ${ERT_LIBRARY_LIST} )
-
 # According to ivarun this is needed on OpenSuse, and Fedora. See: https://github.com/OPM/ResInsight/pull/7
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    set ( EXTERNAL_LINK_LIBRARIES
-        ${EXTERNAL_LINK_LIBRARIES}
+    list(APPEND EXTERNAL_LINK_LIBRARIES
         rt
     )
 endif()
@@ -314,27 +341,29 @@ target_link_libraries( ResInsight ${LINK_LIBRARIES} ${EXTERNAL_LINK_LIBRARIES})
 #############################################################################
 if(RESINSIGHT_ENABLE_COTIRE)
 
-    # forever is used as variable name, and this symbol is defined by Qt and used in precompiled headers
-    set_source_files_properties (${ResInsight_SOURCE_DIR}/ThirdParty/gtest/gtest-all.cc     PROPERTIES COTIRE_EXCLUDED TRUE)
-  
-    # multiple QRC files are not supported
-    set_source_files_properties (qrc_cafAnimControl.cxx                                     PROPERTIES COTIRE_EXCLUDED TRUE)
- 
-    # variables at global file scope
-    set_source_files_properties (ModelVisualization/Intersections/RivIntersectionGeometryGenerator.cpp    PROPERTIES COTIRE_EXCLUDED TRUE)
-    set_source_files_properties (ModelVisualization/Intersections/RivIntersectionPartMgr.cpp              PROPERTIES COTIRE_EXCLUDED TRUE)
-    set_source_files_properties (ModelVisualization/Intersections/RivIntersectionBoxPartMgr.cpp           PROPERTIES COTIRE_EXCLUDED TRUE)
+    set( COTIRE_EXCLUDE_FILES
+        # forever is used as variable name, and this symbol is defined by Qt and used in precompiled headers
+        ${ResInsight_SOURCE_DIR}/ThirdParty/gtest/gtest-all.cc
     
-    set_source_files_properties (ModelVisualization/GridBox/RivGridBoxGenerator.cpp         PROPERTIES COTIRE_EXCLUDED TRUE)
-    set_source_files_properties (Commands/WellLogCommands/RicWellLogPlotCurveFeatureImpl.cpp PROPERTIES COTIRE_EXCLUDED TRUE)
+        # multiple QRC files are not supported
+        qrc_cafAnimControl.cxx
+        qrc_ResInsight.cxx
 
-    # using namespace cvf
-    set_source_files_properties (GeoMech/GeoMechVisualization/RivFemPartGeometryGenerator.cpp  PROPERTIES COTIRE_EXCLUDED TRUE)
-    set_source_files_properties (UnitTests/cvfGeometryTools-Test.cpp                        PROPERTIES COTIRE_EXCLUDED TRUE)
+        # mix of cvf and Qt namespaces
+        ModelVisualization/GridBox/RivGridBoxGenerator.cpp
+        ModelVisualization/Intersections/RivIntersectionGeometryGenerator.cpp
 
-    # opm parser
-    set_source_files_properties (ProjectDataModel/RimProject.cpp                        PROPERTIES COTIRE_EXCLUDED TRUE)
-    
+        # exclude file using Eigen
+        ReservoirDataModel/RigTransmissibilityCondenser.cpp
+        ReservoirDataModel/RigEclipseToStimPlanCellTransmissibilityCalculator.cpp
+        ReservoirDataModel/RigCellGeometryTools.cpp
+    )
+
+	foreach (fileToExclude ${COTIRE_EXCLUDE_FILES})
+        set_source_files_properties (${fileToExclude} PROPERTIES COTIRE_EXCLUDED TRUE)
+	endforeach(fileToExclude)
+
+    # disable precompiled headers
     set_target_properties(ResInsight PROPERTIES COTIRE_ENABLE_PRECOMPILED_HEADER FALSE)
    
     cotire(ResInsight)
@@ -352,53 +381,55 @@ endif()
 # Copy Dlls on MSVC
 #############################################################################
 
-# Copy Odb Dlls
-
-if ((MSVC) AND (${RESINSIGHT_USE_ODB_API}))
-	# Find all the dlls
-	file (GLOB  RI_ALL_ODB_DLLS  ${RESINSIGHT_ODB_API_DIR}/lib/*.dll)
-	
-	# Strip off the path
-	foreach (aDLL  ${RI_ALL_ODB_DLLS})
-		 get_filename_component(filenameWithExt ${aDLL} NAME)
-		 list(APPEND RI_ODB_DLLS ${filenameWithExt} )
-	endforeach(aDLL)
-
-	# Copy to target directory
-	foreach (aDLL ${RI_ODB_DLLS})
-        add_custom_command(TARGET ResInsight POST_BUILD
-                           COMMAND ${CMAKE_COMMAND} -E copy_if_different  
-						   "${RESINSIGHT_ODB_API_DIR}/lib/${aDLL}"  
-						   "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
-        if (_unityTargetName)
-            add_custom_command(TARGET ${_unityTargetName} POST_BUILD
-                               COMMAND ${CMAKE_COMMAND} -E copy_if_different  
-		    				   "${RESINSIGHT_ODB_API_DIR}/lib/${aDLL}"  
-		    				   "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
-        endif()
-    endforeach()
-
-endif()
-
-    # Qt DLLs
 
 if (MSVC)
 
+    # Qt DLLs
     set (QTLIBLIST QtCore QtCored QtGui QtGuid QtOpenGl QtOpenGld QtNetwork QtNetworkd QtScript QtScriptd QtScriptTools QtScriptToolsd)
     foreach (qtlib ${QTLIBLIST})
-        add_custom_command(TARGET ResInsight POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${QT_BINARY_DIR}/${qtlib}4.dll"
-                "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
-        if (_unityTargetName)
-           add_custom_command(TARGET ResInsight POST_BUILD
-               COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                   "${QT_BINARY_DIR}/${qtlib}4.dll"
-                   "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
-        endif()
+        list(APPEND RI_DLL_FILENAMES ${QT_BINARY_DIR}/${qtlib}4.dll)
     endforeach( qtlib )
 
+    # Odb Dlls
+    if (RESINSIGHT_USE_ODB_API)
+	    # Find all the dlls
+	    file (GLOB  RI_ALL_ODB_DLLS  ${RESINSIGHT_ODB_API_DIR}/lib/*.dll)
+	
+	    # Strip off the path
+	    foreach (aDLL  ${RI_ALL_ODB_DLLS})
+		     get_filename_component(filenameWithExt ${aDLL} NAME)
+		     list(APPEND RI_ODB_DLLS ${filenameWithExt} )
+	    endforeach(aDLL)
+
+	    foreach (aDLL ${RI_ODB_DLLS})
+            list(APPEND RI_DLL_FILENAMES ${RESINSIGHT_ODB_API_DIR}/lib/${aDLL})
+        endforeach()
+    endif()
+
+    # HDF5 Dlls
+    if (RESINSIGHT_FOUND_HDF5)
+        set (HDF5_DLL_NAMES hdf5 hdf5_cpp szip zlib)
+        foreach (HDF5_DLL_NAME ${HDF5_DLL_NAMES})
+            list(APPEND RI_DLL_FILENAMES ${RESINSIGHT_HDF5_DIR}/bin/${HDF5_DLL_NAME}.dll)
+        endforeach( HDF5_DLL_NAME )
+    endif()
+
 endif(MSVC)
+
+# Copy to target directory
+foreach (FILE_TO_COPY ${RI_DLL_FILENAMES})
+    add_custom_command(TARGET ResInsight POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+						"${FILE_TO_COPY}"  
+						"${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
+    if (_unityTargetName)
+        add_custom_command(TARGET ${_unityTargetName} POST_BUILD
+                            COMMAND ${CMAKE_COMMAND} -E copy_if_different  
+		    				"${FILE_TO_COPY}"  
+		    				"${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
+    endif()
+endforeach()
+
 
 #############################################################################
 # Install 
@@ -435,21 +466,10 @@ if (RESINSIGHT_PRIVATE_INSTALL)
     endif()
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-      # put a .exe.local file in the target directory to pick up DLLs from there
-      install (CODE "exec_program (\"${CMAKE_COMMAND}\" ARGS -E touch \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}ResInsight${CMAKE_EXECUTABLE_SUFFIX}.local)")
+        # put a .exe.local file in the target directory to pick up DLLs from there
+        install (CODE "exec_program (\"${CMAKE_COMMAND}\" ARGS -E touch \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}ResInsight${CMAKE_EXECUTABLE_SUFFIX}.local)")
 
-        set (RESINSIGHT_FILES
-                ${QT_BINARY_DIR}/QtCore4.dll
-                ${QT_BINARY_DIR}/QtGui4.dll
-                ${QT_BINARY_DIR}/QtOpenGL4.dll
-                ${QT_BINARY_DIR}/QtNetwork4.dll
-                ${QT_BINARY_DIR}/QtScript4.dll
-                ${QT_BINARY_DIR}/QtScriptTools4.dll
-            )
-
-		if (${RESINSIGHT_USE_ODB_API})
-			set (RESINSIGHT_FILES ${RESINSIGHT_FILES} ${RI_ALL_ODB_DLLS})
-		endif()
+        set (RESINSIGHT_FILES ${RI_DLL_FILENAMES})
 
         # CRT
         set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP ON)
@@ -496,3 +516,69 @@ else (RESINSIGHT_PRIVATE_INSTALL)
     DESTINATION share/applications
     )
 endif (RESINSIGHT_PRIVATE_INSTALL)
+
+
+################################################################################
+# Installation packaging
+################################################################################
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    set(CPACK_GENERATOR TGZ)
+elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(CPACK_GENERATOR ZIP)
+endif()
+
+if(RESINSIGHT_OCTAVE_PLUGIN_MKOCTFILE) 
+    get_filename_component(RESINSIGHT_OCTAVE_DIRECTORY ${RESINSIGHT_OCTAVE_PLUGIN_MKOCTFILE} DIRECTORY)
+    
+    execute_process (COMMAND octave-config -v
+        WORKING_DIRECTORY ${RESINSIGHT_OCTAVE_DIRECTORY}
+                    OUTPUT_VARIABLE OCTAVE_VERSION_STRING
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif ()
+
+# Handling of system name on Windows
+if(${CMAKE_SYSTEM_NAME} MATCHES Windows)
+  if(CMAKE_CL_64)
+    set(CPACK_SYSTEM_NAME win64)
+  else()
+    set(CPACK_SYSTEM_NAME win32)
+  endif()
+endif()
+
+# Append el5 when compiled on RHEL5 and el6 if compiled on RHEL6
+string(REGEX MATCH "el[5,6]?" RESINSIGHT_RHEL_SYSTEM_NAME ${CMAKE_SYSTEM})
+
+
+set(RESINSIGHT_PACKAGE_NAME "ResInsight")
+
+set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}-${STRPRODUCTVER}")
+
+if(NOT ${RESINSIGHT_ODB_API_DIR} EQUAL "")
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_odb")
+endif()
+
+if(NOT ${OCTAVE_VERSION_STRING} EQUAL "")
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_oct-${OCTAVE_VERSION_STRING}")
+endif()
+
+if(RESINSIGHT_FOUND_HDF5)
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_souring")
+endif()
+
+if(RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_fractures")
+endif()
+
+# Append el5 when compiled on RHEL5 and el6 if compiled on RHEL6
+if (NOT "${RESINSIGHT_RHEL_SYSTEM_NAME}" STREQUAL "")
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_${RESINSIGHT_RHEL_SYSTEM_NAME}")
+else()
+    set (RESINSIGHT_PACKAGE_NAME "${RESINSIGHT_PACKAGE_NAME}_${CPACK_SYSTEM_NAME}")
+endif()
+
+#message("RESINSIGHT_PACKAGE_NAME : " ${RESINSIGHT_PACKAGE_NAME})
+set(CPACK_PACKAGE_FILE_NAME ${RESINSIGHT_PACKAGE_NAME})
+
+
+include (CPack)

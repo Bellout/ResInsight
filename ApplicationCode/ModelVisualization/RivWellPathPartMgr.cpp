@@ -37,11 +37,18 @@
 #include "RimWellPath.h"
 #include "RimWellPathCollection.h"
 
+#include "RimWellPathFractureCollection.h"
+#include "RimWellPathFracture.h"
+
 #include "RivFishbonesSubsPartMgr.h"
 #include "RivObjectSourceInfo.h"
 #include "RivPartPriority.h"
 #include "RivPipeGeometryGenerator.h"
 #include "RivWellPathSourceInfo.h"
+
+#include "RivPartPriority.h"
+#include "RivWellFracturePartMgr.h"
+#include "RivWellPathPartMgr.h"
 
 #include "cafDisplayCoordTransform.h"
 #include "cafEffectGenerator.h"
@@ -90,6 +97,23 @@ RivWellPathPartMgr::~RivWellPathPartMgr()
 {
     clearAllBranchData();
 }
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+void RivWellPathPartMgr::appendStaticFracturePartsToModel(cvf::ModelBasicList* model, const RimEclipseView& eclView)
+{
+    if (!m_rimWellPath || !m_rimWellPath->showWellPath() || !m_rimWellPath->fractureCollection()->isChecked()) return;
+
+    for (RimWellPathFracture* f : m_rimWellPath->fractureCollection()->fractures())
+    {
+        CVF_ASSERT(f);
+
+        f->fracturePartManager()->appendGeometryPartsToModel(model, eclView);
+    }
+}
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -176,24 +200,18 @@ void RivWellPathPartMgr::appendPerforationsToModel(const QDateTime& currentViewD
 
         if (currentViewDate.isValid() && !perforation->isActiveOnDate(currentViewDate)) continue;
 
-        std::vector<cvf::Vec3d> displayCoords;
-        displayCoords.push_back(displayCoordTransform->transformToDisplayCoord(wellPathGeometry->interpolatedPointAlongWellPath(perforation->startMD())));
-        for (size_t i = 0; i < wellPathGeometry->m_measuredDepths.size(); ++i)
-        {
-            double measuredDepth = wellPathGeometry->m_measuredDepths[i];
-            if (measuredDepth > perforation->startMD() && measuredDepth < perforation->endMD())
-            {
-                displayCoords.push_back(displayCoordTransform->transformToDisplayCoord(wellPathGeometry->m_wellPathPoints[i]));
-            }
-        }
-        displayCoords.push_back(displayCoordTransform->transformToDisplayCoord(wellPathGeometry->interpolatedPointAlongWellPath(perforation->endMD())));
+        using namespace std;
+        pair<vector<cvf::Vec3d>, vector<double> >  displayCoordsAndMD = wellPathGeometry->clippedPointSubset(perforation->startMD(), 
+                                                                                                             perforation->endMD());
+ 
+        if (displayCoordsAndMD.first.size() < 2) continue;
 
-        if (displayCoords.size() < 2) continue;
+        for (cvf::Vec3d& point : displayCoordsAndMD.first) point = displayCoordTransform->transformToDisplayCoord(point);
 
         cvf::ref<RivObjectSourceInfo> objectSourceInfo = new RivObjectSourceInfo(perforation);
 
         cvf::Collection<cvf::Part> parts;
-        geoGenerator.cylinderWithCenterLineParts(&parts, displayCoords, cvf::Color3f::GREEN, perforationRadius);
+        geoGenerator.cylinderWithCenterLineParts(&parts, displayCoordsAndMD.first, cvf::Color3f::GREEN, perforationRadius);
         for (auto part : parts)
         {
             part->setSourceInfo(objectSourceInfo.p());
@@ -369,8 +387,6 @@ void RivWellPathPartMgr::appendStaticGeometryPartsToModel(cvf::ModelBasicList* m
     RimWellPathCollection* wellPathCollection = this->wellPathCollection();
     if (!wellPathCollection) return;
 
-    if (m_rimWellPath.isNull()) return;
-
     if (wellPathCollection->wellPathVisibility() == RimWellPathCollection::FORCE_ALL_OFF)
         return;
 
@@ -379,7 +395,7 @@ void RivWellPathPartMgr::appendStaticGeometryPartsToModel(cvf::ModelBasicList* m
 
     // The pipe geometry needs to be rebuilt on scale change to keep the pipes round
     buildWellPathParts(displayCoordTransform, characteristicCellSize, wellPathClipBoundingBox);
- 
+
     if (m_pipeBranchData.m_surfacePart.notNull())
     {
         model->addPart(m_pipeBranchData.m_surfacePart.p());

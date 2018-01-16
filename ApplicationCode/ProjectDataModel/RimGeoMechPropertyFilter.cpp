@@ -45,7 +45,7 @@ RimGeoMechPropertyFilter::RimGeoMechPropertyFilter()
 {
     CAF_PDM_InitObject("Property Filter", ":/CellFilter_Values.png", "", "");
 
-    CAF_PDM_InitFieldNoDefault(&resultDefinition, "ResultDefinition", "Result definition", "", "", "");
+    CAF_PDM_InitFieldNoDefault(&resultDefinition, "ResultDefinition", "Result Definition", "", "", "");
     resultDefinition = new RimGeoMechResultDefinition();
 
     // Set to hidden to avoid this item to been displayed as a child item
@@ -193,7 +193,7 @@ bool RimGeoMechPropertyFilter::isPropertyFilterControlled()
 {
     bool isPropertyFilterControlled = false;
 
-    RimView* rimView = NULL;
+    Rim3dView* rimView = NULL;
     firstAncestorOrThisOfType(rimView);
     CVF_ASSERT(rimView);
     if (rimView)
@@ -215,6 +215,19 @@ bool RimGeoMechPropertyFilter::isPropertyFilterControlled()
 void RimGeoMechPropertyFilter::updateActiveState()
 {
     isActive.uiCapability()->setUiReadOnly(isPropertyFilterControlled());
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RimGeoMechPropertyFilter::isActiveAndHasResult()
+{
+    if (this->isActive() && this->resultDefinition->hasResult())
+    {
+        return true;
+    }
+    
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -298,6 +311,7 @@ void RimGeoMechPropertyFilter::updateFilterName()
             case RIG_NODAL: posName = "N"; break;
             case RIG_ELEMENT_NODAL: posName = "EN"; break;
             case RIG_INTEGRATION_POINT: posName = "IP"; break;
+            case RIG_ELEMENT: posName = "E"; break;
         }
 
         QString fieldUiName = resultDefinition->resultFieldUiName();

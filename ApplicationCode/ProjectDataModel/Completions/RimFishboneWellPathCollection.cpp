@@ -19,11 +19,10 @@
 
 #include "RimFishboneWellPathCollection.h"
 
-#include "RimEclipseWell.h"
 #include "RimFishboneWellPath.h"
-#include "RimView.h"
-#include "RimProject.h"
 #include "RimFishbonesCollection.h"
+#include "RimProject.h"
+#include "Rim3dView.h"
 
 #include "RigWellPath.h"
 

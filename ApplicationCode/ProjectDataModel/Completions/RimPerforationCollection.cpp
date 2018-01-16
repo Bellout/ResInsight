@@ -19,10 +19,9 @@
 
 #include "RimPerforationCollection.h"
 
-#include "RimEclipseWell.h"
 #include "RimPerforationInterval.h"
-#include "RimView.h"
 #include "RimProject.h"
+#include "Rim3dView.h"
 
 #include "RigWellPath.h"
 
@@ -62,7 +61,14 @@ void RimPerforationCollection::fieldChangedByUi(const caf::PdmFieldHandle* chang
 {
     RimProject* proj;
     this->firstAncestorOrThisOfTypeAsserted(proj);
-    proj->createDisplayModelAndRedrawAllViews();
+    if (changedField == &m_isChecked)
+    {
+        proj->reloadCompletionTypeResultsInAllViews();
+    }
+    else
+    {
+        proj->createDisplayModelAndRedrawAllViews();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

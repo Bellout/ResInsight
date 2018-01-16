@@ -22,13 +22,13 @@
 
 #include "RimCase.h"
 #include "RimTools.h"
-#include "RimView.h"
+#include "Rim3dView.h"
 
 #include "cafPdmUiFilePathEditor.h"
 
 #include <QFile>
 #include <QFileInfo>
-#include "QMessageBox"
+#include <QMessageBox>
 
 CAF_PDM_SOURCE_INIT(RimFormationNames, "FormationNames");
 

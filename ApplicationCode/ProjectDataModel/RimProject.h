@@ -25,27 +25,36 @@
 #include "cafPdmChildArrayField.h"
 #include "cafPdmChildField.h"
 #include "cafPdmDocument.h"
+#include "cvfCollection.h"
 
 #include <vector>
 
 class RigEclipseCaseData;
 class RigGridManager;
 class RigMainGrid;
+class RigWellPath;
 
+class RimSummaryCalculationCollection;
 class RimCase;
 class RimCommandObject;
 class RimDialogData;
 class RimEclipseCase;
+class RimGeoMechCase;
 class RimIdenticalGridCaseGroup;
 class RimMainPlotCollection;
-class RimMultiSnapshotDefinition;
+class RimMultiSnapshotDefinition; 
+class RimObservedData;
 class RimOilField;
 class RimScriptCollection;
 class RimSummaryCase;
-class RimView;
+class Rim3dView;
+class RimGridView;
 class RimViewLinker;
 class RimViewLinkerCollection;
+class RimWellPath;
 class RimWellPathImport;
+class RimFractureTemplateCollection;
+class RimFractureTemplate;
 
 namespace caf
 {
@@ -73,10 +82,11 @@ public:
     caf::PdmChildField<RimWellPathImport*>              wellPathImport;
     caf::PdmChildField<RimMainPlotCollection*>          mainPlotCollection;
     caf::PdmChildField<RimViewLinkerCollection*>        viewLinkerCollection;
+    caf::PdmChildField<RimSummaryCalculationCollection*>       calculationCollection;
     caf::PdmChildArrayField<RimCommandObject*>          commandObjects;
     
     caf::PdmChildArrayField<RimMultiSnapshotDefinition*> multiSnapshotDefinitions;
-    
+
     caf::PdmField<QString>                              mainWindowTreeViewState;
     caf::PdmField<QString>                              mainWindowCurrentModelIndexPath;
 
@@ -85,6 +95,7 @@ public:
 
     void            setScriptDirectories(const QString& scriptDirectories);
     QString         projectFileVersionString() const;
+    bool            isProjectFileVersionEqualOrOlderThan(const QString& otherProjectFileVersion) const;
     void            close();
 
     void            setProjectFileNameAndUpdateDependencies(const QString& fileName);
@@ -93,16 +104,20 @@ public:
     void            assignIdToCaseGroup(RimIdenticalGridCaseGroup* caseGroup);
 
     void            allCases(std::vector<RimCase*>& cases);
-    void            allSummaryCases(std::vector<RimSummaryCase*>& sumCases);
-    void            allNotLinkedViews(std::vector<RimView*>& views);
-    void            allVisibleViews(std::vector<RimView*>& views);
+
+    std::vector<RimSummaryCase*>    allSummaryCases() const;
+    
+    void            allVisibleViews(std::vector<Rim3dView*>& views);
+    void            allVisibleGridViews(std::vector<RimGridView*>& views);
+    void            allNotLinkedViews(std::vector<RimGridView*>& views);
 
     void            createDisplayModelAndRedrawAllViews(); 
 
     void            computeUtmAreaOfInterest();
 
-    RimOilField*       activeOilField();
-    const RimOilField* activeOilField() const;
+    void                allOilFields(std::vector<RimOilField*>& oilFields) const;
+    RimOilField*        activeOilField();
+    const RimOilField*  activeOilField() const;
 
     void            actionsBasedOnSelection(QMenu& contextMenu);
 
@@ -110,8 +125,23 @@ public:
     bool            showPlotWindow() const;
 
     void            reloadCompletionTypeResultsInAllViews();
+    void            reloadCompletionTypeResultsForEclipseCase(RimEclipseCase* eclipseCase);
 
-    RimDialogData*  dialogData() const;
+    RimDialogData*              dialogData() const;
+
+    std::vector<RimEclipseCase*>    eclipseCases() const;
+    std::vector<QString>            simulationWellNames() const;
+
+    RimWellPath*                    wellPathFromSimWellName(const QString& simWellName, int branchIndex = -1);
+    RimWellPath*                    wellPathByName(const QString& wellPathName) const;
+    std::vector<RimWellPath*>       allWellPaths() const;
+
+    std::vector<RimGeoMechCase*>    geoMechCases() const;
+
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+    std::vector<RimFractureTemplateCollection*> allFractureTemplateCollections() const;
+    std::vector<RimFractureTemplate*> allFractureTemplates() const;
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 protected:
     // Overridden methods
@@ -120,10 +150,6 @@ protected:
     virtual void    setupBeforeSave();
 
     virtual void    defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName = "");
-
-private:
-    void            appendScriptItems(QMenu* menu, RimScriptCollection* scriptCollection);
-    void            removeEclipseResultAndRedrawAllViews(RiaDefines::ResultCatType type, const QString& resultName);
 
 private:
     caf::PdmField<QString>  m_projectFileVersionString;

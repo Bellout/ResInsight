@@ -20,12 +20,14 @@
 
 #include "RiaApplication.h"
 #include "RiaLogging.h"
+#include "RiaViewRedrawScheduler.h"
 
 #include "RimMainPlotCollection.h"
 #include "RimProject.h"
 #include "RimViewWindow.h"
-#include "RimView.h"
+#include "RimGridView.h"
 #include "RimCase.h"
+#include "Rim3dOverlayInfoConfig.h"
 
 #include "RicSnapshotViewToFileFeature.h"
 #include "RicSnapshotFilenameGenerator.h"
@@ -96,11 +98,11 @@ void RicSnapshotAllViewsToFileFeature::exportSnapshotOfAllViewsIntoFolder(QStrin
         RimCase* cas = projectCases[i];
         if (!cas) continue;
 
-        std::vector<RimView*> views = cas->views();
+        std::vector<Rim3dView*> views = cas->views();
 
         for (size_t j = 0; j < views.size(); j++)
         {
-            RimView* riv = views[j];
+            Rim3dView* riv = views[j];
 
             if (riv && riv->viewer())
             {
@@ -109,7 +111,7 @@ void RicSnapshotAllViewsToFileFeature::exportSnapshotOfAllViewsIntoFolder(QStrin
                 RiuViewer* viewer = riv->viewer();
                 mainWnd->setActiveViewer(viewer->layoutWidget());
 
-                RiaApplication::instance()->clearViewsScheduledForUpdate();
+                RiaViewRedrawScheduler::instance()->clearViewsScheduledForUpdate();
 
                 //riv->updateCurrentTimeStepAndRedraw();
                 riv->createDisplayModelAndRedraw();
@@ -120,6 +122,16 @@ void RicSnapshotAllViewsToFileFeature::exportSnapshotOfAllViewsIntoFolder(QStrin
                 QString absoluteFileName = caf::Utils::constructFullFileName(absSnapshotPath, fileName, ".png");
                 
                 RicSnapshotViewToFileFeature::saveSnapshotAs(absoluteFileName, riv);
+
+                // Statistics dialog
+
+                RimGridView* rigv = dynamic_cast<RimGridView*>(riv);
+                if ( rigv )
+                {
+                    QImage img = rigv->overlayInfoConfig()->statisticsDialogScreenShotImage();
+                    absoluteFileName = caf::Utils::constructFullFileName(absSnapshotPath, fileName + "_Statistics", ".png");
+                    RicSnapshotViewToFileFeature::saveSnapshotAs(absoluteFileName, img);
+                }
             }
         }
     }

@@ -20,15 +20,17 @@
 
 #include "RiaApplication.h"
 
+#include "RicWellLogTools.h"
+
+#include "RigFlowDiagResults.h"
 #include "RimEclipseResultCase.h"
 #include "RimEclipseView.h"
 #include "RimFlowCharacteristicsPlot.h"
-#include "RigFlowDiagResults.h"
 #include "RimFlowDiagSolution.h"
 #include "RimFlowPlotCollection.h"
 #include "RimMainPlotCollection.h"
 #include "RimProject.h"
-#include "RimView.h"
+#include "Rim3dView.h"
 
 #include "RiuMainPlotWindow.h"
 
@@ -38,16 +40,15 @@ CAF_CMD_SOURCE_INIT(RicShowFlowCharacteristicsPlotFeature, "RicShowFlowCharacter
 
 RimEclipseResultCase* activeEclipseResultCase()
 {
-    RimView * activeView = RiaApplication::instance()->activeReservoirView();
+    Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
 
-    auto eclView = dynamic_cast<RimEclipseView*>(activeView);
+    RimEclipseView* eclView = dynamic_cast<RimEclipseView*>(activeView);
 
     if (!eclView) return nullptr;
 
-    auto eclCase = dynamic_cast<RimEclipseResultCase*>(eclView->ownerCase());
+    RimEclipseResultCase* eclCase = dynamic_cast<RimEclipseResultCase*>(eclView->ownerCase());
 
-     return eclCase;
-
+    return eclCase;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -60,6 +61,8 @@ bool RicShowFlowCharacteristicsPlotFeature::isCommandEnabled()
     if (!eclCase) return false;
 
     if (!eclCase->defaultFlowDiagSolution()) return false;
+
+    if (RicWellLogTools::isWellPathOrSimWellSelectedInView()) return false;
 
     return true;
 }
@@ -75,7 +78,7 @@ void RicShowFlowCharacteristicsPlotFeature::onActionTriggered(bool isChecked)
     {
         // Make sure flow results for the the active timestep is calculated, to avoid an empty plot
         {
-            RimView * activeView = RiaApplication::instance()->activeReservoirView();
+            Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
             if (activeView && eclCase->defaultFlowDiagSolution()->flowDiagResults()) 
             {
                 // Trigger calculation

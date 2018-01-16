@@ -30,10 +30,12 @@ namespace caf
     {
         addItem(RiaDefines::DYNAMIC_NATIVE, "DYNAMIC_NATIVE",   "Dynamic");
         addItem(RiaDefines::STATIC_NATIVE,  "STATIC_NATIVE",    "Static");
+        addItem(RiaDefines::SOURSIMRL,      "SOURSIMRL",        "SourSimRL");
         addItem(RiaDefines::GENERATED,      "GENERATED",        "Generated");
         addItem(RiaDefines::INPUT_PROPERTY, "INPUT_PROPERTY",   "Input Property");
         addItem(RiaDefines::FORMATION_NAMES, "FORMATION_NAMES", "Formation Names");
         addItem(RiaDefines::FLOW_DIAGNOSTICS, "FLOW_DIAGNOSTICS", "Flow Diagnostics");
+        addItem(RiaDefines::INJECTION_FLOODING, "INJECTION_FLOODING", "Injection Flooding");
         setDefault(RiaDefines::DYNAMIC_NATIVE);
     }
 
@@ -63,6 +65,7 @@ namespace caf
         addItem(RiaDefines::WELL_PATH, "WELL_PATH", "Well Path");
         addItem(RiaDefines::PERFORATION_INTERVAL, "PERFORATION_INTERVAL", "Perforation Interval");
         addItem(RiaDefines::FISHBONES, "FISHBONES", "Fishbones");
+        addItem(RiaDefines::FRACTURE, "FRACTURE", "Fracture");
 
         setDefault(RiaDefines::WELL_PATH);
     }
@@ -95,6 +98,22 @@ bool RiaDefines::isPerCellFaceResult(const QString& resultName)
         return true;
     }
     else if (resultName.compare(RiaDefines::combinedRiAreaNormTranResultName(), Qt::CaseInsensitive) == 0)
+    {
+        return true;
+    }
+    else if (resultName.compare(RiaDefines::combinedWaterFluxResultName(), Qt::CaseInsensitive) == 0)
+    {
+        return true;
+    }
+    else if (resultName.compare(RiaDefines::combinedOilFluxResultName(), Qt::CaseInsensitive) == 0)
+    {
+        return true;
+    }
+    else if (resultName.compare(RiaDefines::combinedGasFluxResultName(), Qt::CaseInsensitive) == 0)
+    {
+        return true;
+    }
+    else if (resultName.endsWith("IJK"))
     {
         return true;
     }
@@ -132,6 +151,30 @@ QString RiaDefines::undefinedGridFaultWithInactiveName()
 QString RiaDefines::combinedTransmissibilityResultName()
 {
     return "TRANXYZ";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+QString RiaDefines::combinedWaterFluxResultName()
+{
+    return "FLRWATIJK";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+QString RiaDefines::combinedOilFluxResultName()
+{
+    return "FLROILIJK";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+QString RiaDefines::combinedGasFluxResultName()
+{
+    return "FLRGASIJK";
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -249,6 +292,14 @@ QString RiaDefines::combinedRiAreaNormTranResultName()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+QString RiaDefines::mobilePoreVolumeName()
+{
+    return "MOBPORV";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 QString RiaDefines::completionTypeResultName()
 {
     return "Completion Type";
@@ -292,6 +343,14 @@ QString RiaDefines::mockModelCustomized()
 QString RiaDefines::mockModelBasicInputCase()
 {
     return "Input Mock Debug Model Simple";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+QString RiaDefines::activeFormationNamesResultName()
+{
+    return "Active Formation Names";
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -25,7 +25,7 @@
 #include "RigMainGrid.h"
 #include "RigResultAccessor.h"
 #include "RigResultAccessorFactory.h"
-#include "RigSingleWellResultsData.h"
+#include "RigSimWellData.h"
 
 #include "RimCellEdgeColors.h"
 #include "RimEclipseCase.h"
@@ -340,7 +340,7 @@ QString RiuResultTextBuilder::nncResultText()
             RigNNCData* nncData = grid->nncData();
             CVF_ASSERT(nncData);
 
-            if (nncData)
+            if (nncData && m_nncIndex < nncData->connections().size())
             {
                 const RigConnection& conn = nncData->connections()[m_nncIndex];
                 cvf::StructGridInterface::FaceEnum face(conn.m_c1Face);
@@ -348,8 +348,21 @@ QString RiuResultTextBuilder::nncResultText()
                 if (m_reservoirView->currentFaultResultColors())
                 {
                     size_t scalarResultIdx = m_reservoirView->currentFaultResultColors()->scalarResultIndex();
-                    const std::vector<double>* nncValues = nncData->connectionScalarResult(scalarResultIdx);
-                    if (nncValues)
+                    RiaDefines::ResultCatType resultType = m_reservoirView->currentFaultResultColors()->resultType();
+                    const std::vector<double>* nncValues = nullptr;
+                    if (resultType == RiaDefines::STATIC_NATIVE)
+                    {
+                        nncValues = nncData->staticConnectionScalarResult(scalarResultIdx);
+                    }
+                    else if (resultType == RiaDefines::DYNAMIC_NATIVE)
+                    {
+                        if (m_reservoirView.notNull() && m_reservoirView->eclipseCase())
+                        {
+                            size_t nativeTimeStep = m_reservoirView->eclipseCase()->uiToNativeTimeStepIndex(m_timeStepIndex);
+                            nncValues = nncData->dynamicConnectionScalarResult(scalarResultIdx, nativeTimeStep);
+                        }
+                    }
+                    if (nncValues && (m_nncIndex < nncValues->size()))
                     {
                         QString resultVar = m_reservoirView->currentFaultResultColors()->resultVariableUiName();
                         double scalarValue = (*nncValues)[m_nncIndex];
@@ -377,7 +390,7 @@ void RiuResultTextBuilder::appendTextFromResultColors(RigEclipseCaseData* eclips
     RiaDefines::PorosityModelType porosityModel = resultColors->porosityModel();
     if (resultColors->isTernarySaturationSelected())
     {
-        RimReservoirCellResultsStorage* gridCellResults = resultColors->currentGridCellResults();
+        RigCaseCellResultsData* gridCellResults = resultColors->currentGridCellResults();
         if (gridCellResults)
         {
             size_t soilScalarSetIndex = gridCellResults->findOrLoadScalarResult(RiaDefines::DYNAMIC_NATIVE, "SOIL");
@@ -572,7 +585,7 @@ QString RiuResultTextBuilder::nncDetails()
             RigNNCData* nncData = grid->nncData();
             CVF_ASSERT(nncData);
 
-            if (nncData)
+            if (nncData && m_nncIndex < nncData->connections().size())
             {
                 text += "-- NNC details --\n";
                 {
@@ -657,7 +670,7 @@ QString RiuResultTextBuilder::cellResultText(RimEclipseCellColors* resultColors)
 
         if (resultColors->isTernarySaturationSelected())
         {
-            RimReservoirCellResultsStorage* gridCellResults = m_reservoirView->cellResult()->currentGridCellResults();
+            RigCaseCellResultsData* gridCellResults = m_reservoirView->cellResult()->currentGridCellResults();
             if (gridCellResults)
             {
                 size_t soilScalarSetIndex = gridCellResults->findOrLoadScalarResult(RiaDefines::DYNAMIC_NATIVE, "SOIL");
@@ -729,10 +742,10 @@ QString RiuResultTextBuilder::wellResultText()
     if (m_reservoirView->eclipseCase() &&
         m_reservoirView->eclipseCase()->eclipseCaseData() )
     {
-        cvf::Collection<RigSingleWellResultsData> wellResults = m_reservoirView->eclipseCase()->eclipseCaseData()->wellResults();
-        for (size_t i = 0; i < wellResults.size(); i++)
+        cvf::Collection<RigSimWellData> simWellData = m_reservoirView->eclipseCase()->eclipseCaseData()->wellResults();
+        for (size_t i = 0; i < simWellData.size(); i++)
         {
-            RigSingleWellResultsData* singleWellResultData = wellResults.at(i);
+            RigSimWellData* singleWellResultData = simWellData.at(i);
 
             if (!singleWellResultData->hasWellResult(m_timeStepIndex))
             {

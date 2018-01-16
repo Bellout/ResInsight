@@ -23,6 +23,7 @@
 #include "RimTofAccumulatedPhaseFractionsPlot.h"
 
 #include "RiuMainWindow.h"
+#include "RiuQwtCurvePointTracker.h"
 
 #include "cafSelectionManager.h"
 
@@ -30,6 +31,7 @@
 
 #include "qwt_legend.h"
 #include "qwt_plot_grid.h"
+#include "qwt_plot_layout.h"
 
 #include <QFocusEvent>
 #include <QHBoxLayout>
@@ -66,13 +68,13 @@ RiuTofAccumulatedPhaseFractionsPlot::RiuTofAccumulatedPhaseFractionsPlot(RimTofA
     m_watCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
     m_oilCurve = new QwtPlotCurve;
-    setCurveColor(m_oilCurve, QColor(169, 18, 16)); // Red
+    setCurveColor(m_oilCurve,  QColor(123, 167, 0)); // Green
     m_oilCurve->setZ(0.8);
     m_oilCurve->setTitle("Oil");
     m_oilCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
 
     m_gasCurve = new QwtPlotCurve;
-    setCurveColor(m_gasCurve, QColor(123, 167, 0)); // Green
+    setCurveColor(m_gasCurve, QColor(169, 18, 16)); // Red
     m_gasCurve->setZ(0.7);
     m_gasCurve->setTitle("Gas");
     m_gasCurve->setRenderHint(QwtPlotItem::RenderAntialiased, true);
@@ -152,7 +154,8 @@ RimViewWindow* RiuTofAccumulatedPhaseFractionsPlot::ownerViewWindow() const
 void RiuTofAccumulatedPhaseFractionsPlot::setSamples(std::vector<double> xSamples,
                                                      std::vector<double> watValues,
                                                      std::vector<double> oilValues,
-                                                     std::vector<double> gasValues)
+                                                     std::vector<double> gasValues,
+                                                     int maxTofYears)
 {
     m_xValues.clear();
     m_watValues.clear();
@@ -162,9 +165,13 @@ void RiuTofAccumulatedPhaseFractionsPlot::setSamples(std::vector<double> xSample
     m_watValues.swap(watValues);
     for (size_t i = 0; i < xSamples.size(); ++i)
     {
-        m_xValues.push_back(xSamples[i] / 365.2425);
-        m_oilValues.push_back(oilValues[i] + m_watValues[i]);
-        m_gasValues.push_back(gasValues[i] + m_oilValues[i]);
+        double tofYears = xSamples[i] / 365.2425;
+        if (tofYears <= maxTofYears)
+        {
+            m_xValues.push_back(tofYears);
+            m_oilValues.push_back(oilValues[i] + m_watValues[i]);
+            m_gasValues.push_back(gasValues[i] + m_oilValues[i]);
+        }
     }
     m_watCurve->setSamples(m_xValues.data(), m_watValues.data(), static_cast<int>(m_xValues.size()));
     m_oilCurve->setSamples(m_xValues.data(), m_oilValues.data(), static_cast<int>(m_xValues.size()));
@@ -181,6 +188,7 @@ void RiuTofAccumulatedPhaseFractionsPlot::setSamples(std::vector<double> xSample
         setAxisScale(QwtPlot::xBottom, 0, maxVal);
         updateAxes();
     }
+    replot();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -265,9 +273,9 @@ void RiuTofAccumulatedPhaseFractionsPlot::setCommonPlotBehaviour(QwtPlot* plot)
 
     plot->canvas()->setMouseTracking(true);
     plot->canvas()->installEventFilter(plot);
-//    plot->plotLayout()->setAlignCanvasToScales(true);
+    plot->plotLayout()->setAlignCanvasToScales(true);
 
-//    new RiuQwtCurvePointTracker(plot, true);
+    new RiuQwtCurvePointTracker(plot, true);
 }
 
 //--------------------------------------------------------------------------------------------------

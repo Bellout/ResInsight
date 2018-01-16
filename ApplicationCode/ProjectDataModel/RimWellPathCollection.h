@@ -30,15 +30,18 @@
 
 // Include to make Pdm work for cvf::Color
 #include "cafPdmFieldCvfColor.h"    
+#include "cafPdmChildField.h"
 
 #include "cvfObject.h"
 
-#include <QString>
-
 class RifWellPathImporter;
-class RimWellPath;
-class RimProject;
 class RigWellPath;
+class RimEclipseView;
+class RimProject;
+class RimWellLogFile;
+class RimWellPath;
+class RifWellPathFormationsImporter;
+class QString;
 
 namespace cvf {
 class ModelBasicList;
@@ -90,8 +93,16 @@ public:
     void                                removeWellPath(RimWellPath* wellPath);
     void                                deleteAllWellPaths();
 
+    RimWellPath*                        newestAddedWellPath();
+
+    void                                readWellPathFormationFiles();
+    void                                reloadAllWellPathFormations();
+
     RimWellPath*                        wellPathByName(const QString& wellPathName) const;
-    void                                addWellLogs(const QStringList& filePaths);
+    RimWellPath*                        tryFindMatchingWellPath(const QString& wellName) const;
+    void                                addWellPaths(const std::vector<RimWellPath*> wellPaths);
+    RimWellLogFile*                     addWellLogs(const QStringList& filePaths);
+    void                                addWellPathFormations(const QStringList& filePaths);
 
     void                                scheduleRedrawAffectedViews();
 
@@ -100,6 +111,11 @@ public:
                                                                          const cvf::BoundingBox&           wellPathClipBoundingBox,
                                                                          const caf::DisplayCoordTransform* displayCoordTransform);
 
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+    void                                appendStaticFracturePartsToModel(cvf::ModelBasicList* model, 
+                                                                         const RimEclipseView& eclView);
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+
     void                                appendDynamicGeometryPartsToModel(cvf::ModelBasicList*              model, 
                                                                           const QDateTime&                  timeStamp,
                                                                           double                            characteristicCellSize, 
@@ -107,11 +123,11 @@ public:
                                                                           const caf::DisplayCoordTransform* displayCoordTransform);
     void                                updateFilePathsFromProjectPath(const QString& newProjectPath, const QString& oldProjectPath);
 protected:
-    virtual void                        fieldChangedByUi( const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue );
+    virtual void                        fieldChangedByUi( const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue ) override;
 
 private:
-    virtual void                        defineUiOrdering( QString uiConfigName, caf::PdmUiOrdering& uiOrdering );
-    virtual caf::PdmFieldHandle*        objectToggleField();
+    virtual void                        defineUiOrdering( QString uiConfigName, caf::PdmUiOrdering& uiOrdering ) override;
+    virtual caf::PdmFieldHandle*        objectToggleField() override;
 
     void                                readAndAddWellPaths(std::vector<RimWellPath*>& wellPathArray);
     void                                sortWellsByName();
@@ -119,4 +135,6 @@ private:
     RiaEclipseUnitTools::UnitSystemType findUnitSystemForWellPath(const RimWellPath* wellPath);
 
     RifWellPathImporter*                m_wellPathImporter;
+    RifWellPathFormationsImporter*      m_wellPathFormationsImporter;
+    caf::PdmPointer<RimWellPath>        m_newestAddedWellPath;
 };

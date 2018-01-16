@@ -45,6 +45,20 @@
 #include "RimWellLogTrack.h"
 #include "RimFishboneWellPath.h"
 #include "RimPerforationInterval.h"
+#include "RimFlowCharacteristicsPlot.h"
+#include "RimAsciiDataCurve.h"
+#include "RimWellLogRftCurve.h"
+#include "RimWellRftPlot.h"
+
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+#include "RimEllipseFractureTemplate.h"
+#include "RimSimWellFracture.h"
+#include "RimSimWellFractureCollection.h"
+#include "RimStimPlanFractureTemplate.h"
+#include "RimWellPathFracture.h"
+#include "RimWellPathFractureCollection.h"
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+
 
 #include "cafCmdExecCommandManager.h"
 #include "cafCmdSelectionHelper.h"
@@ -61,15 +75,18 @@ bool isDeletable(caf::PdmUiItem* uiItem)
 {
     // Enable delete of well allocation plots
     if (dynamic_cast<RimWellAllocationPlot*>(uiItem)) return true;
+    if (dynamic_cast<RimFlowCharacteristicsPlot*>(uiItem)) return true;
 
     // Disable delete of all sub objects of a well allocation plot
     caf::PdmObjectHandle* destinationObject = dynamic_cast<caf::PdmObjectHandle*>(uiItem);
     if (destinationObject)
     {
         RimWellAllocationPlot* wellAllocationPlot = nullptr;
+        RimWellRftPlot* rftPlot = nullptr;
         destinationObject->firstAncestorOrThisOfType(wellAllocationPlot);
+        destinationObject->firstAncestorOrThisOfType(rftPlot);
 
-        if (wellAllocationPlot)
+        if (wellAllocationPlot || rftPlot)
         {
             return false;
         }
@@ -88,14 +105,23 @@ bool isDeletable(caf::PdmUiItem* uiItem)
     if (dynamic_cast<RimSummaryPlot*>(uiItem))               return true;
     if (dynamic_cast<RimSummaryCurve*>(uiItem))              return true;
     if (dynamic_cast<RimGridTimeHistoryCurve*>(uiItem))      return true;
-    if (dynamic_cast<RimSummaryCurveFilter*>(uiItem))        return true;
     if (dynamic_cast<RimIntersection*>(uiItem))              return true;
     if (dynamic_cast<RimIntersectionBox*>(uiItem))           return true;
     if (dynamic_cast<RimFormationNames*>(uiItem))            return true;
     if (dynamic_cast<RimFormationNamesCollection*>(uiItem))  return true;
-    if (dynamic_cast<RimFishboneWellPath*>(uiItem))        return true;
+    if (dynamic_cast<RimFishboneWellPath*>(uiItem))          return true;
     if (dynamic_cast<RimFishbonesMultipleSubs*>(uiItem))     return true;
     if (dynamic_cast<RimPerforationInterval*>(uiItem))       return true;
+    if (dynamic_cast<RimAsciiDataCurve*>(uiItem))            return true;
+
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+    if (dynamic_cast<RimWellPathFractureCollection*>(uiItem))   return true;
+    if (dynamic_cast<RimWellPathFracture*>(uiItem))             return true;
+    if (dynamic_cast<RimEllipseFractureTemplate*>(uiItem))      return true;
+    if (dynamic_cast<RimStimPlanFractureTemplate*>(uiItem))     return true;
+    if (dynamic_cast<RimSimWellFractureCollection*>(uiItem))    return true;
+    if (dynamic_cast<RimSimWellFracture*>(uiItem))              return true;
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     return false;    
 }

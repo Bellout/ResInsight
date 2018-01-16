@@ -30,6 +30,7 @@
 #include <QColor>
 
 #include <algorithm>
+#include <cmath>
 
 namespace caf {
     template<>
@@ -104,7 +105,14 @@ void RimFishbonesCollection::fieldChangedByUi(const caf::PdmFieldHandle* changed
 
     RimProject* proj;
     this->firstAncestorOrThisOfTypeAsserted(proj);
-    proj->createDisplayModelAndRedrawAllViews();
+    if (changedField == &m_isChecked)
+    {
+        proj->reloadCompletionTypeResultsInAllViews();
+    }
+    else
+    {
+        proj->createDisplayModelAndRedrawAllViews();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

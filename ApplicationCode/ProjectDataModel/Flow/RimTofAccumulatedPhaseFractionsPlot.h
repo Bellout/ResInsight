@@ -29,11 +29,10 @@
 
 #include <vector>
 
-class RiuWellAllocationPlot;
-class RimEclipseWell;
+class RimEclipseResultCase;
 class RimWellLogPlot;
 class RiuTofAccumulatedPhaseFractionsPlot;
-class RimEclipseResultCase;
+class RiuWellAllocationPlot;
 
 namespace caf {
     class PdmOptionItemInfo;
@@ -75,7 +74,7 @@ public:
 protected:
     // RimViewWindow overrides
 
-    virtual void                                    loadDataAndUpdate() override;
+    virtual void                                    onLoadDataAndUpdate() override;
     virtual QImage                                  snapshotWindowContent() override;
 
     // Overridden PDM methods
@@ -85,6 +84,7 @@ protected:
 private:
     caf::PdmField<bool>                             m_showPlotTitle;
     caf::PdmField<QString>                          m_userName;
+    caf::PdmField<int>                              m_maxTof;
 
     QPointer<RiuTofAccumulatedPhaseFractionsPlot>   m_tofAccumulatedPhaseFractionsPlotWidget;
 };

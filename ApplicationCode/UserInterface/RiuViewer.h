@@ -20,17 +20,19 @@
 
 #pragma once
 
+#include "RiuViewerToViewInterface.h"
 #include "cafViewer.h"
 
 #include "cafPdmObject.h"
 #include "cafPdmPointer.h"
+#include "cafPdmInterfacePointer.h"
 
 #include "cafMouseState.h"
 #include "cvfStructGrid.h"
 #include "RiuInterfaceToViewWindow.h"
 
 class RicCommandFeature;
-class RimView;
+class Rim3dView;
 class RiuSimpleHistogramWidget;
 class RiuViewerCommands;
 class RivGridBoxGenerator;
@@ -46,6 +48,7 @@ namespace cvf
     class OverlayItem;
     class Part;
     class OverlayAxisCross;
+    class BoundingBox;
 }
 
 //==================================================================================================
@@ -64,8 +67,8 @@ public:
     void            setDefaultView();
     cvf::Vec3d      pointOfInterest();
     void            setPointOfInterest(cvf::Vec3d poi);
-    void            setOwnerReservoirView(RimView * owner);
-    RimView*        ownerReservoirView();
+    void            setOwnerReservoirView(RiuViewerToViewInterface * owner);
+    RiuViewerToViewInterface*      ownerReservoirView();
     RimViewWindow*  ownerViewWindow() const override;
     void            setEnableMask(unsigned int mask);
 
@@ -75,8 +78,13 @@ public:
     void            setHistogram(double min, double max, const std::vector<size_t>& histogram);
     void            setHistogramPercentiles(double pmin, double pmax, double mean);
 
-    void            updateGridBoxData();
-    cvf::Model*     gridBoxModel() const;
+    void            showGridBox(bool enable);
+    void            updateGridBoxData(double scaleZ, 
+                                      const cvf::Vec3d& displayModelOffset,
+                                      const cvf::Color3f&  backgroundColor,
+                                      const cvf::BoundingBox& domainCoordBoundingBox);
+
+    void            updateAnnotationItems();
 
     void            showAnimationProgress(bool enable);
     
@@ -89,10 +97,10 @@ public:
 
     void            setCurrentFrame(int frameIndex);
 
+    void            showAxisCross(bool enable);
     void            setAxisLabels(const cvf::String& xLabel, const cvf::String& yLabel, const cvf::String& zLabel);
 
     cvf::Vec3d      lastPickPositionInDomainCoords() const;
-    caf::PdmObject* lastPickedObject() const;
 
     cvf::OverlayItem*   pickFixedPositionedLegend(int winPosX, int winPosY);
 
@@ -140,7 +148,7 @@ private:
     cvf::ref<cvf::OverlayAxisCross> m_axisCross;
     cvf::Collection<cvf::OverlayItem> m_visibleLegends;
 
-    caf::PdmPointer<RimView>    m_rimView;
+    caf::PdmInterfacePointer<RiuViewerToViewInterface>    m_rimView;
     QPoint                      m_lastMousePressPosition;
 
     RiuViewerCommands*          m_viewerCommands;

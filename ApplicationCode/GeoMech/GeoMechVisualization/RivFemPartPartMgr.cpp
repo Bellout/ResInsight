@@ -259,7 +259,13 @@ void RivFemPartPartMgr::updateCellResultColor(size_t timeStepIndex, RimGeoMechCe
         {
             vxToResultMapping = &(m_surfaceGenerator.quadVerticesToGlobalElmFaceNodeIdx());
         }
-
+        else if (resVarAddress.resultPosType == RIG_ELEMENT)
+        {
+            vxToResultMapping = &(m_surfaceGenerator.quadVerticesToGlobalElmIdx());
+        }
+        
+        if (!vxToResultMapping) return;
+        
         vxCount = static_cast<int>(vxToResultMapping->size());
         m_surfaceFacesTextureCoords->resize(vxCount);
 
@@ -299,7 +305,7 @@ void RivFemPartPartMgr::updateCellResultColor(size_t timeStepIndex, RimGeoMechCe
             }
         }
 
-        RimView* view = NULL;
+        Rim3dView* view = NULL;
         cellResultColors->firstAncestorOrThisOfType(view);
         CVF_ASSERT(view);
 

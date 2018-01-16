@@ -21,6 +21,8 @@
 #include "RicDeleteItemExec.h"
 #include "RicDeleteItemExecData.h"
 
+#include "RiaApplication.h"
+
 #include "RimCase.h"
 #include "RimCellRangeFilterCollection.h"
 #include "RimEclipsePropertyFilterCollection.h"
@@ -28,12 +30,23 @@
 #include "RimGeoMechPropertyFilterCollection.h"
 #include "RimIntersectionCollection.h"
 #include "RimProject.h"
-#include "RimView.h"
+#include "RimSimWellInView.h"
+#include "RimSummaryPlotCollection.h"
+#include "RimSummaryCrossPlotCollection.h"
+#include "Rim3dView.h"
 #include "RimViewLinkerCollection.h"
 #include "RimWellLogPlot.h"
 #include "RimWellLogPlotCollection.h"
 #include "RimWellLogTrack.h"
+#include "RimWellPath.h"
 #include "RimWellPathCollection.h"
+
+#include "RiuMainPlotWindow.h"
+
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+#include "RimFractureTemplateCollection.h"
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+
 
 #include "cafNotificationCenter.h"
 #include "cafPdmChildArrayField.h"
@@ -82,7 +95,7 @@ void RicDeleteItemExec::redo()
         caf::PdmObjectHandle* parentObj = listField->ownerObject();
         parentObj->uiCapability()->updateConnectedEditors();
         
-        RimView* view = NULL;
+        Rim3dView* view = NULL;
         parentObj->firstAncestorOrThisOfType(view);
 
         // Range Filters
@@ -118,7 +131,38 @@ void RicDeleteItemExec::redo()
             view->scheduleCreateDisplayModelAndRedraw();
         }
 
+        // SimWell Fractures
+        RimSimWellInView* simWell;
+        parentObj->firstAncestorOrThisOfType(simWell);
+        if (view && simWell)
+        {
+            view->scheduleCreateDisplayModelAndRedraw();
+        }
+
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+        RimFractureTemplateCollection* fracTemplateColl;
+        parentObj->firstAncestorOrThisOfType(fracTemplateColl);
+        if (fracTemplateColl)
+        {
+            RimProject* proj = nullptr;
+            parentObj->firstAncestorOrThisOfType(proj);
+            if (proj)
+            {
+                proj->createDisplayModelAndRedrawAllViews();
+            }
+        }
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+
+
         // Well paths
+
+        RimWellPath* wellPath;
+        parentObj->firstAncestorOrThisOfType(wellPath);
+
+        if (wellPath)
+        {
+            wellPath->updateConnectedEditors();
+        }
 
         RimWellPathCollection* wellPathColl;
         parentObj->firstAncestorOrThisOfType(wellPathColl);
@@ -192,6 +236,23 @@ void RicDeleteItemExec::redo()
                 RimCase* aCase = dynamic_cast<RimCase*>(reffingObj);
                 if (aCase) aCase->updateFormationNamesData();
             }
+        }
+
+
+        RimSummaryPlotCollection* summaryPlotCollection = nullptr;
+        parentObj->firstAncestorOrThisOfType(summaryPlotCollection);
+        if (summaryPlotCollection)
+        {
+            RiuMainPlotWindow* mainPlotWindow = RiaApplication::instance()->mainPlotWindow();
+            mainPlotWindow->updateSummaryPlotToolBar();
+        }
+
+        RimSummaryCrossPlotCollection* summaryCrossPlotCollection = nullptr;
+        parentObj->firstAncestorOrThisOfType(summaryCrossPlotCollection);
+        if (summaryCrossPlotCollection)
+        {
+            RiuMainPlotWindow* mainPlotWindow = RiaApplication::instance()->mainPlotWindow();
+            mainPlotWindow->updateSummaryPlotToolBar();
         }
     }
 }

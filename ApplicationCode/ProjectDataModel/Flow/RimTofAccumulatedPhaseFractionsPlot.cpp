@@ -21,11 +21,10 @@
 #include "RiaApplication.h"
 
 #include "RimEclipseView.h"
-#include "RimEclipseWell.h"
-#include "RimEclipseWellCollection.h"
+#include "RimSimWellInViewCollection.h"
 #include "RimWellAllocationPlot.h"
 
-#include "RigSingleWellResultsData.h"
+#include "RigSimWellData.h"
 #include "RigTofAccumulatedPhaseFractionsCalculator.h"
 
 #include "RimWellLogPlot.h"
@@ -46,12 +45,15 @@ CAF_PDM_SOURCE_INIT(RimTofAccumulatedPhaseFractionsPlot, "TofAccumulatedPhaseFra
 //--------------------------------------------------------------------------------------------------
 RimTofAccumulatedPhaseFractionsPlot::RimTofAccumulatedPhaseFractionsPlot()
 {
-    CAF_PDM_InitObject("Cumulative Saturation by Time of Flight", ":/WellAllocPie16x16.png", "", "");
+    CAF_PDM_InitObject("Cumulative Saturation by Time of Flight", ":/TOFAccSatPlot16x16.png", "", "");
 
     CAF_PDM_InitField(&m_userName, "PlotDescription", QString("Cumulative Saturation by Time of Flight"), "Name", "", "", "");
-    m_userName.uiCapability()->setUiReadOnly(true);
+    m_userName.uiCapability()->setUiHidden(true);
 
     CAF_PDM_InitField(&m_showPlotTitle, "ShowPlotTitle", true, "Show Plot Title", "", "", "");
+    m_showPlotTitle.uiCapability()->setUiHidden(true);
+
+    CAF_PDM_InitField(&m_maxTof, "MaxTof", 50, "Max Time of Flight [year]", "", "", "");
     m_showWindow = false;
 }
 
@@ -83,7 +85,7 @@ void RimTofAccumulatedPhaseFractionsPlot::deleteViewWidget()
 //--------------------------------------------------------------------------------------------------
 void RimTofAccumulatedPhaseFractionsPlot::reloadFromWell()
 {
-    loadDataAndUpdate();
+    onLoadDataAndUpdate();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -147,6 +149,10 @@ void RimTofAccumulatedPhaseFractionsPlot::fieldChangedByUi(const caf::PdmFieldHa
     {
         updateMdiWindowTitle();
     }
+    else if (changedField == &m_maxTof)
+    {
+        onLoadDataAndUpdate();
+    }
  
 }
 
@@ -183,7 +189,7 @@ QString RimTofAccumulatedPhaseFractionsPlot::description() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimTofAccumulatedPhaseFractionsPlot::loadDataAndUpdate()
+void RimTofAccumulatedPhaseFractionsPlot::onLoadDataAndUpdate()
 {
     updateMdiWindowVisibility();
 
@@ -196,7 +202,7 @@ void RimTofAccumulatedPhaseFractionsPlot::loadDataAndUpdate()
         const std::vector<double>& oilValues = calc.accumulatedPhaseFractionsSoil();
         const std::vector<double>& gasValues = calc.accumulatedPhaseFractionsSgas();
 
-        m_tofAccumulatedPhaseFractionsPlotWidget->setSamples(xValues, watValues, oilValues, gasValues);
+        m_tofAccumulatedPhaseFractionsPlotWidget->setSamples(xValues, watValues, oilValues, gasValues, m_maxTof());
     }
 }
 

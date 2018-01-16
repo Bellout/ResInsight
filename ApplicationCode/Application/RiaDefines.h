@@ -28,17 +28,20 @@ namespace RiaDefines
     {
         DYNAMIC_NATIVE,
         STATIC_NATIVE,
+        SOURSIMRL,
         GENERATED,
         INPUT_PROPERTY,
         FORMATION_NAMES,
         FLOW_DIAGNOSTICS,
+        INJECTION_FLOODING,
         REMOVED
     };
 
     enum CompletionType {
         WELL_PATH,
         PERFORATION_INTERVAL,
-        FISHBONES
+        FISHBONES,
+        FRACTURE,
     };
 
     bool isPerCellFaceResult(const QString& resultName);
@@ -47,6 +50,10 @@ namespace RiaDefines
     QString undefinedGridFaultName();
     QString undefinedGridFaultWithInactiveName();
     QString combinedTransmissibilityResultName();
+    QString combinedWaterFluxResultName();
+    QString combinedOilFluxResultName();
+    QString combinedGasFluxResultName();
+
     QString ternarySaturationResultName();
     QString combinedMultResultName();
 
@@ -65,6 +72,8 @@ namespace RiaDefines
     QString riAreaNormTranZResultName();
     QString combinedRiAreaNormTranResultName();
 
+    QString mobilePoreVolumeName();
+
     QString completionTypeResultName();
 
     // Mock model text identifiers
@@ -74,6 +83,7 @@ namespace RiaDefines
     QString mockModelCustomized();
     QString mockModelBasicInputCase();
 
+    QString activeFormationNamesResultName();
 
     //Units and conversions
     enum DepthUnitType
@@ -89,10 +99,17 @@ namespace RiaDefines
     enum PlotAxis
     {
         PLOT_AXIS_LEFT,
-        PLOT_AXIS_RIGHT
+        PLOT_AXIS_RIGHT,
+        PLOT_AXIS_BOTTOM
     };
 
     double minimumDefaultValuePlot();
     double maximumDefaultValuePlot();
+
+    enum PhaseType {
+        OIL_PHASE,
+        GAS_PHASE,
+        WATER_PHASE
+    };
 };
 

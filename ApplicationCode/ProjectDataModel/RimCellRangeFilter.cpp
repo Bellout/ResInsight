@@ -46,19 +46,19 @@ RimCellRangeFilter::RimCellRangeFilter()
     CAF_PDM_InitField(&gridIndex, "GridIndex",  0,  "Grid", "", "","");
     CAF_PDM_InitField(&propagateToSubGrids, "PropagateToSubGrids",  true,  "Apply to Subgrids", "", "","");
 
-    CAF_PDM_InitField(&startIndexI, "StartIndexI",  1,  "Start index I", "", "","");
+    CAF_PDM_InitField(&startIndexI, "StartIndexI",  1,  "Start Index I", "", "","");
     startIndexI.uiCapability()->setUiEditorTypeName(caf::PdmUiSliderEditor::uiEditorTypeName());
     
     CAF_PDM_InitField(&cellCountI,  "CellCountI",   1,  "Cell Count I", "", "","");
     cellCountI.uiCapability()->setUiEditorTypeName(caf::PdmUiSliderEditor::uiEditorTypeName());
 
-    CAF_PDM_InitField(&startIndexJ, "StartIndexJ",  1,  "Start index J", "", "","");
+    CAF_PDM_InitField(&startIndexJ, "StartIndexJ",  1,  "Start Index J", "", "","");
     startIndexJ.uiCapability()->setUiEditorTypeName(caf::PdmUiSliderEditor::uiEditorTypeName());
 
     CAF_PDM_InitField(&cellCountJ,  "CellCountJ",   1,  "Cell Count J", "", "","");
     cellCountJ.uiCapability()->setUiEditorTypeName(caf::PdmUiSliderEditor::uiEditorTypeName());
 
-    CAF_PDM_InitField(&startIndexK, "StartIndexK",  1,  "Start index K", "", "","");
+    CAF_PDM_InitField(&startIndexK, "StartIndexK",  1,  "Start Index K", "", "","");
     startIndexK.uiCapability()->setUiEditorTypeName(caf::PdmUiSliderEditor::uiEditorTypeName());
 
     CAF_PDM_InitField(&cellCountK,  "CellCountK",   1,  "Cell Count K", "", "","");
@@ -79,6 +79,27 @@ RimCellRangeFilter::~RimCellRangeFilter()
 //--------------------------------------------------------------------------------------------------
 void RimCellRangeFilter::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
 {
+    if (changedField == &gridIndex)
+    {
+        const cvf::StructGridInterface* grid = selectedGrid();
+
+        if (grid && grid->cellCountI() > 0 && grid->cellCountJ() > 0 && grid->cellCountK() > 0)
+        {
+            cellCountI = static_cast<int>(grid->cellCountI());
+            startIndexI = 1;
+
+            cellCountJ = static_cast<int>(grid->cellCountJ());
+            startIndexJ = 1;
+
+            cellCountK = static_cast<int>(grid->cellCountK());
+            startIndexK = 1;
+        }
+
+        parentContainer()->updateDisplayModeNotifyManagedViews(this);
+
+        return;
+    }
+    
     if (changedField != &name)
     {
         computeAndSetValidValues();
@@ -126,7 +147,7 @@ void RimCellRangeFilter::setDefaultValues()
 
     const cvf::StructGridInterface* grid = selectedGrid();
 
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     this->firstAncestorOrThisOfTypeAsserted(rimView);
     RigActiveCellInfo* actCellInfo = RigReservoirGridTools::activeCellInfo(rimView);
     
@@ -203,12 +224,29 @@ void RimCellRangeFilter::defineEditorAttribute(const caf::PdmFieldHandle* field,
         myAttr->m_minimum = 1;
         myAttr->m_maximum = static_cast<int>(grid->cellCountK());
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimCellRangeFilter::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
+{
+    bool readOnlyState = isRangeFilterControlled();
+
+    std::vector<caf::PdmFieldHandle*> objFields;
+    this->fields(objFields);
+    for (size_t i = 0; i < objFields.size(); i ++)
+    {
+        objFields[i]->uiCapability()->setUiReadOnly(readOnlyState);
+    }
+
+    const cvf::StructGridInterface* grid = selectedGrid();
 
     RimCase* rimCase = nullptr;
     this->firstAncestorOrThisOfTypeAsserted(rimCase);
     const cvf::StructGridInterface* mainGrid = RigReservoirGridTools::mainGrid(rimCase);
-    
-    RimView* rimView = nullptr;
+
+    Rim3dView* rimView = nullptr;
     this->firstAncestorOrThisOfTypeAsserted(rimView);
     RigActiveCellInfo* actCellInfo = RigReservoirGridTools::activeCellInfo(rimView);
 
@@ -241,21 +279,6 @@ void RimCellRangeFilter::defineEditorAttribute(const caf::PdmFieldHandle* field,
         cellCountI.uiCapability()->setUiName(QString("  Width"));
         cellCountJ.uiCapability()->setUiName(QString("  Width"));
         cellCountK.uiCapability()->setUiName(QString("  Width"));
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimCellRangeFilter::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
-{
-    bool readOnlyState = isRangeFilterControlled();
-
-    std::vector<caf::PdmFieldHandle*> objFields;
-    this->fields(objFields);
-    for (size_t i = 0; i < objFields.size(); i ++)
-    {
-        objFields[i]->uiCapability()->setUiReadOnly(readOnlyState);
     }
 }
 
@@ -309,7 +332,7 @@ QList<caf::PdmOptionItemInfo> RimCellRangeFilter::calculateValueOptions(const ca
 //--------------------------------------------------------------------------------------------------
 bool RimCellRangeFilter::isRangeFilterControlled() const
 {
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     firstAncestorOrThisOfTypeAsserted(rimView);
 
     bool isRangeFilterControlled = false;

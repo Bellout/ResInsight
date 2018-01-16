@@ -22,11 +22,13 @@
 
 #include "RiaApplication.h"
 
+#include "RigWellPath.h"
+
 #include "RimProject.h"
 #include "RimFishboneWellPathCollection.h"
 #include "RimFishbonesCollection.h"
 #include "RimFishbonesMultipleSubs.h"
-#include "RimView.h"
+#include "Rim3dView.h"
 #include "RimWellPathCollection.h"
 
 #include "RiuMainWindow.h"
@@ -36,8 +38,15 @@
 #include <QAction>
 #include <QMessageBox>
 
+#include <cmath>
+
 
 CAF_CMD_SOURCE_INIT(RicNewFishbonesSubsFeature, "RicNewFishbonesSubsFeature");
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double getWellPathTipMd(RimWellPath* wellPath);
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -52,8 +61,16 @@ void RicNewFishbonesSubsFeature::onActionTriggered(bool isChecked)
     if (!RicWellPathsUnitSystemSettingsImpl::ensureHasUnitSystem(wellPath)) return;
 
     RimFishbonesMultipleSubs* obj = new RimFishbonesMultipleSubs;
-    obj->setName(QString("Fishbones Subs (%1)").arg(fishbonesCollection->fishbonesSubs.size()));
     fishbonesCollection->appendFishbonesSubs(obj);
+
+    double wellPathTipMd = getWellPathTipMd(wellPath);
+    if (wellPathTipMd != HUGE_VAL)
+    {
+        double startMd = wellPathTipMd - 150 - 100;
+        if (startMd < 100) startMd = 100;
+
+        obj->setMeasuredDepthAndCount(startMd, 12.5, 13);
+    }
 
     RicNewFishbonesSubsFeature::askUserToSetUsefulScaling(fishbonesCollection);
 
@@ -133,7 +150,7 @@ void RicNewFishbonesSubsFeature::askUserToSetUsefulScaling(RimFishbonesCollectio
     fishboneCollection->firstAncestorOrThisOfTypeAsserted(wellPathColl);
     wellPathColl->wellPathRadiusScaleFactor = 0.01;
 
-    RimView* activeView = RiaApplication::instance()->activeReservoirView();
+    Rim3dView* activeView = RiaApplication::instance()->activeReservoirView();
     if (!activeView) return;
 
     RiaApplication* app = RiaApplication::instance();
@@ -175,4 +192,18 @@ void RicNewFishbonesSubsFeature::askUserToSetUsefulScaling(RimFishbonesCollectio
 
         RiuMainWindow::instance()->updateScaleValue();
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double getWellPathTipMd(RimWellPath* wellPath)
+{
+    RigWellPath* geometry = wellPath ? wellPath->wellPathGeometry() : nullptr;
+
+    if (geometry && !geometry->m_measuredDepths.empty())
+    {
+        return geometry->m_measuredDepths.back();
+    }
+    return HUGE_VAL;
 }

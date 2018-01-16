@@ -24,15 +24,15 @@
 
 #include "RigCaseCellResultsData.h"
 #include "RigEclipseCaseData.h"
-#include "RigSingleWellResultsData.h"
+#include "RigSimWellData.h"
 
 #include "RimCaseCollection.h"
 #include "RimEclipseCellColors.h"
 #include "RimEclipseStatisticsCaseEvaluator.h"
 #include "RimEclipseView.h"
-#include "RimEclipseWellCollection.h"
 #include "RimIdenticalGridCaseGroup.h"
 #include "RimReservoirCellResultsStorage.h"
+#include "RimSimWellInViewCollection.h"
 
 #include "RiuMainWindow.h"
 
@@ -63,14 +63,10 @@ RimEclipseStatisticsCase::RimEclipseStatisticsCase()
     CAF_PDM_InitObject("Case Group Statistics", ":/Histogram16x16.png", "", "");
 
     CAF_PDM_InitFieldNoDefault(&m_calculateEditCommand,   "m_editingAllowed", "", "", "", "");
-    m_calculateEditCommand.xmlCapability()->setIOWritable(false);
-    m_calculateEditCommand.xmlCapability()->setIOReadable(false);
-    m_calculateEditCommand.uiCapability()->setUiEditorTypeName(caf::PdmUiPushButtonEditor::uiEditorTypeName());
-    m_calculateEditCommand.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
-
+    caf::PdmUiPushButtonEditor::configureEditorForField(&m_calculateEditCommand);
     m_calculateEditCommand = false;
 
-    CAF_PDM_InitField(&m_selectionSummary, "SelectionSummary", QString(""), "Summary of calculation setup", "", "", "");
+    CAF_PDM_InitField(&m_selectionSummary, "SelectionSummary", QString(""), "Summary of Calculation Setup", "", "", "");
     m_selectionSummary.xmlCapability()->setIOWritable(false);
     m_selectionSummary.xmlCapability()->setIOReadable(false);
     m_selectionSummary.uiCapability()->setUiReadOnly(true);
@@ -148,7 +144,7 @@ bool RimEclipseStatisticsCase::openEclipseGridFile()
 {
     if (this->eclipseCaseData()) return true;
 
-    cvf::ref<RigEclipseCaseData> eclipseCase = new RigEclipseCaseData;
+    cvf::ref<RigEclipseCaseData> eclipseCase = new RigEclipseCaseData(this);
 
     CVF_ASSERT(parentStatisticsCaseCollection());
 
@@ -218,15 +214,14 @@ void RimEclipseStatisticsCase::computeStatistics()
     getSourceCases(sourceCases);
 
     if (sourceCases.size() == 0
-        || !sourceCases.at(0)->results(RiaDefines::MATRIX_MODEL)
-        || !sourceCases.at(0)->results(RiaDefines::MATRIX_MODEL)->cellResults())
+        || !sourceCases.at(0)->results(RiaDefines::MATRIX_MODEL))
     {
         return;
     }
 
     // The first source has been read completely from disk, and contains grid and meta data
     // Use this information for all cases in the case group
-    size_t timeStepCount = sourceCases.at(0)->results(RiaDefines::MATRIX_MODEL)->cellResults()->maxTimeStepCount();
+    size_t timeStepCount = sourceCases.at(0)->results(RiaDefines::MATRIX_MODEL)->maxTimeStepCount();
 
     RimStatisticsConfig statisticsConfig;
 
@@ -512,13 +507,13 @@ void RimEclipseStatisticsCase::fieldChangedByUi(const caf::PdmFieldHandle* chang
             // Propagate well info to statistics case
             if (sourceResultCase->eclipseCaseData())
             {
-                const cvf::Collection<RigSingleWellResultsData>& sourceCaseWellResults = sourceResultCase->eclipseCaseData()->wellResults();
-                setWellResultsAndUpdateViews(sourceCaseWellResults);
+                const cvf::Collection<RigSimWellData>& sourceCaseSimWellData = sourceResultCase->eclipseCaseData()->wellResults();
+                setWellResultsAndUpdateViews(sourceCaseSimWellData);
             }
         }
         else
         {
-            cvf::Collection<RigSingleWellResultsData> sourceCaseWellResults;
+            cvf::Collection<RigSimWellData> sourceCaseWellResults;
             setWellResultsAndUpdateViews(sourceCaseWellResults);
         }
     }
@@ -527,9 +522,9 @@ void RimEclipseStatisticsCase::fieldChangedByUi(const caf::PdmFieldHandle* chang
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimEclipseStatisticsCase::setWellResultsAndUpdateViews(const cvf::Collection<RigSingleWellResultsData>& sourceCaseWellResults)
+void RimEclipseStatisticsCase::setWellResultsAndUpdateViews(const cvf::Collection<RigSimWellData>& sourceCaseSimWellData)
 {
-    this->eclipseCaseData()->setWellResults(sourceCaseWellResults);
+    this->eclipseCaseData()->setSimWellData(sourceCaseSimWellData);
     
     caf::ProgressInfo progInfo(reservoirViews().size() + 1, "Updating Well Data for Views");
 

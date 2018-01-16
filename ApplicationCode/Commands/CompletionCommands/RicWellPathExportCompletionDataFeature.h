@@ -31,23 +31,30 @@
 #include "cvfBoundingBox.h"
 
 
-class RimWellPath;
-class RimEclipseCase;
+class RigCell;
 class RigEclipseCaseData;
 class RigMainGrid;
-class RigCell;
+class RimEclipseCase;
 class RimFishbonesMultipleSubs;
+class RimSimWellInView;
+class RimWellPath;
 
 //==================================================================================================
 /// 
 //==================================================================================================
 struct WellSegmentLateralIntersection {
-    WellSegmentLateralIntersection(int segmentNumber, int attachedSegmentNumber, size_t cellIndex, double length, double depth)
+    WellSegmentLateralIntersection(int segmentNumber, 
+                                   int attachedSegmentNumber, 
+                                   size_t cellIndex, 
+                                   double length, 
+                                   double depth, 
+                                   const cvf::Vec3d& lengthsInCell)
         : segmentNumber(segmentNumber),
           attachedSegmentNumber(attachedSegmentNumber),
           cellIndex(cellIndex),
-          length(length),
-          depth(depth),
+          mdFromPreviousIntersection(length),
+          tvdChangeFromPreviousIntersection(depth),
+          lengthsInCell(lengthsInCell),
           mainBoreCell(false)
     {}
 
@@ -55,8 +62,8 @@ struct WellSegmentLateralIntersection {
     int                      attachedSegmentNumber;
     size_t                   cellIndex;
     bool                     mainBoreCell;
-    double                   length;
-    double                   depth;
+    double                   mdFromPreviousIntersection;
+    double                   tvdChangeFromPreviousIntersection;
     cvf::Vec3d               lengthsInCell;
 };
 
@@ -83,7 +90,9 @@ struct WellSegmentLocation {
           measuredDepth(measuredDepth),
           trueVerticalDepth(trueVerticalDepth),
           subIndex(subIndex),
-          segmentNumber(segmentNumber)
+          segmentNumber(segmentNumber),
+          icdBranchNumber(-1),
+          icdSegmentNumber(-1)
     {
     }
 
@@ -126,6 +135,8 @@ protected:
     virtual void setupActionLook(QAction* actionToSetup) override;
 
     std::vector<RimWellPath*>                    selectedWellPaths();
+    std::vector<RimSimWellInView*>               selectedSimWells();
+
     bool                                         noWellPathsSelectedDirectly();
 
 public:
@@ -133,7 +144,7 @@ public:
     static std::vector<WellSegmentLocation>      findWellSegmentLocations(const RimEclipseCase* caseToApply, const RimWellPath* wellPath, const std::vector<RimFishbonesMultipleSubs*>& fishbonesSubs);
 
     //functions also used by RicFishbonesTransmissibilityCalculationFeatureImp
-    static std::vector<size_t>                   findIntersectingCells(const RigEclipseCaseData* grid, const std::vector<cvf::Vec3d>& coords);
+    static std::set<size_t>                      findIntersectedCells(const RigEclipseCaseData* grid, const std::vector<cvf::Vec3d>& coords);
     static void                                  markWellPathCells(const std::vector<size_t>& wellPathCells, std::vector<WellSegmentLocation>* locations);
     static CellDirection                         calculateDirectionInCell(RimEclipseCase* eclipseCase, size_t cellIndex, const cvf::Vec3d& lengthsInCell);
     
@@ -143,6 +154,7 @@ public:
                                                                            double skinFactor, 
                                                                            double wellRadius, 
                                                                            size_t cellIndex, 
+                                                                           bool useLateralNTG, 
                                                                            size_t volumeScaleConstant = 1, 
                                                                            CellDirection directionForVolumeScaling = CellDirection::DIR_I);
     static double                                calculateTransmissibilityAsEclipseDoes(RimEclipseCase* eclipseCase,
@@ -150,7 +162,7 @@ public:
                                                                                         double wellRadius,
                                                                                         size_t cellIndex,
                                                                                         CellDirection direction);
-    static void                                  exportCompletions(const std::vector<RimWellPath*>& wellPaths, const RicExportCompletionDataSettingsUi& exportSettings);
+    static void                                  exportCompletions(const std::vector<RimWellPath*>& wellPaths, const std::vector<RimSimWellInView*>& simWells, const RicExportCompletionDataSettingsUi& exportSettings);
 
 private:
     static RigCompletionData                     combineEclipseCellCompletions(const std::vector<RigCompletionData>& completions, 
@@ -166,8 +178,8 @@ private:
 
     static bool                                  wellSegmentLocationOrdering(const WellSegmentLocation& first, const WellSegmentLocation& second);
     static bool                                  isPointBetween(const cvf::Vec3d& pointA, const cvf::Vec3d& pointB, const cvf::Vec3d& needle);
-    static void                                  calculateLateralIntersections(const RimEclipseCase* caseToApply, WellSegmentLocation* location, int* branchNum, int* segmentNum);
-    static void                                  assignBranchAndSegmentNumbers(const RimEclipseCase* caseToApply, std::vector<WellSegmentLocation>* locations);
+    static void                                  assignLateralIntersections(const RimEclipseCase* caseToApply, WellSegmentLocation* location, int* branchNum, int* segmentNum);
+    static void                                  assignLateralIntersectionsAndBranchAndSegmentNumbers(const RimEclipseCase* caseToApply, std::vector<WellSegmentLocation>* locations);
 
     static void                                  appendCompletionData(std::map<IJKCellIndex, std::vector<RigCompletionData> >* completionData, const std::vector<RigCompletionData>& data);
 

@@ -38,6 +38,7 @@
 
 #include "cafSelectionManager.h"
 #include "cafPdmUiPropertyViewDialog.h"
+#include "cafUtils.h"
 
 #include "cvfMath.h"
 
@@ -157,14 +158,16 @@ bool RicExportFishbonesWellSegmentsFeature::isCommandEnabled()
 //--------------------------------------------------------------------------------------------------
 void RicExportFishbonesWellSegmentsFeature::exportWellSegments(const RimWellPath* wellPath, const std::vector<RimFishbonesMultipleSubs*>& fishbonesSubs, const RicCaseAndFileExportSettingsUi& settings)
 {
-    QString filePath = QDir(settings.folder()).filePath("Welsegs");
-    QFile exportFile(filePath);
-
     if (settings.caseToApply() == nullptr)
     {
         RiaLogging::error("Export Well Segments: Cannot export completions data without specified eclipse case");
         return;
     }
+
+    QString fileName = QString("%1-Welsegs").arg(settings.caseToApply()->caseUserDescription());
+    fileName = caf::Utils::makeValidFileBasename(fileName);
+    QString filePath = QDir(settings.folder()).filePath(fileName);
+    QFile exportFile(filePath);
 
     if (!exportFile.open(QIODevice::WriteOnly))
     {
@@ -285,7 +288,7 @@ void RicExportFishbonesWellSegmentsFeature::generateWelsegsTable(RifEclipseDataT
 
             for (const WellSegmentLateral& lateral : location.laterals)
             {
-                formatter.comment(QString("%1 : Sub index %2 - Lateral %3").arg(location.fishbonesSubs->name()).arg(location.subIndex).arg(lateral.lateralIndex));
+                formatter.comment(QString("%1 : Sub index %2 - Lateral %3").arg(location.fishbonesSubs->generatedName()).arg(location.subIndex).arg(lateral.lateralIndex));
 
                 double depth = 0;
                 double length = 0;
@@ -294,13 +297,13 @@ void RicExportFishbonesWellSegmentsFeature::generateWelsegsTable(RifEclipseDataT
                 {
                     if (wellPath->fishbonesCollection()->lengthAndDepth() == RimFishbonesCollection::INC)
                     {
-                        depth = intersection.depth;
-                        length = intersection.length;
+                        depth = intersection.tvdChangeFromPreviousIntersection;
+                        length = intersection.mdFromPreviousIntersection;
                     }
                     else
                     {
-                        depth += intersection.depth;
-                        length += intersection.length;
+                        depth += intersection.tvdChangeFromPreviousIntersection;
+                        length += intersection.mdFromPreviousIntersection;
                     }
                     double diameter = computeEffectiveDiameter(location.fishbonesSubs->tubingDiameter(unitSystem), location.fishbonesSubs->holeDiameter(unitSystem));
                     formatter.add(intersection.segmentNumber);
@@ -367,10 +370,10 @@ void RicExportFishbonesWellSegmentsFeature::generateCompsegsTable(RifEclipseData
                 formatter.addZeroBasedCellIndex(i).addZeroBasedCellIndex(j).addZeroBasedCellIndex(k);
                 formatter.add(lateral.branchNumber);
                 formatter.add(aggregatedLength);
-                formatter.add(aggregatedLength + intersection.length);
+                formatter.add(aggregatedLength + intersection.mdFromPreviousIntersection);
                 formatter.rowCompleted();
 
-                aggregatedLength += intersection.length;
+                aggregatedLength += intersection.mdFromPreviousIntersection;
             }
         }
     }

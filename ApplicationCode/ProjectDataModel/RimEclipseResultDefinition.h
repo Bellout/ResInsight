@@ -88,13 +88,16 @@ public:
     bool                            isTernarySaturationSelected() const;
     bool                            isCompletionTypeSelected() const;
     bool                            hasCategoryResult() const;
+    bool                            isFlowDiagOrInjectionFlooding() const;
 
-    RimReservoirCellResultsStorage* currentGridCellResults() const;
+    RigCaseCellResultsData*         currentGridCellResults() const;
 
     void                            loadDataAndUpdate();
     void                            updateAnyFieldHasChanged();
 
     void                            setTofAndSelectTracer(const QString& tracerName);
+    void                            setSelectedTracers(const std::vector<QString>& selectedTracers);
+    void                            setSelectedSouringTracers(const std::vector<QString>& selectedTracers);
 
 
 protected:
@@ -114,6 +117,8 @@ protected:
     caf::PdmPtrField<RimFlowDiagSolution*>                          m_flowSolution;
     caf::PdmField<std::vector<QString> >                            m_selectedTracers;
 
+    caf::PdmField<std::vector<QString> >                            m_selectedSouringTracers;
+
     friend class RimEclipsePropertyFilter;
     friend class RimEclipseFaultColors;
     friend class RimWellLogExtractionCurve;
@@ -131,11 +136,12 @@ protected:
     caf::PdmField<QString>                                          m_selectedTracersUiFieldFilter;
     caf::PdmField<std::vector<QString> >                            m_selectedTracersUiField;
 
+    caf::PdmField<std::vector<QString> >                            m_selectedSouringTracersUiField;
+
 
     caf::PdmPointer<RimEclipseCase>                                 m_eclipseCase;
 
 private:
-    void                            setSelectedTracers(const std::vector<QString>& selectedTracers);
     void                            assignFlowSolutionFromCase();
 
     bool                            hasDualPorFractureResult();

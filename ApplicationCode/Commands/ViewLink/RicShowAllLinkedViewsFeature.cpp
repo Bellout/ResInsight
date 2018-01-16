@@ -20,7 +20,7 @@
 #include "RicShowAllLinkedViewsFeature.h"
 
 #include "RimViewController.h"
-#include "RimView.h"
+#include "RimGridView.h"
 #include "RimViewLinker.h"
 
 #include "cafSelectionManager.h"
@@ -58,7 +58,7 @@ void RicShowAllLinkedViewsFeature::onActionTriggered(bool isChecked)
 
     for (size_t i = 0; i < linkedViews.size(); i++)
     {
-        std::vector<RimView*> views;
+        std::vector<RimGridView*> views;
         linkedViews[i]->allViews(views);
 
         for (size_t j = 0; j < views.size(); j++)

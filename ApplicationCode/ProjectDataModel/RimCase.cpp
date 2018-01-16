@@ -69,6 +69,29 @@ cvf::Vec3d RimCase::displayModelOffset() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void RimCase::setFormationNames(RimFormationNames* formationNames)
+{
+    activeFormationNames = formationNames;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+size_t RimCase::uiToNativeTimeStepIndex(size_t uiTimeStepIndex)
+{
+    std::vector<size_t> nativeTimeIndices = m_timeStepFilter->filteredNativeTimeStepIndices();
+
+    if (nativeTimeIndices.size() > 0)
+    {
+        return nativeTimeIndices.at(uiTimeStepIndex);
+    }
+
+    return uiTimeStepIndex;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 QList<caf::PdmOptionItemInfo> RimCase::calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool * useOptionsOnly)
 {
     QList<caf::PdmOptionItemInfo> options;

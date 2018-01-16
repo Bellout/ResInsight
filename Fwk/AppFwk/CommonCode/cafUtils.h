@@ -66,6 +66,9 @@ public:
 
     static bool         fileExists(const QString& fileName);
     static QString      fileExtension(const QString& fileName);
+    static bool         isFolderWritable(const QString& folderName);
+
+    static bool         isStringMatch(const QString& filterString, const QString& value);
 };
 
 }

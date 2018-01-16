@@ -28,6 +28,7 @@
 #include "RimWellAllocationPlot.h"
 #include "RimWellLogPlot.h"
 #include "RimWellLogTrack.h"
+#include "RimWellRftPlot.h"
 
 #include "cafPdmObject.h"
 #include "cafPdmUiItem.h"
@@ -119,7 +120,9 @@ bool RicCopyReferencesToClipboardFeature::isAnyCopyableObjectSelected()
 bool RicCopyReferencesToClipboardFeature::isCopyOfObjectSupported(caf::PdmObject* pdmObject)
 {
     RimWellAllocationPlot* wellAllocPlot = nullptr;
+    RimWellRftPlot* rftPlot = nullptr;
     pdmObject->firstAncestorOrThisOfType(wellAllocPlot);
+    pdmObject->firstAncestorOrThisOfType(rftPlot);
 
     if (dynamic_cast<RimGeoMechView*>(pdmObject))
     {
@@ -139,19 +142,15 @@ bool RicCopyReferencesToClipboardFeature::isCopyOfObjectSupported(caf::PdmObject
     }
     else if (dynamic_cast<RimPlotCurve*>(pdmObject))
     {
-        return true;
-    }
-    else if (dynamic_cast<RimSummaryCurveFilter*>(pdmObject))
-    {
-        return true;
+        if(!rftPlot) return true;
     }
     else if (dynamic_cast<RimWellLogTrack*>(pdmObject))
     {
-        if (!wellAllocPlot) return true;
+        if (!wellAllocPlot && !rftPlot) return true;
     }
     else if (dynamic_cast<RimWellLogPlot*>(pdmObject))
     {
-        if (!wellAllocPlot) return true;
+        if (!wellAllocPlot && !rftPlot) return true;
     }
 
     return false;

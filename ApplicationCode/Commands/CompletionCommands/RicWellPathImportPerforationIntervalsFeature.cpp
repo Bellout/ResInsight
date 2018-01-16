@@ -43,7 +43,7 @@ CAF_CMD_SOURCE_INIT(RicWellPathImportPerforationIntervalsFeature, "RicWellPathIm
 //--------------------------------------------------------------------------------------------------
 bool RicWellPathImportPerforationIntervalsFeature::isCommandEnabled()
 {
-    if (RicWellPathImportPerforationIntervalsFeature::selectedWellPath() != nullptr)
+    if (RicWellPathImportPerforationIntervalsFeature::selectedWellPathCollection() != nullptr)
     {
         return true;
     }
@@ -56,7 +56,7 @@ bool RicWellPathImportPerforationIntervalsFeature::isCommandEnabled()
 //--------------------------------------------------------------------------------------------------
 void RicWellPathImportPerforationIntervalsFeature::onActionTriggered(bool isChecked)
 {
-    RimWellPathCollection* wellPathCollection = RicWellPathImportPerforationIntervalsFeature::selectedWellPath();
+    RimWellPathCollection* wellPathCollection = RicWellPathImportPerforationIntervalsFeature::selectedWellPathCollection();
     CVF_ASSERT(wellPathCollection);
 
     // Open dialog box to select well path files
@@ -73,7 +73,7 @@ void RicWellPathImportPerforationIntervalsFeature::onActionTriggered(bool isChec
 
     for (auto& entry : perforationIntervals)
     {
-        RimWellPath* wellPath = wellPathCollection->wellPathByName(entry.first);
+        RimWellPath* wellPath = wellPathCollection->tryFindMatchingWellPath(entry.first);
         if (wellPath == nullptr)
         {
             RiaLogging::warning(QString("Import Well Path Perforation Intervals : Imported file contains unknown well path '%1'.").arg(entry.first));
@@ -116,7 +116,7 @@ void RicWellPathImportPerforationIntervalsFeature::setupActionLook(QAction* acti
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimWellPathCollection* RicWellPathImportPerforationIntervalsFeature::selectedWellPath()
+RimWellPathCollection* RicWellPathImportPerforationIntervalsFeature::selectedWellPathCollection()
 {
     std::vector<RimWellPathCollection*> objects;
     caf::SelectionManager::instance()->objectsByType(&objects);

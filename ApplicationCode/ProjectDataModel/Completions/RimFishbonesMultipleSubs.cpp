@@ -24,12 +24,14 @@
 #include "RimWellPath.h"
 #include "RimFishbonesCollection.h"
 
+#include "cafPdmUiDoubleValueEditor.h"
 #include "cafPdmUiListEditor.h"
 
 #include "cvfAssert.h"
 #include "cvfBoundingBox.h"
 
 #include <cstdlib>
+#include <cmath>
 
 
 CAF_PDM_SOURCE_INIT(RimFishbonesMultipleSubs, "FishbonesMultipleSubs");
@@ -60,9 +62,17 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
 {
     CAF_PDM_InitObject("FishbonesMultipleSubs", ":/FishBoneGroup16x16.png", "", "");
 
-    CAF_PDM_InitField(&fishbonesColor,                  "FishbonesColor", cvf::Color3f(0.999f, 0.333f, 0.999f), "Fishbones Color", "", "", "");
+    CAF_PDM_InitField(&m_isActive,                      "Active", true, "Active", "", "", "");
+    m_isActive.uiCapability()->setUiHidden(true);
 
-    CAF_PDM_InitField(&m_lateralCountPerSub,            "LateralCountPerSub", size_t(3),    "Laterals Per Sub", "", "", "");
+    CAF_PDM_InitFieldNoDefault(&m_name,                 "Name", "Name", "", "", "");
+    m_name.registerGetMethod(this, &RimFishbonesMultipleSubs::generatedName);
+    m_name.uiCapability()->setUiReadOnly(true);
+    m_name.xmlCapability()->setIOWritable(false);
+
+    CAF_PDM_InitField(&fishbonesColor,                  "Color", cvf::Color3f(0.999f, 0.333f, 0.999f), "Fishbones Color", "", "", "");
+
+    CAF_PDM_InitField(&m_lateralCountPerSub,            "LateralCountPerSub", 3,            "Laterals Per Sub", "", "", "");
     CAF_PDM_InitField(&m_lateralLength,                 "LateralLength",  QString("11.0"),  "Length(s) [m]", "", "Specify multiple length values if the sub lengths differ", "");
 
     CAF_PDM_InitField(&m_lateralExitAngle,              "LateralExitAngle", 35.0,           "Exit Angle [deg]", "", "", "");
@@ -75,7 +85,7 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
 
     CAF_PDM_InitField(&m_lateralInstallSuccessFraction, "LateralInstallSuccessFraction", 1.0,     "Install Success Rate [0..1]", "", "", "");
 
-    CAF_PDM_InitField(&m_icdCount,                      "IcdCount", size_t(2),              "ICDs per Sub", "", "", "");
+    CAF_PDM_InitField(&m_icdCount,                      "IcdCount", 2,                      "ICDs per Sub", "", "", "");
     CAF_PDM_InitField(&m_icdOrificeDiameter,            "IcdOrificeDiameter", 7.0,          "ICD Orifice Diameter [mm]", "", "", "");
     CAF_PDM_InitField(&m_icdFlowCoefficient,            "IcdFlowCoefficient", 1.5,          "ICD Flow Coefficient", "", "", "");
 
@@ -84,9 +94,15 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
 
     CAF_PDM_InitField(&m_subsLocationMode,              "SubsLocationMode", caf::AppEnum<LocationType>(FB_SUB_COUNT_END), "Location Defined By", "", "", "");
     CAF_PDM_InitField(&m_rangeStart,                    "RangeStart",       100.0,          "Start MD [m]", "", "", "");
+    m_rangeStart.uiCapability()->setUiEditorTypeName(caf::PdmUiDoubleValueEditor::uiEditorTypeName());
+
     CAF_PDM_InitField(&m_rangeEnd,                      "RangeEnd",         250.0,          "End MD [m]", "", "", "");
-    CAF_PDM_InitField(&m_rangeSubSpacing,               "RangeSubSpacing",  13.0,           "Spacing [m]", "", "", "");
-    CAF_PDM_InitField(&m_rangeSubCount,                 "RangeSubCount",    size_t(25),     "Number of Subs", "", "", "");
+    m_rangeEnd.uiCapability()->setUiEditorTypeName(caf::PdmUiDoubleValueEditor::uiEditorTypeName());
+
+    CAF_PDM_InitFieldNoDefault(&m_rangeSubSpacing,      "RangeSubSpacing",                  "Spacing [m]", "", "", "");
+    m_rangeSubSpacing.uiCapability()->setUiEditorTypeName(caf::PdmUiDoubleValueEditor::uiEditorTypeName());
+
+    CAF_PDM_InitField(&m_rangeSubCount,                 "RangeSubCount",    13,             "Number of Subs", "", "", "");
 
     CAF_PDM_InitField(&m_subsOrientationMode,           "SubsOrientationMode", caf::AppEnum<LateralsOrientationType>(FB_LATERAL_ORIENTATION_RANDOM), "Orientation", "", "", "");
     
@@ -100,8 +116,6 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
 
     m_pipeProperties = new RimFishbonesPipeProperties;
 
-    nameField()->uiCapability()->setUiReadOnly(true);
-
     m_rigFishbonesGeometry = std::unique_ptr<RigFisbonesGeometry>(new RigFisbonesGeometry(this));
 }
 
@@ -110,6 +124,27 @@ RimFishbonesMultipleSubs::RimFishbonesMultipleSubs()
 //--------------------------------------------------------------------------------------------------
 RimFishbonesMultipleSubs::~RimFishbonesMultipleSubs()
 {
+
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RimFishbonesMultipleSubs::isActive() const
+{
+    return m_isActive;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+QString RimFishbonesMultipleSubs::generatedName() const
+{
+    caf::PdmChildArrayField<RimFishbonesMultipleSubs*>* container = dynamic_cast<caf::PdmChildArrayField<RimFishbonesMultipleSubs*>*>(this->parentField());
+    CVF_ASSERT(container);
+
+    size_t index = container->index(this);
+    return QString("Fishbone %1").arg(index);
 
 }
 
@@ -327,8 +362,8 @@ void RimFishbonesMultipleSubs::setUnitSystemSpecificDefaults()
     {
         if (wellPath->unitSystem() == RiaEclipseUnitTools::UNITS_METRIC)
         {
-            m_rangeSubSpacing = 13;
             m_lateralLength = "11";
+            m_lateralBuildAngle = 6.0;
             m_lateralTubingDiameter = 8;
             m_lateralOpenHoleRoghnessFactor = 0.001;
             m_lateralTubingRoghnessFactor = 1e-05;
@@ -336,8 +371,8 @@ void RimFishbonesMultipleSubs::setUnitSystemSpecificDefaults()
         }
         else if (wellPath->unitSystem() == RiaEclipseUnitTools::UNITS_FIELD)
         {
-            m_rangeSubSpacing = 42;
             m_lateralLength = "36";
+            m_lateralBuildAngle = 1.83;
             m_lateralTubingDiameter = 0.31;
             m_lateralOpenHoleRoghnessFactor = 0.0032;
             m_lateralTubingRoghnessFactor = 3.28e-05;
@@ -368,6 +403,16 @@ void RimFishbonesMultipleSubs::fieldChangedByUi(const caf::PdmFieldHandle* chang
         changedField == &m_rangeSubSpacing)
     {
         recomputeLocations = true;
+    }
+
+    if (changedField == &m_rangeStart && m_rangeStart > m_rangeEnd)
+    {
+        m_rangeEnd = m_rangeStart;
+    }
+
+    if (changedField == &m_rangeEnd && m_rangeEnd < m_rangeStart)
+    {
+        m_rangeStart = m_rangeEnd;
     }
 
     if (changedField == &m_rangeSubSpacing &&
@@ -404,11 +449,45 @@ void RimFishbonesMultipleSubs::fieldChangedByUi(const caf::PdmFieldHandle* chang
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+caf::PdmFieldHandle* RimFishbonesMultipleSubs::userDescriptionField()
+{
+    return &m_name;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+caf::PdmFieldHandle* RimFishbonesMultipleSubs::objectToggleField()
+{
+    return &m_isActive;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimFishbonesMultipleSubs::defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute)
+{
+    if (field == &m_rangeStart ||
+        field == &m_rangeEnd ||
+        field == &m_rangeSubSpacing)
+    {
+        caf::PdmUiDoubleValueEditorAttribute* attr = dynamic_cast<caf::PdmUiDoubleValueEditorAttribute*>(attribute);
+
+        if (attr)
+        {
+            attr->m_decimals = 2;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimFishbonesMultipleSubs::computeRangesAndLocations()
 {
     if (m_subsLocationMode == FB_SUB_COUNT_END)
     {
-        size_t divisor = 1;
+        int divisor = 1;
         if (m_rangeSubCount > 2) divisor = m_rangeSubCount - 1;
 
         m_rangeSubSpacing = fabs(m_rangeStart - m_rangeEnd) / divisor;
@@ -614,18 +693,6 @@ void RimFishbonesMultipleSubs::initAfterRead()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimFishbonesMultipleSubs::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName /*= ""*/)
-{
-    caf::PdmChildArrayField<RimFishbonesMultipleSubs*>* container = dynamic_cast<caf::PdmChildArrayField<RimFishbonesMultipleSubs*>*>(this->parentField());
-    CVF_ASSERT(container);
-
-    size_t index = container->index(this);
-    this->setName(QString("Fishbone %1").arg(index));
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
 cvf::BoundingBox RimFishbonesMultipleSubs::boundingBoxInDomainCoords()
 {
     cvf::BoundingBox bb;
@@ -672,7 +739,7 @@ void RimFishbonesMultipleSubs::computeSubLateralIndices()
         SubLateralIndex subLateralIndex;
         subLateralIndex.subIndex = subIndex;
 
-        for (size_t lateralIndex = 0; lateralIndex < m_lateralCountPerSub(); ++lateralIndex)
+        for (int lateralIndex = 0; lateralIndex < m_lateralCountPerSub(); ++lateralIndex)
         {
             subLateralIndex.lateralIndices.push_back(lateralIndex);
         }
@@ -716,13 +783,9 @@ int RimFishbonesMultipleSubs::randomValueFromRange(int min, int max)
     // See http://www.cplusplus.com/reference/cstdlib/rand/ 
 
     int range = abs(max - min);
-    int random_integer = min + int(range*rand() / (RAND_MAX + 1.0));
-
-    return random_integer;
     int randomNumberInRange = rand() % range;
 
     int randomValue = min + randomNumberInRange;
 
     return randomValue;
 }
-

@@ -20,7 +20,7 @@
 
 #include "RimCase.h"
 #include "RimEclipseView.h"
-#include "RimView.h"
+#include "Rim3dView.h"
 
 #include "IntersectionBoxCommands/RicBoxManipulatorEventHandler.h"
 
@@ -86,11 +86,7 @@ RimIntersectionBox::RimIntersectionBox()
     CAF_PDM_InitField         (&m_depthSliderStepSize, "DepthSliderStepSize", 0.5, "Depth Slider Step Size", "", "", "");
 
     CAF_PDM_InitFieldNoDefault(&m_show3DManipulator, "show3DManipulator", "", "", "", "");
-    m_show3DManipulator.xmlCapability()->setIOWritable(false);
-    m_show3DManipulator.xmlCapability()->setIOReadable(false);
-    m_show3DManipulator.uiCapability()->setUiEditorTypeName(caf::PdmUiPushButtonEditor::uiEditorTypeName());
-    m_show3DManipulator.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
-
+    caf::PdmUiPushButtonEditor::configureEditorForField(&m_show3DManipulator);
     m_show3DManipulator = false;
 }
 
@@ -322,7 +318,7 @@ void RimIntersectionBox::fieldChangedByUi(const caf::PdmFieldHandle* changedFiel
     {
         if (m_boxManipulator)
         {
-            RimView* rimView = nullptr;
+            Rim3dView* rimView = nullptr;
             this->firstAncestorOrThisOfType(rimView);
 
             if (rimView)
@@ -349,7 +345,7 @@ void RimIntersectionBox::updateBoxManipulatorGeometry()
 {
     if (m_boxManipulator.isNull()) return;
 
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     this->firstAncestorOrThisOfType(rimView);
     if (!rimView) return;
 
@@ -474,7 +470,7 @@ void RimIntersectionBox::initAfterRead()
 //--------------------------------------------------------------------------------------------------
 void RimIntersectionBox::slotScheduleRedraw()
 {
-    RimView* rimView = NULL;
+    Rim3dView* rimView = NULL;
     this->firstAncestorOrThisOfType(rimView);
     if (rimView)
     {
@@ -487,7 +483,7 @@ void RimIntersectionBox::slotScheduleRedraw()
 //--------------------------------------------------------------------------------------------------
 void RimIntersectionBox::slotUpdateGeometry(const cvf::Vec3d& origin, const cvf::Vec3d& size)
 {
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     this->firstAncestorOrThisOfType(rimView);
 
     if (rimView)
@@ -658,7 +654,7 @@ cvf::BoundingBox RimIntersectionBox::currentCellBoundingBox()
 //--------------------------------------------------------------------------------------------------
 RiuViewer* RimIntersectionBox::viewer()
 {
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     this->firstAncestorOrThisOfType(rimView);
 
     RiuViewer* riuViewer = nullptr;

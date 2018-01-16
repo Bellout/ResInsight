@@ -48,9 +48,9 @@ RicCellRangeUi::RicCellRangeUi()
 
     CAF_PDM_InitField(&m_gridIndex, "GridIndex", 0, "Grid", "", "", "");
 
-    CAF_PDM_InitField(&m_startIndexI, "StartIndexI", 1, "Start index I", "", "", "");
-    CAF_PDM_InitField(&m_startIndexJ, "StartIndexJ", 1, "Start index J", "", "", "");
-    CAF_PDM_InitField(&m_startIndexK, "StartIndexK", 1, "Start index K", "", "", "");
+    CAF_PDM_InitField(&m_startIndexI, "StartIndexI", 1, "Start Index I", "", "", "");
+    CAF_PDM_InitField(&m_startIndexJ, "StartIndexJ", 1, "Start Index J", "", "", "");
+    CAF_PDM_InitField(&m_startIndexK, "StartIndexK", 1, "Start Index K", "", "", "");
     
     CAF_PDM_InitField(&m_cellCountI, "CellCountI", 1, "Cell Count I", "", "", "");
     CAF_PDM_InitField(&m_cellCountJ, "CellCountJ", 1, "Cell Count J", "", "", "");
@@ -82,7 +82,7 @@ void RicCellRangeUi::setCase(RimCase* rimCase)
 //--------------------------------------------------------------------------------------------------
 caf::VecIjk RicCellRangeUi::start() const
 {
-    return caf::VecIjk{m_startIndexI, m_startIndexJ, m_startIndexK};
+    return caf::VecIjk(m_startIndexI, m_startIndexJ, m_startIndexK);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ caf::VecIjk RicCellRangeUi::start() const
 //--------------------------------------------------------------------------------------------------
 caf::VecIjk RicCellRangeUi::count() const
 {
-    return caf::VecIjk{ m_cellCountI, m_cellCountJ, m_cellCountK };
+    return caf::VecIjk(m_cellCountI, m_cellCountJ, m_cellCountK);
 }
 
 //--------------------------------------------------------------------------------------------------

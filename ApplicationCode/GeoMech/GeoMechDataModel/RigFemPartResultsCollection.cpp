@@ -19,38 +19,51 @@
 
 #include "RigFemPartResultsCollection.h"
 
+#include "RifElementPropertyReader.h"
 #include "RifGeoMechReaderInterface.h"
 
 #ifdef USE_ODB_API 
 #include "RifOdbReader.h"
 #endif
-#include "RigFemScalarResultFrames.h"
-#include "RigStatisticsDataCache.h"
-#include "RigFemPartResults.h"
+
+#include "RiaApplication.h"
+
+#include "RigFemNativeStatCalc.h"
 #include "RigFemPartCollection.h"
+#include "RigFemPartGrid.h"
+#include "RigFemPartResults.h"
+#include "RigFemScalarResultFrames.h"
 #include "RigFormationNames.h"
+#include "RigStatisticsDataCache.h"
+
+#include "RimMainPlotCollection.h"
+#include "RimProject.h"
+#include "RimWellLogPlot.h"
+#include "RimWellLogPlotCollection.h"
 
 #include "cafProgressInfo.h"
 #include "cvfBoundingBox.h"
-#include <QString>
 
-#include <cmath>
-#include <stdlib.h>
-#include "RigFemNativeStatCalc.h"
-#include "cafTensor3.h"
 #include "cafProgressInfo.h"
-#include "RigFemPartGrid.h"
+#include "cafTensor3.h"
 #include "cvfGeometryTools.h"
 #include "cvfMath.h"
+
+#include <QString>
+
+#include <stdlib.h>
+#include <cmath>
 
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RigFemPartResultsCollection::RigFemPartResultsCollection(RifGeoMechReaderInterface* readerInterface, const RigFemPartCollection * femPartCollection)
+RigFemPartResultsCollection::RigFemPartResultsCollection(RifGeoMechReaderInterface* readerInterface, RifElementPropertyReader* elementPropertyReader, const RigFemPartCollection* femPartCollection)
 {
     CVF_ASSERT(readerInterface);
+    CVF_ASSERT(elementPropertyReader);
     m_readerInterface = readerInterface;
+    m_elementPropertyReader = elementPropertyReader;
     m_femParts = femPartCollection;
 
     m_femPartResults.resize(m_femParts->partCount());
@@ -80,6 +93,23 @@ RigFemPartResultsCollection::~RigFemPartResultsCollection()
 void RigFemPartResultsCollection::setActiveFormationNames(RigFormationNames* activeFormationNames)
 {
     m_activeFormationNamesData  = activeFormationNames;
+
+    RimProject* project = RiaApplication::instance()->project();
+    if (project)
+    {
+        if (project->mainPlotCollection())
+        {
+            RimWellLogPlotCollection* plotCollection = project->mainPlotCollection()->wellLogPlotCollection();
+            if (plotCollection)
+            {
+                for (RimWellLogPlot* wellLogPlot : plotCollection->wellLogPlots)
+                {
+                    wellLogPlot->loadDataAndUpdate();
+                }
+            }
+        }
+    }
+
     this->deleteResult(RigFemResultAddress(RIG_FORMATION_NAMES, "Active Formation Names", ""));
 }
 
@@ -89,6 +119,44 @@ void RigFemPartResultsCollection::setActiveFormationNames(RigFormationNames* act
 RigFormationNames* RigFemPartResultsCollection::activeFormationNames()
 {
     return m_activeFormationNamesData.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigFemPartResultsCollection::addElementPropertyFiles(const std::vector<QString>& filenames)
+{
+    for (const QString filename : filenames)
+    {
+        m_elementPropertyReader->addFile(filename.toStdString());
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<RigFemResultAddress> RigFemPartResultsCollection::removeElementPropertyFiles(const std::vector<QString>& filenames)
+{
+    std::vector<RigFemResultAddress> addressesToRemove;
+
+    for (const QString filename : filenames)
+    {
+        std::vector<std::string> fields = m_elementPropertyReader->fieldsInFile(filename.toStdString());
+        
+        for (std::string field : fields)
+        {
+            addressesToRemove.push_back(RigFemResultAddress(RIG_ELEMENT, field, ""));
+        }
+
+        m_elementPropertyReader->removeFile(filename.toStdString());
+    }
+
+    for (const RigFemResultAddress& address : addressesToRemove)
+    {
+        this->deleteResult(address);
+    }
+
+    return addressesToRemove;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -106,7 +174,6 @@ void RigFemPartResultsCollection::setCalculationParameters(double cohesion, doub
     this->deleteResult(RigFemResultAddress(RIG_INTEGRATION_POINT, "SE", "DSM", RigFemResultAddress::ALL_TIME_LAPSES));
     this->deleteResult(RigFemResultAddress(RIG_ELEMENT_NODAL,     "SE", "FOS", RigFemResultAddress::ALL_TIME_LAPSES));
     this->deleteResult(RigFemResultAddress(RIG_INTEGRATION_POINT, "SE", "FOS", RigFemResultAddress::ALL_TIME_LAPSES));
-
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -127,6 +194,30 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::findOrLoadScalarResult(in
 
     frames = calculateDerivedResult(partIndex, resVarAddr);
     if (frames) return frames;
+
+    if (resVarAddr.resultPosType == RIG_ELEMENT)
+    {
+        std::map<std::string, std::vector<float>> elementProperties = m_elementPropertyReader->readAllElementPropertiesInFileContainingField(resVarAddr.fieldName);
+        
+        std::vector<RigFemScalarResultFrames*> resultsForEachComponent;
+        for (std::pair< std::string, std::vector<float>> elem : elementProperties)
+        {
+            RigFemResultAddress addressForElement(RIG_ELEMENT, elem.first, "");
+            RigFemScalarResultFrames* currentFrames = m_femPartResults[partIndex]->createScalarResult(addressForElement);
+            currentFrames->enableAsSingleFrameResult();
+            currentFrames->frameData(0).swap(elem.second);
+        }
+
+        frames = m_femPartResults[partIndex]->findScalarResult(resVarAddr);
+        if (frames)
+        {
+            return frames;
+        }
+        else
+        {
+            return m_femPartResults[partIndex]->createScalarResult(resVarAddr);
+        }
+    }
 
     // We need to read the data as bulk fields, and populate the correct scalar caches 
 
@@ -357,7 +448,13 @@ std::map<std::string, std::vector<std::string> > RigFemPartResultsCollection::sc
             fieldCompNames["ST"].push_back("TPQV");
             fieldCompNames["ST"].push_back("FAULTMOB");
             fieldCompNames["ST"].push_back("PCRIT");
-
+        }
+        else if (resPos == RIG_ELEMENT)
+        {
+            for (const std::string& field : m_elementPropertyReader->scalarElementFields())
+            {
+                fieldCompNames[field];
+            }
         }
     }
 
@@ -1342,10 +1439,18 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculateDerivedResult(in
 
     if(resVarAddr.resultPosType == RIG_ELEMENT_NODAL_FACE )
     {
-        if (resVarAddr.componentName == "Pazi" || resVarAddr.componentName == "Pinc" )
+        if (resVarAddr.componentName == "Pazi" || resVarAddr.componentName == "Pinc")
+        {
             return calculateSurfaceAngles(partIndex, resVarAddr);
-        else
+        }
+        else if (resVarAddr.componentName.empty())
+        {
+            return nullptr;
+        }
+        else 
+        {
             return calculateSurfaceAlignedStress(partIndex, resVarAddr);
+        }
     }
 
     if (resVarAddr.fieldName == "SE" && resVarAddr.componentName == "SFI")
@@ -1770,7 +1875,7 @@ void RigFemPartResultsCollection::calculateGammaFromFrames(int partIndex,
 
                     float por = srcPORFrameData[nodeIdx];
 
-                    if ( por == inf || abs(por) < 0.01e6*1.0e-5 )
+                    if ( por == inf || fabs(por) < 0.01e6*1.0e-5 )
                         dstFrameData[elmNodResIdx] = inf;
                     else
                         dstFrameData[elmNodResIdx] = srcSTFrameData[elmNodResIdx]/por;
@@ -2101,6 +2206,10 @@ RigFemClosestResultIndexCalculator::RigFemClosestResultIndexCalculator(RigFemPar
             else if (resultPosition == RIG_ELEMENT_NODAL_FACE)
             {
                 m_resultIndexToClosestResult = -1;   
+            }
+            else if (resultPosition == RIG_ELEMENT)
+            {
+                m_resultIndexToClosestResult = elementIndex;
             }
             else
             {

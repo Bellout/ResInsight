@@ -42,10 +42,22 @@
 #include "RiuResultQwtPlot.h"
 #include "RiuResultTextBuilder.h"
 #include "RiuSelectionManager.h"
+#include "RiuRelativePermeabilityPlotPanel.h"
+#include "RiuPvtPlotPanel.h"
+#include "RiuRelativePermeabilityPlotUpdater.h"
+#include "RiuPvtPlotUpdater.h"
 
 #include <QStatusBar>
 
 #include <assert.h>
+
+
+
+//==================================================================================================
+//
+//
+//
+//==================================================================================================
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -69,6 +81,12 @@ void RiuSelectionChangedHandler::handleSelectionDeleted() const
 {
     RiuMainWindow::instance()->resultPlot()->deleteAllCurves();
 
+    RiuRelativePermeabilityPlotUpdater* relPermPlotUpdater = RiuMainWindow::instance()->relativePermeabilityPlotPanel()->plotUpdater();
+    relPermPlotUpdater->updateOnSelectionChanged(NULL);
+
+    RiuPvtPlotUpdater* pvtPlotUpdater = RiuMainWindow::instance()->pvtPlotPanel()->plotUpdater();
+    pvtPlotUpdater->updateOnSelectionChanged(NULL);
+
     updateResultInfo(NULL);
 
     scheduleUpdateForAllVisibleViews();
@@ -80,6 +98,12 @@ void RiuSelectionChangedHandler::handleSelectionDeleted() const
 void RiuSelectionChangedHandler::handleItemAppended(const RiuSelectionItem* item) const
 {
     addCurveFromSelectionItem(item);
+
+    RiuRelativePermeabilityPlotUpdater* relPermUpdater = RiuMainWindow::instance()->relativePermeabilityPlotPanel()->plotUpdater();
+    relPermUpdater->updateOnSelectionChanged(item);
+
+    RiuPvtPlotUpdater* pvtPlotUpdater = RiuMainWindow::instance()->pvtPlotPanel()->plotUpdater();
+    pvtPlotUpdater->updateOnSelectionChanged(item);
 
     updateResultInfo(item);
 
@@ -103,15 +127,16 @@ void RiuSelectionChangedHandler::addCurveFromSelectionItem(const RiuEclipseSelec
 {
     RimEclipseView* eclipseView = eclipseSelectionItem->m_view.p();
 
-    if (eclipseView->cellResult()->resultType() == RiaDefines::FLOW_DIAGNOSTICS)
+    if (eclipseView->cellResult()->isFlowDiagOrInjectionFlooding() && eclipseView->cellResult()->resultVariable() != RIG_NUM_FLOODED_PV)
     { 
         // NB! Do not read out data for flow results, as this can be a time consuming operation
 
         return;
     }
-    else if (eclipseView->cellResult()->hasDynamicResult() &&
-        eclipseView->eclipseCase() &&
-        eclipseView->eclipseCase()->eclipseCaseData())
+    else if (eclipseView->cellResult()->hasDynamicResult() 
+             && !RiaDefines::isPerCellFaceResult(eclipseView->cellResult()->resultVariable())
+             && eclipseView->eclipseCase() 
+             && eclipseView->eclipseCase()->eclipseCaseData())
     {
         RiaDefines::PorosityModelType porosityModel = eclipseView->cellResult()->porosityModel();
 
@@ -123,10 +148,10 @@ void RiuSelectionChangedHandler::addCurveFromSelectionItem(const RiuEclipseSelec
         curveName += ", ";
         curveName += QString("Grid index %1").arg(eclipseSelectionItem->m_gridIndex);
         curveName += ", ";
-        curveName += RigTimeHistoryResultAccessor::geometrySelectionText(eclipseView->eclipseCase()->eclipseCaseData(), eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_cellIndex);
+        curveName += RigTimeHistoryResultAccessor::geometrySelectionText(eclipseView->eclipseCase()->eclipseCaseData(), eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_gridLocalCellIndex);
 
 
-        std::vector<double> timeHistoryValues = RigTimeHistoryResultAccessor::timeHistoryValues(eclipseView->eclipseCase()->eclipseCaseData(), eclipseView->cellResult(), eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_cellIndex, timeStepDates.size());
+        std::vector<double> timeHistoryValues = RigTimeHistoryResultAccessor::timeHistoryValues(eclipseView->eclipseCase()->eclipseCaseData(), eclipseView->cellResult(), eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_gridLocalCellIndex, timeStepDates.size());
         CVF_ASSERT(timeStepDates.size() == timeHistoryValues.size());
 
         RiuMainWindow::instance()->resultPlot()->addCurve(curveName, eclipseSelectionItem->m_color, timeStepDates, timeHistoryValues);
@@ -240,7 +265,7 @@ void RiuSelectionChangedHandler::scheduleUpdateForAllVisibleViews() const
     RimProject* proj = RiaApplication::instance()->project();
     if (proj)
     {
-        std::vector<RimView*> visibleViews;
+        std::vector<Rim3dView*> visibleViews;
         proj->allVisibleViews(visibleViews);
 
         for (size_t i = 0; i < visibleViews.size(); i++)
@@ -266,7 +291,7 @@ void RiuSelectionChangedHandler::updateResultInfo(const RiuSelectionItem* itemAd
 
             RimEclipseView* eclipseView = eclipseSelectionItem->m_view.p();
 
-            RiuResultTextBuilder textBuilder(eclipseView, eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_cellIndex, eclipseView->currentTimeStep());
+            RiuResultTextBuilder textBuilder(eclipseView, eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_gridLocalCellIndex, eclipseView->currentTimeStep());
             textBuilder.setFace(eclipseSelectionItem->m_face);
             textBuilder.setNncIndex(eclipseSelectionItem->m_nncIndex);
             textBuilder.setIntersectionPoint(eclipseSelectionItem->m_localIntersectionPoint);

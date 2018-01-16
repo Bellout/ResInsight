@@ -46,43 +46,14 @@ public:
     virtual ~RimReservoirCellResultsStorage();
 
     void                            setCellResults(RigCaseCellResultsData* cellResults);
-    RigCaseCellResultsData*         cellResults()  { return m_cellResults; }
-    const RigCaseCellResultsData*   cellResults() const  { return m_cellResults; }
 
     size_t                          storedResultsCount();
-
-    void                            setMainGrid(RigMainGrid* mainGrid);
-
-    void                            setReaderInterface(RifReaderInterface* readerInterface);
-    RifReaderInterface*             readerInterface();
-
-    void                            computeDepthRelatedResults();
-    bool                            isDataPresent(size_t scalarResultIndex) const;
-
-    size_t                          findOrLoadScalarResultForTimeStep(RiaDefines::ResultCatType type, const QString& resultName, size_t timeStepIndex);
-    size_t                          findOrLoadScalarResult(RiaDefines::ResultCatType type, const QString& resultName);
-    size_t                          findOrLoadScalarResult(const QString& resultName); ///< Simplified search. Assumes unique names across types.
-
-    void                            clearScalarResult(RiaDefines::ResultCatType type, const QString& resultName);
 
 protected:
     // Overridden methods from PdmObject
     virtual void                    setupBeforeSave();
 
 private:
-    void                            computeSOILForTimeStep(size_t timeStepIndex);
-    void                            computeRiTransComponent(const QString& riTransComponentResultName);
-    void                            computeNncCombRiTrans();
-
-    void                            computeRiMULTComponent(const QString& riMultCompName);
-    void                            computeNncCombRiMULT();
-    void                            computeRiTRANSbyAreaComponent(const QString& riTransByAreaCompResultName);
-    void                            computeNncCombRiTRANSbyArea();
-
-    void                            computeCompletionTypeForTimeStep(size_t timeStep);
-
-    double                          darchysValue();
-
     QString                         getValidCacheFileName();
     QString                         getCacheDirectoryPath();
     // Fields
@@ -90,9 +61,7 @@ private:
     caf::PdmChildArrayField<RimReservoirCellResultsStorageEntryInfo*> 
                                     m_resultCacheMetaData;
 
-    cvf::ref<RifReaderInterface>    m_readerInterface;
     RigCaseCellResultsData*         m_cellResults;
-    RigMainGrid*                    m_ownerMainGrid;
 };
 
 class RimReservoirCellResultsStorageEntryInfo : public caf::PdmObject

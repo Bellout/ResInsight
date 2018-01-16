@@ -26,8 +26,8 @@ ${CEE_CURRENT_LIST_DIR}RimEclipseView.h
 ${CEE_CURRENT_LIST_DIR}RimEclipseResultDefinition.h
 ${CEE_CURRENT_LIST_DIR}RimEclipseCellColors.h
 ${CEE_CURRENT_LIST_DIR}RimCellEdgeColors.h
-${CEE_CURRENT_LIST_DIR}RimEclipseWell.h
-${CEE_CURRENT_LIST_DIR}RimEclipseWellCollection.h
+${CEE_CURRENT_LIST_DIR}RimSimWellInView.h
+${CEE_CURRENT_LIST_DIR}RimSimWellInViewCollection.h
 ${CEE_CURRENT_LIST_DIR}RimWellPath.h
 ${CEE_CURRENT_LIST_DIR}RimWellPathCollection.h
 ${CEE_CURRENT_LIST_DIR}RimScriptCollection.h
@@ -42,8 +42,8 @@ ${CEE_CURRENT_LIST_DIR}RimEclipseStatisticsCaseEvaluator.h
 ${CEE_CURRENT_LIST_DIR}RimMimeData.h
 ${CEE_CURRENT_LIST_DIR}RimCommandObject.h
 ${CEE_CURRENT_LIST_DIR}RimTools.h
-${CEE_CURRENT_LIST_DIR}RimFault.h
-${CEE_CURRENT_LIST_DIR}RimFaultCollection.h
+${CEE_CURRENT_LIST_DIR}RimFaultInView.h
+${CEE_CURRENT_LIST_DIR}RimFaultInViewCollection.h
 ${CEE_CURRENT_LIST_DIR}RimFormationNames.h
 ${CEE_CURRENT_LIST_DIR}RimFormationNamesCollection.h
 ${CEE_CURRENT_LIST_DIR}RimMockModelSettings.h
@@ -59,13 +59,15 @@ ${CEE_CURRENT_LIST_DIR}RimGeoMechPropertyFilterCollection.h
 ${CEE_CURRENT_LIST_DIR}RimGeoMechResultDefinition.h
 ${CEE_CURRENT_LIST_DIR}RimGeoMechCellColors.h
 ${CEE_CURRENT_LIST_DIR}RimViewWindow.h
-${CEE_CURRENT_LIST_DIR}RimView.h
+${CEE_CURRENT_LIST_DIR}Rim3dView.h
+${CEE_CURRENT_LIST_DIR}RimGridView.h
 ${CEE_CURRENT_LIST_DIR}RimViewManipulator.h
 ${CEE_CURRENT_LIST_DIR}RimCase.h
-${CEE_CURRENT_LIST_DIR}RimTreeViewStateSerializer.h
 ${CEE_CURRENT_LIST_DIR}RimViewController.h
 ${CEE_CURRENT_LIST_DIR}RimMainPlotCollection.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogPlotCollection.h
+${CEE_CURRENT_LIST_DIR}RimRftPlotCollection.h
+${CEE_CURRENT_LIST_DIR}RimPltPlotCollection.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogPlot.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogTrack.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogCurve.h
@@ -75,6 +77,7 @@ ${CEE_CURRENT_LIST_DIR}RimWellLogExtractionCurve.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogFile.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogFileChannel.h
 ${CEE_CURRENT_LIST_DIR}RimWellLogFileCurve.h
+${CEE_CURRENT_LIST_DIR}RimWellLogRftCurve.h
 ${CEE_CURRENT_LIST_DIR}RimIntersection.h
 ${CEE_CURRENT_LIST_DIR}RimIntersectionCollection.h
 ${CEE_CURRENT_LIST_DIR}RimContextCommandBuilder.h
@@ -91,7 +94,17 @@ ${CEE_CURRENT_LIST_DIR}RimGeometrySelectionItem.h
 ${CEE_CURRENT_LIST_DIR}RimEclipseGeometrySelectionItem.h
 ${CEE_CURRENT_LIST_DIR}RimDialogData.h
 ${CEE_CURRENT_LIST_DIR}RimTimeStepFilter.h
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculation.h
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculationCollection.h
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculationVariable.h
 )
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES) 
+    list (APPEND SOURCE_GROUP_HEADER_FILES 
+        ${CEE_CURRENT_LIST_DIR}RimStimPlanLegendConfig.h
+        ${CEE_CURRENT_LIST_DIR}RimStimPlanColors.h
+    ) 
+endif() 
 
 set (SOURCE_GROUP_SOURCE_FILES
 ${CEE_CURRENT_LIST_DIR}RimEclipseCaseCollection.cpp
@@ -115,8 +128,8 @@ ${CEE_CURRENT_LIST_DIR}RimEclipseView.cpp
 ${CEE_CURRENT_LIST_DIR}RimEclipseResultDefinition.cpp
 ${CEE_CURRENT_LIST_DIR}RimEclipseCellColors.cpp
 ${CEE_CURRENT_LIST_DIR}RimCellEdgeColors.cpp
-${CEE_CURRENT_LIST_DIR}RimEclipseWell.cpp
-${CEE_CURRENT_LIST_DIR}RimEclipseWellCollection.cpp
+${CEE_CURRENT_LIST_DIR}RimSimWellInView.cpp
+${CEE_CURRENT_LIST_DIR}RimSimWellInViewCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellPath.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellPathCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimScriptCollection.cpp
@@ -131,8 +144,8 @@ ${CEE_CURRENT_LIST_DIR}RimEclipseStatisticsCaseEvaluator.cpp
 ${CEE_CURRENT_LIST_DIR}RimMimeData.cpp
 ${CEE_CURRENT_LIST_DIR}RimCommandObject.cpp
 ${CEE_CURRENT_LIST_DIR}RimTools.cpp
-${CEE_CURRENT_LIST_DIR}RimFault.cpp
-${CEE_CURRENT_LIST_DIR}RimFaultCollection.cpp
+${CEE_CURRENT_LIST_DIR}RimFaultInView.cpp
+${CEE_CURRENT_LIST_DIR}RimFaultInViewCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimFormationNames.cpp
 ${CEE_CURRENT_LIST_DIR}RimFormationNamesCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimMockModelSettings.cpp
@@ -148,13 +161,15 @@ ${CEE_CURRENT_LIST_DIR}RimGeoMechPropertyFilterCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimGeoMechResultDefinition.cpp
 ${CEE_CURRENT_LIST_DIR}RimGeoMechCellColors.cpp
 ${CEE_CURRENT_LIST_DIR}RimViewWindow.cpp
-${CEE_CURRENT_LIST_DIR}RimView.cpp
+${CEE_CURRENT_LIST_DIR}Rim3dView.cpp
+${CEE_CURRENT_LIST_DIR}RimGridView.cpp
 ${CEE_CURRENT_LIST_DIR}RimViewManipulator.cpp
 ${CEE_CURRENT_LIST_DIR}RimCase.cpp
-${CEE_CURRENT_LIST_DIR}RimTreeViewStateSerializer.cpp
 ${CEE_CURRENT_LIST_DIR}RimViewController.cpp
 ${CEE_CURRENT_LIST_DIR}RimMainPlotCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogPlotCollection.cpp
+${CEE_CURRENT_LIST_DIR}RimRftPlotCollection.cpp
+${CEE_CURRENT_LIST_DIR}RimPltPlotCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogPlot.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogTrack.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogCurve.cpp
@@ -164,6 +179,7 @@ ${CEE_CURRENT_LIST_DIR}RimWellLogExtractionCurve.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogFile.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogFileChannel.cpp
 ${CEE_CURRENT_LIST_DIR}RimWellLogFileCurve.cpp
+${CEE_CURRENT_LIST_DIR}RimWellLogRftCurve.cpp
 ${CEE_CURRENT_LIST_DIR}RimIntersection.cpp
 ${CEE_CURRENT_LIST_DIR}RimIntersectionCollection.cpp
 ${CEE_CURRENT_LIST_DIR}RimContextCommandBuilder.cpp
@@ -180,7 +196,17 @@ ${CEE_CURRENT_LIST_DIR}RimGeometrySelectionItem.cpp
 ${CEE_CURRENT_LIST_DIR}RimEclipseGeometrySelectionItem.cpp
 ${CEE_CURRENT_LIST_DIR}RimDialogData.cpp
 ${CEE_CURRENT_LIST_DIR}RimTimeStepFilter.cpp
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculation.cpp
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculationCollection.cpp
+${CEE_CURRENT_LIST_DIR}RimSummaryCalculationVariable.cpp
 )
+
+if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+    list (APPEND SOURCE_GROUP_SOURCE_FILES
+        ${CEE_CURRENT_LIST_DIR}RimStimPlanLegendConfig.cpp
+        ${CEE_CURRENT_LIST_DIR}RimStimPlanColors.cpp
+    )
+endif()
 
 list(APPEND CODE_HEADER_FILES
 ${SOURCE_GROUP_HEADER_FILES}

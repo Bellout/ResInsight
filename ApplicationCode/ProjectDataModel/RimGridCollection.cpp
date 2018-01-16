@@ -18,7 +18,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "RimGridCollection.h"
-#include "RimView.h"
+#include "RimGridView.h"
 
 
 CAF_PDM_SOURCE_INIT(RimGridCollection, "GridCollection");
@@ -28,9 +28,9 @@ CAF_PDM_SOURCE_INIT(RimGridCollection, "GridCollection");
 //--------------------------------------------------------------------------------------------------
 RimGridCollection::RimGridCollection()
 {
-    CAF_PDM_InitObject("Grids", ":/draw_style_faults_24x24.png", "", "");
+    CAF_PDM_InitObject("Grids", ":/draw_style_meshlines_24x24.png", "", "");
 
-    CAF_PDM_InitField(&isActive, "IsActive", true, "Show grid cells", "", "", "");
+    CAF_PDM_InitField(&isActive, "IsActive", true, "Show Grid Cells", "", "", "");
     isActive.uiCapability()->setUiHidden(true);
 }
 
@@ -57,7 +57,7 @@ void RimGridCollection::fieldChangedByUi(const caf::PdmFieldHandle* changedField
 {
     if (changedField == &isActive)
     {
-        RimView* rimView = NULL;
+        RimGridView* rimView = NULL;
         this->firstAncestorOrThisOfType(rimView);
         CVF_ASSERT(rimView);
 

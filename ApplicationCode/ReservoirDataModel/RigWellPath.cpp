@@ -17,6 +17,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "RigWellPath.h"
+#include "cvfGeometryTools.h"
 
 #include "cvfGeometryTools.h"
 
@@ -97,26 +98,52 @@ cvf::Vec3d RigWellPath::interpolatedPointAlongWellPath(double measuredDepth) con
 //--------------------------------------------------------------------------------------------------
 double RigWellPath::wellPathAzimuthAngle(const cvf::Vec3d& position) const
 {
-    double azimuthAngle = 0.0;
+    size_t closestIndex = cvf::UNDEFINED_SIZE_T;
+    double closestDistance = cvf::UNDEFINED_DOUBLE;
 
-    cvf::Vec3d p1 = cvf::Vec3d::UNDEFINED;
-    cvf::Vec3d p2 = cvf::Vec3d::UNDEFINED;
-
-    twoClosestPoints(position, &p1, &p2);
-    if (!p1.isUndefined() && !p2.isUndefined())
+    for (size_t i = 1; i < m_wellPathPoints.size(); i++)
     {
-        cvf::Vec3d direction = p1 - p2;
+        cvf::Vec3d p1 = m_wellPathPoints[i - 1];
+        cvf::Vec3d p2 = m_wellPathPoints[i - 0];
 
-        if (abs(direction.x()) > 1e-5)
+        double candidateDistance = cvf::GeometryTools::linePointSquareDist(p1, p2, position);
+        if (candidateDistance < closestDistance)
         {
-            double atanValue = direction.y() / direction.x();
-            azimuthAngle = atan(atanValue);
-            azimuthAngle = cvf::Math::toDegrees(azimuthAngle);
-            azimuthAngle = -azimuthAngle;
+            closestDistance = candidateDistance;
+            closestIndex = i;
         }
     }
 
-    return azimuthAngle;
+    //For vertical well (x-component of direction = 0) returned angle will be 90. 
+    double azimuthAngleDegrees = 90.0;
+
+    if (closestIndex != cvf::UNDEFINED_DOUBLE)
+    {
+        cvf::Vec3d p1;
+        cvf::Vec3d p2;
+
+        if (closestIndex > 0)
+        {
+            p1 = m_wellPathPoints[closestIndex - 1];
+            p2 = m_wellPathPoints[closestIndex - 0];
+        }
+        else
+        {
+            p1 = m_wellPathPoints[closestIndex + 1];
+            p2 = m_wellPathPoints[closestIndex + 0];
+        }
+
+        cvf::Vec3d direction = p2 - p1;
+
+        if (fabs(direction.y()) > 1e-5)
+        {
+            double atanValue = direction.x() / direction.y();
+            double azimuthRadians = atan(atanValue);
+            azimuthAngleDegrees = cvf::Math::toDegrees(azimuthRadians);
+        }
+    }
+
+    return azimuthAngleDegrees;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -160,39 +187,68 @@ void RigWellPath::twoClosestPoints(const cvf::Vec3d& position, cvf::Vec3d* p1, c
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<cvf::Vec3d> RigWellPath::clippedPointSubset(double startMD, double endMD) const
+std::pair<std::vector<cvf::Vec3d>, std::vector<double> > RigWellPath::clippedPointSubset(double startMD, double endMD) const
+{
+    std::pair<std::vector<cvf::Vec3d>, std::vector<double> >  pointsAndMDs;
+    if (m_measuredDepths.empty()) return pointsAndMDs;
+    if (startMD > endMD) return pointsAndMDs;
+
+    pointsAndMDs.first.push_back(interpolatedPointAlongWellPath(startMD));
+    pointsAndMDs.second.push_back(startMD);
+
+    for (size_t i = 0; i < m_measuredDepths.size(); ++i)
+    {
+        double measuredDepth = m_measuredDepths[i];
+        if (measuredDepth > startMD && measuredDepth < endMD)
+        {
+            pointsAndMDs.first.push_back(m_wellPathPoints[i]);
+            pointsAndMDs.second.push_back(measuredDepth);
+        }
+    }
+    pointsAndMDs.first.push_back(interpolatedPointAlongWellPath(endMD));
+    pointsAndMDs.second.push_back(endMD);
+
+
+    return pointsAndMDs;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<cvf::Vec3d> RigWellPath::wellPathPointsIncludingInterpolatedIntersectionPoint(double intersectionMeasuredDepth) const
 {
     std::vector<cvf::Vec3d> points;
     if (m_measuredDepths.empty()) return points;
-    if (startMD > endMD) return points;
 
-    size_t i = 0;
-    // Skip points below startMD
-    while (i < m_measuredDepths.size() && m_measuredDepths[i] < startMD) ++i;
+    cvf::Vec3d interpolatedWellPathPoint = interpolatedPointAlongWellPath(intersectionMeasuredDepth);
 
-    if (i == 0)
+    for (size_t i = 0; i < m_measuredDepths.size() - 1; i++)
     {
-        // If startMD is at or below the starting MD, use that point
-        points.push_back(m_wellPathPoints[0]);
+        if (m_measuredDepths[i] == intersectionMeasuredDepth)
+        {
+            points.push_back(m_wellPathPoints[i]);
+        }
+        else if (m_measuredDepths[i] < intersectionMeasuredDepth)
+        {
+            points.push_back(m_wellPathPoints[i]);
+            if (m_measuredDepths[i + 1] > intersectionMeasuredDepth)
+            {
+                points.push_back(interpolatedWellPathPoint);
+            }
+        }
+        else if (m_measuredDepths[i] > intersectionMeasuredDepth)
+        {
+            if (i == 0)
+            {
+                points.push_back(interpolatedWellPathPoint);
+            }
+            else
+            {
+                points.push_back(m_wellPathPoints[i]);
+            }
+        }
     }
-    else
-    {
-        double stepsize = (startMD - m_measuredDepths[i - 1]) / (m_measuredDepths[i] - m_measuredDepths[i - 1]);
-        points.push_back(m_wellPathPoints[i - 1] + stepsize * (m_wellPathPoints[i] - m_wellPathPoints[i - 1]));
-    }
-
-    while (i < m_measuredDepths.size() && m_measuredDepths[i] < endMD)
-    {
-        // Add all points between startMD and endMD
-        points.push_back(m_wellPathPoints[i]);
-        ++i;
-    }
-
-    if (i < m_measuredDepths.size() && m_measuredDepths[i] > endMD)
-    {
-      double stepsize = (endMD - m_measuredDepths[i - 1]) / (m_measuredDepths[i] - m_measuredDepths[i - 1]);
-      points.push_back(m_wellPathPoints[i - 1] + stepsize * (m_wellPathPoints[i] - m_wellPathPoints[i - 1]));
-    }
+    points.push_back(m_wellPathPoints.back());
 
     return points;
 }

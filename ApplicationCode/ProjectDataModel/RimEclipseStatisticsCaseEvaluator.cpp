@@ -44,9 +44,9 @@ void RimEclipseStatisticsCaseEvaluator::addNamedResult(RigCaseCellResultsData* d
     // Use time step dates from first result in first source case
     CVF_ASSERT(m_sourceCases.size() > 0);
 
-    std::vector<RigEclipseTimeStepInfo> sourceTimeStepInfos = m_sourceCases[0]->results(RiaDefines::MATRIX_MODEL)->cellResults()->timeStepInfos(0);
+    std::vector<RigEclipseTimeStepInfo> sourceTimeStepInfos = m_sourceCases[0]->results(RiaDefines::MATRIX_MODEL)->timeStepInfos(0);
 
-    size_t destinationScalarResultIndex = destinationCellResults->addEmptyScalarResult(resultType, resultName, true);
+    size_t destinationScalarResultIndex = destinationCellResults->findOrCreateScalarResultIndex(resultType, resultName, true);
     CVF_ASSERT(destinationScalarResultIndex != cvf::UNDEFINED_SIZE_T);
 
     destinationCellResults->setTimeStepInfos(destinationScalarResultIndex, sourceTimeStepInfos);
@@ -301,13 +301,10 @@ void RimEclipseStatisticsCaseEvaluator::evaluateForResults(const QList<ResSpec>&
 
             if (!eclipseCase->reservoirViews.size())
             {
-                eclipseCase->results(RiaDefines::MATRIX_MODEL)->cellResults()->freeAllocatedResultsData();
-                eclipseCase->results(RiaDefines::FRACTURE_MODEL)->cellResults()->freeAllocatedResultsData();
+                eclipseCase->results(RiaDefines::MATRIX_MODEL)->freeAllocatedResultsData();
+                eclipseCase->results(RiaDefines::FRACTURE_MODEL)->freeAllocatedResultsData();
             }
 
-            // Todo : These calls really do nothing right now the access actually closes automatically in ert i belive ...
-            eclipseCase->results(RiaDefines::MATRIX_MODEL)->readerInterface()->close();
-            eclipseCase->results(RiaDefines::FRACTURE_MODEL)->readerInterface()->close();
         }
 
         progressInfo.setProgress(timeIndicesIdx);

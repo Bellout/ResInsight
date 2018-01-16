@@ -64,11 +64,11 @@ RimEclipsePropertyFilter::RimEclipsePropertyFilter()
 {
     CAF_PDM_InitObject("Cell Property Filter", ":/CellFilter_Values.png", "", "");
 
-    CAF_PDM_InitFieldNoDefault(&obsoleteField_evaluationRegion, "EvaluationRegion", "Evaluation region", "", "", "");
+    CAF_PDM_InitFieldNoDefault(&obsoleteField_evaluationRegion, "EvaluationRegion", "Evaluation Region", "", "", "");
     obsoleteField_evaluationRegion.uiCapability()->setUiHidden(true);
     obsoleteField_evaluationRegion.xmlCapability()->setIOWritable(false);
 
-    CAF_PDM_InitFieldNoDefault(&resultDefinition, "ResultDefinition", "Result definition", "", "", "");
+    CAF_PDM_InitFieldNoDefault(&resultDefinition, "ResultDefinition", "Result Definition", "", "", "");
     resultDefinition = new RimEclipseResultDefinition();
 
     // Set to hidden to avoid this item to been displayed as a child item
@@ -252,7 +252,7 @@ void RimEclipsePropertyFilter::updateReadOnlyStateOfAllFields()
 //--------------------------------------------------------------------------------------------------
 void RimEclipsePropertyFilter::updateRangeLabel()
 {
-    if (resultDefinition->resultType() == RiaDefines::FLOW_DIAGNOSTICS)
+    if (resultDefinition->isFlowDiagOrInjectionFlooding())
     {
         m_rangeLabelText = "Current Timestep";
     }
@@ -267,7 +267,7 @@ void RimEclipsePropertyFilter::updateRangeLabel()
 //--------------------------------------------------------------------------------------------------
 bool RimEclipsePropertyFilter::isPropertyFilterControlled()
 {
-    RimView* rimView = nullptr;
+    Rim3dView* rimView = nullptr;
     firstAncestorOrThisOfTypeAsserted(rimView);
 
     bool isPropertyFilterControlled = false;
@@ -348,9 +348,9 @@ void RimEclipsePropertyFilter::computeResultValueRange()
 
     clearCategories();
 
-    if (resultDefinition->resultType() == RiaDefines::FLOW_DIAGNOSTICS)
+    if (resultDefinition->isFlowDiagOrInjectionFlooding())
     {
-        RimView* view;
+        Rim3dView* view;
         this->firstAncestorOrThisOfType(view);
 
         int timeStep = 0;
@@ -372,10 +372,10 @@ void RimEclipsePropertyFilter::computeResultValueRange()
         size_t scalarIndex = resultDefinition->scalarResultIndex();
         if ( scalarIndex != cvf::UNDEFINED_SIZE_T )
         {
-            RimReservoirCellResultsStorage* results = resultDefinition->currentGridCellResults();
+            RigCaseCellResultsData* results = resultDefinition->currentGridCellResults();
             if ( results )
             {
-                results->cellResults()->minMaxCellScalarValues(scalarIndex, min, max);
+                results->minMaxCellScalarValues(scalarIndex, min, max);
 
                 if ( resultDefinition->hasCategoryResult() )
                 {
@@ -398,7 +398,7 @@ void RimEclipsePropertyFilter::computeResultValueRange()
                     }
                     else
                     {
-                        setCategoryValues(results->cellResults()->uniqueCellScalarValues(scalarIndex));
+                        setCategoryValues(results->uniqueCellScalarValues(scalarIndex));
                     }
                 }
             }
@@ -423,7 +423,7 @@ void RimEclipsePropertyFilter::updateFromCurrentTimeStep()
     //
     // If the user manually has set a filter value, this value is left untouched
 
-    if (resultDefinition->resultType() != RiaDefines::FLOW_DIAGNOSTICS)
+    if (!resultDefinition->isFlowDiagOrInjectionFlooding())
     {
         return;
     }
@@ -446,7 +446,7 @@ void RimEclipsePropertyFilter::updateFromCurrentTimeStep()
 
     clearCategories();
 
-    RimView* view = nullptr;
+    Rim3dView* view = nullptr;
     this->firstAncestorOrThisOfTypeAsserted(view);
 
     int timeStep = view->currentTimeStep();
