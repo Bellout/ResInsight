@@ -617,7 +617,8 @@ void RimProject::allNotLinkedViews(std::vector<RimGridView*>& views)
         std::vector<Rim3dView*> caseViews = rimCase->views();
         for (size_t viewIdx = 0; viewIdx < caseViews.size(); viewIdx++)
         {
-            RimGridView* gridView = dynamic_cast<RimGridView*>(caseViews[viewIdx]);
+//            RimGridView* gridView = dynamic_cast<RimGridView*>(caseViews[viewIdx]);
+            RimGridView* gridView = reinterpret_cast<RimGridView*>(caseViews[viewIdx]);
             
             if (!gridView) continue;
 
@@ -670,7 +671,8 @@ void RimProject::allVisibleGridViews(std::vector<RimGridView*>& views)
     this->allVisibleViews(visibleViews);
     for ( Rim3dView* view : visibleViews )
     {
-        RimGridView* gridView = dynamic_cast<RimGridView*>(view);
+        // RimGridView* gridView = dynamic_cast<RimGridView*>(view);
+        RimGridView* gridView = reinterpret_cast<RimGridView*>(view);
         if ( gridView ) views.push_back(gridView);
     }
 }
