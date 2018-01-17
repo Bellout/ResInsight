@@ -114,7 +114,11 @@ QString RiuFemResultTextBuilder::geometrySelectionText(QString itemSeparator)
          
             RigFemPart* femPart = geomData->femParts()->part(m_gridIndex);
             int elementId = femPart->elmId(m_cellIndex);
+
             text += QString("Element : Id[%1]").arg(elementId);
+
+            text += QString(" m_cellIndex : %1").arg(m_cellIndex);
+            text += QString(" m_gridIndex : %1").arg(m_gridIndex);
 
             size_t i = 0;
             size_t j = 0;
@@ -137,7 +141,8 @@ QString RiuFemResultTextBuilder::geometrySelectionText(QString itemSeparator)
                 text += QString(", ijk[%1, %2, %3]").arg(i).arg(j).arg(k) + itemSeparator;
 
                 QString formattedText;
-                formattedText.sprintf("Intersection point : [E: %.2f, N: %.2f, Depth: %.2f]", domainCoord.x(), domainCoord.y(), -domainCoord.z());
+                formattedText.sprintf("Intersection point : [E: %.2f, N: %.2f, Depth: %.2f]",
+                                      domainCoord.x(), domainCoord.y(), -domainCoord.z());
 
                 text += formattedText;
             }
@@ -158,7 +163,9 @@ QString RiuFemResultTextBuilder::gridResultDetails()
     {
         RigGeoMechCaseData* eclipseCaseData = m_reservoirView->geoMechCase()->geoMechData();
 
-        this->appendTextFromResultColors(eclipseCaseData, m_gridIndex, m_cellIndex, m_timeStepIndex, m_reservoirView->cellResultResultDefinition(), &text);
+        this->appendTextFromResultColors(eclipseCaseData,
+                                         m_gridIndex, m_cellIndex, m_timeStepIndex,
+                                         m_reservoirView->cellResultResultDefinition(), &text);
 
         if (!text.isEmpty())
         {
@@ -212,7 +219,10 @@ QString RiuFemResultTextBuilder::formationDetails()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geomData, int gridIndex, int cellIndex, int timeStepIndex, RimGeoMechResultDefinition* resultDefinition, QString* resultInfoText)
+void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geomData,
+                                                         int gridIndex, int cellIndex, int timeStepIndex,
+                                                         RimGeoMechResultDefinition* resultDefinition,
+                                                         QString* resultInfoText)
 {
     if (!resultDefinition)
     {
@@ -221,7 +231,8 @@ void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geo
 
     if (resultDefinition->hasResult())
     {
-        const std::vector<float>& scalarResults = geomData->femPartResults()->resultValues(resultDefinition->resultAddress(), gridIndex, timeStepIndex);
+        const std::vector<float>& scalarResults = geomData->femPartResults()->resultValues(resultDefinition->resultAddress(),
+                                                                                           gridIndex, timeStepIndex);
         if (scalarResults.size())
         {
             caf::AppEnum<RigFemResultPosEnum> resPosAppEnum = resultDefinition->resultPositionType();
