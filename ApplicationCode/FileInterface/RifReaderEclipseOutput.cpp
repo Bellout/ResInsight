@@ -108,7 +108,13 @@ static const size_t cellMappingECLRi[8] = { 0, 1, 3, 2, 4, 5, 7, 6 };
 // Static functions
 //**************************************************************************************************
 
-bool transferGridCellData(RigMainGrid* mainGrid, RigActiveCellInfo* activeCellInfo, RigActiveCellInfo* fractureActiveCellInfo, RigGridBase* localGrid, const ecl_grid_type* localEclGrid, size_t matrixActiveStartIndex, size_t fractureActiveStartIndex)
+bool transferGridCellData(RigMainGrid* mainGrid,
+                          RigActiveCellInfo* activeCellInfo,
+                          RigActiveCellInfo* fractureActiveCellInfo,
+                          RigGridBase* localGrid,
+                          const ecl_grid_type* localEclGrid,
+                          size_t matrixActiveStartIndex,
+                          size_t fractureActiveStartIndex)
 {
     CVF_ASSERT(activeCellInfo && fractureActiveCellInfo);
 
