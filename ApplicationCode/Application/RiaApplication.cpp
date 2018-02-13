@@ -36,6 +36,7 @@
 #include "RigEclipseCaseData.h"
 
 
+#include "Rim2dIntersectionViewCollection.h"
 #include "Rim3dOverlayInfoConfig.h"
 #include "RimCaseCollection.h"
 #include "RimCellEdgeColors.h"
@@ -95,6 +96,7 @@
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 #include "RimFractureTemplateCollection.h"
 #include "RimWellPathFracture.h"
+#include "RimStimPlanColors.h"
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 
@@ -511,7 +513,9 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
         }
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+        
         oilField->fractureDefinitionCollection()->loadAndUpdateData();
+        oilField->fractureDefinitionCollection()->setDefaultConductivityResultIfEmpty();
 
         {
             std::vector<RimWellPathFracture*> wellPathFractures;
@@ -542,6 +546,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
     }
 
 
+
     // Now load the ReservoirViews for the cases
     // Add all "native" cases in the project
     std::vector<RimCase*> casesToLoad;
@@ -567,6 +572,18 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 
                     viewProgress.setProgressDescription(riv->name());
 
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
+                    if (m_project->isProjectFileVersionEqualOrOlderThan("2018.1.0.103"))
+                    {
+                        std::vector<RimStimPlanColors*> stimPlanColors;
+                        riv->descendantsIncludingThisOfType(stimPlanColors);
+                        if (stimPlanColors.size() == 1)
+                        {
+                            stimPlanColors[0]->updateConductivityResultName();
+                        }
+                    }
+#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+
                     riv->loadDataAndUpdate();
                     this->setActiveReservoirView(riv);
 
@@ -584,6 +601,14 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
     {
         m_project->viewLinkerCollection()->viewLinker()->updateOverrides();
     }
+    
+    // Intersection Views: Sync from intersections in the case.
+
+    for (RimCase* cas: casesToLoad)
+    {
+        cas->intersectionViewCollection()->syncFromExistingIntersections(false);
+    }
+
 
     loadAndUpdatePlotData();
 
@@ -2129,6 +2154,10 @@ void RiaApplication::runRegressionTest(const QString& testRootPath, QStringList*
             closeProject();
         
             logInfoTextWithTimeInSeconds(timeStamp, "Completed test :" + testCaseFolder.absolutePath());
+        }
+        else
+        {
+            RiaLogging::error("Could not find a regression test file named : " + testCaseFolder.absolutePath() + "/" + regTestProjectName + ".rsp");
         }
     }
 

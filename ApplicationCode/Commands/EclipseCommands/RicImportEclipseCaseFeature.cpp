@@ -59,7 +59,7 @@ void RicImportEclipseCaseFeature::onActionTriggered(bool isChecked)
     {
         QString fileName = fileNames[i];
 
-        if (!fileNames.isEmpty())
+        if (!fileName.isEmpty())
         {
             if (RiaImportEclipseCaseTools::openEclipseCaseFromFile(fileName))
             {

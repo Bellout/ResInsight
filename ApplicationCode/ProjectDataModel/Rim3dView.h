@@ -51,6 +51,8 @@ class RimViewController;
 class RimViewLinker;
 class RiuViewer;
 class RimWellPathCollection;
+class RivWellPathsPartMgr; 
+class RimWellPath; 
 
 namespace cvf
 {
@@ -66,6 +68,17 @@ namespace caf
 {
     class DisplayCoordTransform;
 }
+
+
+enum PartRenderMaskEnum
+{
+    surfaceBit      = 0x00000001,
+    meshSurfaceBit  = 0x00000002,
+    faultBit        = 0x00000004,
+    meshFaultBit    = 0x00000008,
+};
+
+
 //==================================================================================================
 ///  
 ///  
@@ -118,6 +131,7 @@ public:
     int                                     currentTimeStep() const { return m_currentTimeStep;}
     void                                    setCurrentTimeStep(int frameIdx);
     void                                    setCurrentTimeStepAndUpdate(int frameIdx) override;
+    virtual bool                            isTimeStepDependentDataVisible() const = 0;
 
     // Updating 
     void                                    updateCurrentTimeStepAndRedraw() override;
@@ -132,12 +146,16 @@ public:
 
     cvf::ref<caf::DisplayCoordTransform>    displayCoordTransform() const override;
 
+    size_t                                  wellPathSegmentIndexFromTriangleIndex(size_t triangleIndex, RimWellPath* wellPath) const; 
+
     virtual RimCase*                        ownerCase() const = 0;
 
 protected:
-    void                                    setDefaultView();
+    virtual void                            setDefaultView();
+    void                                    disableGridBoxField();
+    void                                    disablePerspectiveProjectionField();
 
-    RimWellPathCollection*                  wellPathCollection();
+    RimWellPathCollection*                  wellPathCollection() const;
     void                                    addWellPathsToModel(cvf::ModelBasicList* wellPathModelBasicList, 
                                                                 const cvf::BoundingBox& wellPathClipBoundingBox);
 
@@ -153,7 +171,7 @@ protected:
     virtual void                            createDisplayModel() = 0;
     virtual void                            createPartCollectionFromSelection(cvf::Collection<cvf::Part>* parts) = 0;
     
-    virtual void                            updateDisplayModelVisibility() = 0;
+    virtual void                            updateDisplayModelVisibility();
     virtual void                            clampCurrentTimestep() = 0;
 
     virtual void                            updateCurrentTimeStep() = 0;
@@ -174,6 +192,8 @@ protected:
     cvf::ref<cvf::ModelBasicList>           m_wellPathPipeVizModel;
     cvf::ref<cvf::ModelBasicList>           m_crossSectionVizModel;
     cvf::ref<cvf::ModelBasicList>           m_highlightVizModel;
+
+    cvf::ref<RivWellPathsPartMgr>           m_wellPathsPartManager; 
 
 private:
     // Overridden PdmObject methods:
@@ -209,6 +229,6 @@ private:
     caf::PdmField<cvf::Mat4d>               m_cameraPosition;
     caf::PdmField<cvf::Vec3d>               m_cameraPointOfInterest;
     caf::PdmField< cvf::Color3f >           m_backgroundColor;
-    caf::PdmField<bool>                     showGridBox;
+    caf::PdmField<bool>                     m_showGridBox;
 
 };

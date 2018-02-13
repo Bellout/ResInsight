@@ -32,6 +32,8 @@
 #include "RimViewLinker.h"
 #include "RimWellPathCollection.h"
 
+#include "RivWellPathsPartMgr.h"
+
 #include "RiuMainWindow.h"
 #include "RiuViewer.h"
 #include "RiuTimeStepChangedHandler.h"
@@ -46,6 +48,7 @@
 #include "cvfViewport.h"
 
 #include <QDateTime>
+#include <climits>
 
 
 namespace caf {
@@ -112,7 +115,7 @@ Rim3dView::Rim3dView(void)
     CAF_PDM_InitField(&meshMode, "MeshMode", defaultMeshType, "Grid Lines",   "", "", "");
     CAF_PDM_InitFieldNoDefault(&surfaceMode, "SurfaceMode", "Grid Surface",  "", "", "");
 
-    CAF_PDM_InitField(&showGridBox, "ShowGridBox", true, "Show Grid Box", "", "", "");
+    CAF_PDM_InitField(&m_showGridBox, "ShowGridBox", true, "Show Grid Box", "", "", "");
 
     CAF_PDM_InitField(&m_disableLighting, "DisableLighting", false, "Disable Results Lighting", "", "Disable light model for scalar result colors", "");
 
@@ -124,6 +127,8 @@ Rim3dView::Rim3dView(void)
 
     m_wellPathPipeVizModel = new cvf::ModelBasicList;
     m_wellPathPipeVizModel->setName("WellPathPipeModel");
+
+    m_wellPathsPartManager = new RivWellPathsPartMgr(this); 
 
     this->setAs3DViewMdiWindow();
 }
@@ -233,7 +238,7 @@ void Rim3dView::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrd
     caf::PdmUiGroup* viewGroup = uiOrdering.addNewGroup("Viewer");
     viewGroup->add(&name);
     viewGroup->add(&m_backgroundColor);
-    viewGroup->add(&showGridBox);
+    viewGroup->add(&m_showGridBox);
     viewGroup->add(&isPerspectiveView);
     viewGroup->add(&m_disableLighting);
 
@@ -380,7 +385,7 @@ void Rim3dView::endAnimation()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimWellPathCollection* Rim3dView::wellPathCollection()
+RimWellPathCollection* Rim3dView::wellPathCollection() const
 {
     RimProject* proj = nullptr;
     this->firstAncestorOrThisOfTypeAsserted(proj);
@@ -571,7 +576,7 @@ void Rim3dView::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const 
         RiuMainWindow::instance()->refreshDrawStyleActions();
         RiuMainWindow::instance()->refreshAnimationActions();
     }
-    else if (changedField == &showGridBox)
+    else if (changedField == &m_showGridBox)
     {
         createHighlightAndGridBoxDisplayModelWithRedraw();
     }
@@ -638,9 +643,9 @@ void Rim3dView::addWellPathsToModel(cvf::ModelBasicList* wellPathModelBasicList,
 
     cvf::ref<caf::DisplayCoordTransform> transForm = displayCoordTransform();
 
-    wellPathCollection()->appendStaticGeometryPartsToModel(wellPathModelBasicList,
-                                                             this->ownerCase()->characteristicCellSize(),
-                                                             wellPathClipBoundingBox,
+    m_wellPathsPartManager->appendStaticGeometryPartsToModel(wellPathModelBasicList, 
+                                                             this->ownerCase()->characteristicCellSize(), 
+                                                             wellPathClipBoundingBox, 
                                                              transForm.p());
 
     wellPathModelBasicList->updateBoundingBoxesRecursive();
@@ -662,7 +667,7 @@ void Rim3dView::addDynamicWellPathsToModel(cvf::ModelBasicList* wellPathModelBas
         currentTimeStamp = timeStamps[currentTimeStep()];
     }
 
-    wellPathCollection()->appendDynamicGeometryPartsToModel(wellPathModelBasicList,
+    m_wellPathsPartManager->appendDynamicGeometryPartsToModel(wellPathModelBasicList,
         currentTimeStamp,
         this->ownerCase()->characteristicCellSize(),
         wellPathClipBoundingBox,
@@ -760,7 +765,48 @@ void Rim3dView::createHighlightAndGridBoxDisplayModel()
         m_viewer->addStaticModelOnce(m_highlightVizModel.p());
     }
 
-    m_viewer->showGridBox(showGridBox());
+    m_viewer->showGridBox(m_showGridBox());
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim3dView::updateDisplayModelVisibility()
+{
+    if (m_viewer.isNull()) return;
+
+    const cvf::uint uintSurfaceBit      = surfaceBit;
+    const cvf::uint uintMeshSurfaceBit  = meshSurfaceBit;
+    const cvf::uint uintFaultBit        = faultBit;
+    const cvf::uint uintMeshFaultBit    = meshFaultBit;
+
+    // Initialize the mask to show everything except the the bits controlled here
+    unsigned int mask = 0xffffffff & ~uintSurfaceBit & ~uintFaultBit & ~uintMeshSurfaceBit & ~uintMeshFaultBit ;
+
+    // Then turn the appropriate bits on according to the user settings
+
+    if (surfaceMode == SURFACE)
+    {
+        mask |= uintSurfaceBit;
+        mask |= uintFaultBit;
+    }
+    else if (surfaceMode == FAULTS)
+    {
+        mask |= uintFaultBit;
+    }
+
+    if (meshMode == FULL_MESH)
+    {
+        mask |= uintMeshSurfaceBit;
+        mask |= uintMeshFaultBit;
+    }
+    else if (meshMode == FAULTS_MESH)
+    {
+        mask |= uintMeshFaultBit;
+    }
+
+    m_viewer->setEnableMask(mask);
+    m_viewer->update();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -804,6 +850,14 @@ cvf::ref<caf::DisplayCoordTransform> Rim3dView::displayCoordTransform() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+size_t Rim3dView::wellPathSegmentIndexFromTriangleIndex(size_t triangleIndex, RimWellPath* wellPath) const
+{
+    return m_wellPathsPartManager->segmentIndexFromTriangleIndex(triangleIndex, wellPath);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 QWidget* Rim3dView::viewWidget()
 {
     if ( m_viewer ) return m_viewer->layoutWidget();
@@ -816,6 +870,26 @@ QWidget* Rim3dView::viewWidget()
 void Rim3dView::forceShowWindowOn()
 {
     m_showWindow.setValueWithFieldChanged(true);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim3dView::disableGridBoxField()
+{
+    m_showGridBox = false;
+    m_showGridBox.uiCapability()->setUiHidden(true);
+    m_showGridBox.xmlCapability()->setIOWritable(false);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim3dView::disablePerspectiveProjectionField()
+{
+    isPerspectiveView = false;
+    isPerspectiveView.uiCapability()->setUiHidden(true);
+    isPerspectiveView.xmlCapability()->setIOWritable(false);
 }
 
 //--------------------------------------------------------------------------------------------------

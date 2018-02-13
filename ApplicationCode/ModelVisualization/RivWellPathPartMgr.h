@@ -44,14 +44,17 @@ class RimProject;
 class RimWellPath;
 class RivFishbonesSubsPartMgr;
 class RimWellPathCollection;
-class RimEclipseView;
+class Rim3dView;
 
 class QDateTime;
 
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 class RivWellPathPartMgr : public cvf::Object
 {
 public:
-    explicit RivWellPathPartMgr(RimWellPath* wellPath);
+    explicit RivWellPathPartMgr(RimWellPath* wellPath, Rim3dView* view);
     ~RivWellPathPartMgr();
 
     void                          appendStaticGeometryPartsToModel(cvf::ModelBasicList* model, 
@@ -60,8 +63,7 @@ public:
                                                                    const caf::DisplayCoordTransform* displayCoordTransform);
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    void                          appendStaticFracturePartsToModel(cvf::ModelBasicList* model, 
-                                                                   const RimEclipseView& eclView);
+    void                          appendStaticFracturePartsToModel(cvf::ModelBasicList* model);
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     void                          appendDynamicGeometryPartsToModel(cvf::ModelBasicList* model, 
@@ -96,22 +98,13 @@ private:
     inline double                 wellPathRadius(double characteristicCellSize, RimWellPathCollection* wellPathCollection);
 
 private:
-    caf::PdmPointer<RimWellPath>            m_rimWellPath;
+    caf::PdmPointer<RimWellPath>        m_rimWellPath;
+    caf::PdmPointer<Rim3dView>          m_rimView;
     
-    struct RivPipeBranchData
-    {
-        cvf::ref<RivPipeGeometryGenerator>  m_pipeGeomGenerator;
-        cvf::ref<cvf::Part>                 m_surfacePart;
-        cvf::ref<cvf::DrawableGeo>          m_surfaceDrawable;
-        cvf::ref<cvf::Part>                 m_centerLinePart;
-        cvf::ref<cvf::DrawableGeo>          m_centerLineDrawable;
-    };
-
-    RivPipeBranchData                       m_pipeBranchData;
-    cvf::ref<cvf::Part>                     m_wellLabelPart;
-
-    cvf::ref<cvf::ScalarMapper>             m_scalarMapper;
-    cvf::ref<cvf::Effect>                   m_scalarMapperSurfaceEffect; 
-    cvf::ref<cvf::Effect>                   m_scalarMapperMeshEffect; 
-
+    cvf::ref<RivPipeGeometryGenerator>  m_pipeGeomGenerator;
+    cvf::ref<cvf::Part>                 m_surfacePart;
+    cvf::ref<cvf::DrawableGeo>          m_surfaceDrawable;
+    cvf::ref<cvf::Part>                 m_centerLinePart;
+    cvf::ref<cvf::DrawableGeo>          m_centerLineDrawable;
+    cvf::ref<cvf::Part>                 m_wellLabelPart;
 };

@@ -40,7 +40,6 @@
 
 #include <QAction>
 #include <QFileInfo>
-#include <QMessageBox>
 #include <QString>
 
 CAF_CMD_SOURCE_INIT(RicConvertAllFractureTemplatesToMetricFeature, "RicConvertAllFractureTemplatesToMetricFeature");
@@ -64,7 +63,7 @@ void RicConvertAllFractureTemplatesToMetricFeature::onActionTriggered(bool isChe
 
     for (auto ellipseFracTemplate : ellipseFracTemplates)
     {
-        if (ellipseFracTemplate->fractureTemplateUnit == RiaEclipseUnitTools::UNITS_FIELD)
+        if (ellipseFracTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
         {
             ellipseFracTemplate->changeUnits();
         }

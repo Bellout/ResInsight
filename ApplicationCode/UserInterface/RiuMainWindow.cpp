@@ -352,9 +352,11 @@ void RiuMainWindow::createMenus()
 
     QMenu* importMenu = fileMenu->addMenu("&Import");
     importMenu->addAction(cmdFeatureMgr->action("RicImportEclipseCaseFeature"));
+    importMenu->addAction(cmdFeatureMgr->action("RicImportEclipseCasesFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportEclipseCaseTimeStepFilterFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportInputEclipseCaseFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicCreateGridCaseGroupFeature"));
+    importMenu->addAction(cmdFeatureMgr->action("RicCreateGridCaseGroupFromFilesFeature"));
     importMenu->addSeparator();
     #ifdef USE_ODB_API
     importMenu->addAction(cmdFeatureMgr->action("RicImportGeoMechCaseFeature"));
@@ -721,7 +723,7 @@ void RiuMainWindow::slotRefreshEditActions()
 //--------------------------------------------------------------------------------------------------
 void RiuMainWindow::slotRefreshViewActions()
 {
-    bool enabled = true;
+    bool enabled = RiaApplication::instance()->activeGridView() != nullptr;
     m_viewFromNorth->setEnabled(enabled);
     m_viewFromSouth->setEnabled(enabled);
     m_viewFromEast->setEnabled(enabled);
@@ -740,9 +742,11 @@ void RiuMainWindow::slotRefreshViewActions()
 void RiuMainWindow::refreshAnimationActions()
 {
     caf::FrameAnimationControl* animationControl = NULL;
-    if (RiaApplication::instance()->activeReservoirView() && RiaApplication::instance()->activeReservoirView()->viewer())
+    Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
+
+    if (activeView && activeView->viewer())
     {
-        animationControl = RiaApplication::instance()->activeReservoirView()->viewer()->animationControl();
+        animationControl = activeView->viewer()->animationControl();
     }
 
     m_animationToolBar->connectAnimationControl(animationControl);
@@ -752,37 +756,22 @@ void RiuMainWindow::refreshAnimationActions()
     int currentTimeStepIndex = 0;
 
     bool enableAnimControls = false;
-    Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
     if (activeView && 
         activeView->viewer() &&
         activeView->viewer()->frameCount())
     {
         enableAnimControls = true;
-        RimEclipseView * activeRiv = dynamic_cast<RimEclipseView*>(activeView);
-
-        if (activeRiv)
+       
+        if ( activeView->isTimeStepDependentDataVisible() )
         {
-            if (activeRiv->currentGridCellResults())
-            {
-                if (activeRiv->isTimeStepDependentDataVisible())
-                {
-                    timeStepStrings = activeRiv->eclipseCase()->timeStepStrings();
-                }
-                else
-                {
-                    timeStepStrings.push_back(tr("Static Property"));
-                }
-            }
+            timeStepStrings = activeView->ownerCase()->timeStepStrings();
         }
         else
         {
-            RimGeoMechView * activeGmv = dynamic_cast<RimGeoMechView*>(activeView);
-            if (activeGmv)
+            RimEclipseView * activeRiv = dynamic_cast<RimEclipseView*>(activeView);
+            if ( activeRiv->currentGridCellResults() )
             {
-                if (activeGmv->isTimeStepDependentDataVisible())
-                {
-                    timeStepStrings = activeGmv->geoMechCase()->timeStepStrings();
-                }
+                timeStepStrings.push_back(tr("Static Property"));
             }
         }
 
@@ -1456,6 +1445,7 @@ void RiuMainWindow::refreshDrawStyleActions()
 {
     Rim3dView* view = RiaApplication::instance()->activeReservoirView();
     bool enable = view != NULL;
+    bool isGridView = RiaApplication::instance()->activeGridView() != nullptr;
 
     m_drawStyleLinesAction->setEnabled(enable);
     m_drawStyleLinesSolidAction->setEnabled(enable);
@@ -1469,9 +1459,9 @@ void RiuMainWindow::refreshDrawStyleActions()
     m_disableLightingAction->setChecked(lightingDisabledInView);
     m_disableLightingAction->blockSignals(false);
 
-    if (enable)
+    m_drawStyleHideGridCellsAction->setEnabled(isGridView);
+    if (isGridView)
     {
-        m_drawStyleHideGridCellsAction->setEnabled(true);
         m_drawStyleHideGridCellsAction->blockSignals(true);
         m_drawStyleHideGridCellsAction->setChecked(!view->isGridVisualizationMode());
         m_drawStyleHideGridCellsAction->blockSignals(false);

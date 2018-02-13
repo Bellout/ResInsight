@@ -29,21 +29,30 @@ namespace cvf {
     class Part; 
 } 
 
+class Rim3dView;
 
+//==================================================================================================
+/// 
+//==================================================================================================
 class RicViewerEventObject
 {
 public:
-    RicViewerEventObject(cvf::Vec3d globalIntersectionPoint, const std::vector<std::pair<const cvf::Part*, cvf::uint>>& partAndTriangleIndexPairs)
+    RicViewerEventObject(cvf::Vec3d globalIntersectionPoint, const std::vector<std::pair<const cvf::Part*, cvf::uint>>& partAndTriangleIndexPairs, Rim3dView* view)
         : m_globalIntersectionPoint(globalIntersectionPoint),
-        m_partAndTriangleIndexPairs(partAndTriangleIndexPairs)
+        m_partAndTriangleIndexPairs(partAndTriangleIndexPairs),
+        m_view(view)
     {
     }
 
     cvf::Vec3d  m_globalIntersectionPoint;
     std::vector<std::pair<const cvf::Part*, cvf::uint>> m_partAndTriangleIndexPairs;
+    Rim3dView* m_view; 
 };
 
 
+//==================================================================================================
+/// 
+//==================================================================================================
 class RicViewerEventInterface
 {
 public:

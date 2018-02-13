@@ -44,6 +44,7 @@
 #include "RimEclipseView.h"
 #include "RimFaultInView.h"
 #include "RimFaultInViewCollection.h"
+#include "RimFracture.h"
 #include "RimGeoMechCase.h"
 #include "RimGeoMechCellColors.h"
 #include "RimGeoMechView.h"
@@ -54,6 +55,10 @@
 #include "RimTernaryLegendConfig.h"
 #include "RimViewController.h"
 #include "RimWellPath.h"
+#include "RimPerforationInterval.h"
+#include "RimStimPlanFractureTemplate.h"
+#include "RimEllipseFractureTemplate.h"
+#include "Rim2dIntersectionView.h"
 
 #include "RiuMainWindow.h"
 #include "RiuSelectionManager.h"
@@ -68,6 +73,7 @@
 #include "RivSourceInfo.h"
 #include "RivTernarySaturationOverlayItem.h"
 #include "RivWellPathSourceInfo.h"
+#include "RivWellFracturePartMgr.h"
 
 #include "cafCmdExecCommandManager.h"
 #include "cafCmdFeatureManager.h"
@@ -86,7 +92,6 @@
 #include <QMouseEvent>
 #include <QStatusBar>
 #include <array>
-#include "RimPerforationInterval.h"
 
 
 
@@ -220,6 +225,8 @@ void RiuViewerCommands::displayContextMenu(QMouseEvent* event)
                 RiuSelectionManager::instance()->setSelectedItem(selItem, RiuSelectionManager::RUI_TEMPORARY);
                 
                 menuBuilder << "RicHideIntersectionFeature";
+                menuBuilder.addSeparator();
+                menuBuilder << "RicNewIntersectionViewFeature";
                 menuBuilder.addSeparator();
             }
             else if (intersectionBoxSourceInfo)
@@ -414,6 +421,7 @@ void RiuViewerCommands::displayContextMenu(QMouseEvent* event)
     menuBuilder << "RicShowFlowCharacteristicsPlotFeature";
     menuBuilder << "RicSaveEclipseInputActiveVisibleCellsFeature";
     menuBuilder << "RicShowGridStatisticsFeature";
+    menuBuilder << "RicSelectColorResult";
 
     menuBuilder.appendToMenu(&menu);
 
@@ -463,7 +471,7 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
 
             if (!partAndTriangleIndexPairs.empty())
             {
-                RicViewerEventObject viewerEventObject(globalIntersectionPoint, partAndTriangleIndexPairs);
+                RicViewerEventObject viewerEventObject(globalIntersectionPoint, partAndTriangleIndexPairs, m_reservoirView);
                 for (size_t i = 0; i < m_viewerEventHandlers.size(); i++)
                 {
                     if (m_viewerEventHandlers[i]->handleEvent(viewerEventObject))
@@ -488,7 +496,34 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
 
             if (rivObjectSourceInfo)
             {
+#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
                 RiuMainWindow::instance()->selectAsCurrentItem(rivObjectSourceInfo->object());
+
+                RimFracture* fracture = dynamic_cast<RimFracture*>(rivObjectSourceInfo->object());
+                RimStimPlanFractureTemplate* stimPlanTempl = fracture ? dynamic_cast<RimStimPlanFractureTemplate*>(fracture->fractureTemplate()) : nullptr;
+                RimEllipseFractureTemplate* ellipseTempl = fracture ? dynamic_cast<RimEllipseFractureTemplate*>(fracture->fractureTemplate()) : nullptr;
+                if (stimPlanTempl || ellipseTempl)
+                {
+                    // Set fracture resultInfo text
+                    QString resultInfoText;
+
+                    cvf::ref<caf::DisplayCoordTransform> transForm = m_reservoirView->displayCoordTransform();
+                    cvf::Vec3d domainCoord = transForm->transformToDomainCoord(globalIntersectionPoint);
+
+                    RimEclipseView* eclView = dynamic_cast<RimEclipseView*>(m_reservoirView.p());
+                    RivWellFracturePartMgr* partMgr = fracture->fracturePartManager();
+                    if (eclView) resultInfoText = partMgr->resultInfoText(*eclView, domainCoord);
+
+                    // Set intersection point result text
+                    QString intersectionPointText;
+
+                    intersectionPointText.sprintf("Intersection point : Global [E: %.2f, N: %.2f, Depth: %.2f]", domainCoord.x(), domainCoord.y(), -domainCoord.z());
+                    resultInfoText.append(intersectionPointText);
+
+                    // Display result info text
+                    RiuMainWindow::instance()->setResultInfo(resultInfoText);
+                }
+#endif //USE_PROTOTYPE_FEATURE_FRACTURES
             }
             
             if (rivSourceInfo)
@@ -572,27 +607,35 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
 
         RiuSelectionItem* selItem = nullptr;
         {
+            Rim2dIntersectionView* intersectionView = dynamic_cast<Rim2dIntersectionView*>(m_reservoirView.p());
             RimEclipseView* eclipseView = dynamic_cast<RimEclipseView*>(m_reservoirView.p());
+            RimGeoMechView* geomView = dynamic_cast<RimGeoMechView*>(m_reservoirView.p());
+
+            if (intersectionView)
+            {
+                intersectionView->intersection()->firstAncestorOrThisOfType(eclipseView);
+                intersectionView->intersection()->firstAncestorOrThisOfType(geomView);
+            }
+
             if (eclipseView)
             {
                 selItem = new RiuEclipseSelectionItem(eclipseView, gridIndex, cellIndex, nncIndex, curveColor, face, localIntersectionPoint);
             }
 
-            RimGeoMechView* geomView = dynamic_cast<RimGeoMechView*>(m_reservoirView.p());
-            if (geomView )
+            if (geomView)
             {
                 if(intersectionHit)   selItem = new RiuGeoMechSelectionItem(geomView, gridIndex, cellIndex, curveColor, gmFace, localIntersectionPoint, intersectionTriangleHit);
                 else                  selItem = new RiuGeoMechSelectionItem(geomView, gridIndex, cellIndex, curveColor, gmFace, localIntersectionPoint);
             }
 
-
+            if (intersectionView) selItem = new Riu2dIntersectionSelectionItem(selItem);
         }
 
         if (appendToSelection)
         {
             RiuSelectionManager::instance()->appendItemToSelection(selItem);
         }
-        else
+        else if(selItem)
         {
             RiuSelectionManager::instance()->setSelectedItem(selItem);
         }
@@ -615,17 +658,23 @@ void RiuViewerCommands::findCellAndGridIndex(const RivIntersectionSourceInfo* cr
 {
     CVF_ASSERT(cellIndex && gridIndex);
 
-    RimEclipseView* eclipseView = dynamic_cast<RimEclipseView*>(m_reservoirView.p());
-    RimGeoMechView* geomView = dynamic_cast<RimGeoMechView*>(m_reservoirView.p());
-    if (eclipseView)
+    RimCase* ownerCase = m_reservoirView->ownerCase();
+    RimEclipseCase* eclipseCase = dynamic_cast<RimEclipseCase*>(ownerCase);
+    RimGeoMechCase* geomCase = dynamic_cast<RimGeoMechCase*>(ownerCase);
+    if (eclipseCase)
     {
+        //RimEclipseView* eclipseView = dynamic_cast<RimEclipseView*>(m_reservoirView.p());
+        RimEclipseView* eclipseView;
+        crossSectionSourceInfo->crossSection()->firstAncestorOrThisOfType(eclipseView);
+
         size_t globalCellIndex = crossSectionSourceInfo->triangleToCellIndex()[firstPartTriangleIndex];
 
         const RigCell& cell = eclipseView->mainGrid()->globalCellArray()[globalCellIndex];
+
         *cellIndex = cell.gridLocalCellIndex();
         *gridIndex = cell.hostGrid()->gridIndex();
     }
-    else if (geomView)
+    else if (geomCase)
     {
         *cellIndex = crossSectionSourceInfo->triangleToCellIndex()[firstPartTriangleIndex];
         *gridIndex = 0;

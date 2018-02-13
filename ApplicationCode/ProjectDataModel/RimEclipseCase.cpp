@@ -41,6 +41,7 @@
 #include "RimFlowCharacteristicsPlot.h"
 #include "RimFlowPlotCollection.h"
 #include "RimFormationNames.h"
+#include "RimIntersectionCollection.h"
 #include "RimMainPlotCollection.h"
 #include "RimOilField.h"
 #include "RimProject.h"
@@ -59,6 +60,7 @@
 
 #include "cafPdmDocument.h"
 #include "cafProgressInfo.h"
+#include "cafPdmUiTreeOrdering.h"
 
 #include <QFile>
 #include <QFileInfo>
@@ -200,6 +202,19 @@ cvf::Color3f RimEclipseCase::defaultWellColor(const QString& wellName)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+const RigMainGrid* RimEclipseCase::mainGrid() const
+{
+    if (eclipseCaseData())
+    {
+        return eclipseCaseData()->mainGrid();
+    }
+
+    return nullptr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimEclipseCase::initAfterRead()
 {
     size_t j;
@@ -240,7 +255,7 @@ RimEclipseView* RimEclipseCase::createAndAddReservoirView()
         rimEclipseView->cellEdgeResult()->enableCellEdgeColors = false;
     
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-        rimEclipseView->stimPlanColors()->setDefaultResultNameForStimPlan();
+        rimEclipseView->fractureColors()->setDefaultResultName();
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
     }
 
@@ -384,9 +399,23 @@ void RimEclipseCase::updateFormationNamesData()
 
                 view->scheduleGeometryRegen(PROPERTY_FILTERED);
                 view->scheduleCreateDisplayModelAndRedraw();
+                eclView->crossSectionCollection()->scheduleCreateDisplayModelAndRedraw2dIntersectionViews();
             }
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimEclipseCase::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName /*= ""*/)
+{
+    std::vector<PdmObjectHandle*> children;
+    reservoirViews.childObjects(&children);
+
+    for (auto child : children) uiTreeOrdering.add(child); 
+    
+    uiTreeOrdering.add(&m_2dIntersectionViewCollection);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -673,13 +702,14 @@ bool RimEclipseCase::openReserviorCase()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<Rim3dView*> RimEclipseCase::views()
+std::vector<Rim3dView*> RimEclipseCase::allSpecialViews() const
 {
     std::vector<Rim3dView*> views;
     for (size_t vIdx = 0; vIdx < reservoirViews.size(); ++vIdx)
     {
         views.push_back(reservoirViews[vIdx]);
     }
+ 
     return views;
 }
 

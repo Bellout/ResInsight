@@ -15,128 +15,72 @@
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
-#if 0
-#include "Rim2dIntersectionView.h"
 
-#include "RiaApplication.h"
-#include "RiaPreferences.h"
+#include "Rim2dIntersectionView.h"
+#include "Rim2dIntersectionViewCollection.h"
+#include "RimIntersection.h"
+#include "RimCase.h"
+#include "RiuViewer.h"
+#include "RimGridView.h"
+#include "RivIntersectionPartMgr.h"
+#include "RivTernarySaturationOverlayItem.h"
+
+#include "cvfPart.h"
+#include "cvfModelBasicList.h"
+#include "cvfTransform.h"
+#include "cvfScene.h"
 
 #include "Rim3dOverlayInfoConfig.h"
-#include "RimCellRangeFilterCollection.h"
-#include "RimEclipseCase.h"
 #include "RimEclipseView.h"
-#include "RimGridCollection.h"
-#include "RimIntersectionCollection.h"
-#include "RimMainPlotCollection.h"
-#include "RimOilField.h"
-#include "RimProject.h"
-#include "RimPropertyFilterCollection.h"
-#include "RimViewController.h"
-#include "RimViewLinker.h"
-#include "RimViewLinkerCollection.h"
-#include "RimWellPathCollection.h"
-
-#include "RiuMainWindow.h"
-#include "RiuViewer.h"
-#include "RiuTimeStepChangedHandler.h"
-
-#include "cafDisplayCoordTransform.h"
-#include "cafFrameAnimationControl.h"
-#include "cafPdmObjectFactory.h"
-
-#include "cvfCamera.h"
-#include "cvfModel.h"
-#include "cvfModelBasicList.h"
-#include "cvfPart.h"
-#include "cvfScene.h"
-#include "cvfViewport.h"
+#include "RimEclipseCellColors.h"
+#include "RimGeoMechView.h"
+#include "RimGeoMechCellColors.h"
+#include "RimLegendConfig.h"
+#include "RimTernaryLegendConfig.h"
+#include "RimSimWellInView.h"
+#include "RimWellPath.h"
 
 #include <QDateTime>
 
-#include <limits.h>
-#include "cvfTransform.h"
+CAF_PDM_SOURCE_INIT(Rim2dIntersectionView, "Intersection2dView"); 
 
+const cvf::Mat4d defaultIntersectinoViewMatrix(1, 0, 0, 0,
+                                               0, 0, 1, 0,
+                                               0, -1, 0, 1000,
+                                               0, 0, 0, 1);
 
-namespace caf {
-
-template<>
-void caf::AppEnum< Rim2dIntersectionView::MeshModeType >::setUp()
-{
-    addItem(Rim2dIntersectionView::FULL_MESH,      "FULL_MESH",       "All");
-    addItem(Rim2dIntersectionView::FAULTS_MESH,    "FAULTS_MESH",     "Faults only");
-    addItem(Rim2dIntersectionView::NO_MESH,        "NO_MESH",         "None");
-    setDefault(Rim2dIntersectionView::FULL_MESH);
-}
-
-template<>
-void caf::AppEnum< Rim2dIntersectionView::SurfaceModeType >::setUp()
-{
-    addItem(Rim2dIntersectionView::SURFACE,              "SURFACE",             "All");
-    addItem(Rim2dIntersectionView::NO_SURFACE,           "NO_SURFACE",          "None");
-    setDefault(Rim2dIntersectionView::SURFACE);
-}
-
-} // End namespace caf
-
-
-CAF_PDM_XML_ABSTRACT_SOURCE_INIT(Rim2dIntersectionView, "GenericView"); // Do not use. Abstract class 
-
-                                                            //--------------------------------------------------------------------------------------------------
-                                                            /// 
-                                                            //--------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 Rim2dIntersectionView::Rim2dIntersectionView(void)
 {
-    RiaApplication* app = RiaApplication::instance();
-    RiaPreferences* preferences = app->preferences();
-    CVF_ASSERT(preferences);
+    CAF_PDM_InitObject("Intersection View", ":/CrossSection16x16.png", "", "");
 
+    CAF_PDM_InitFieldNoDefault(&m_intersection,  "Intersection", "Intersection", ":/CrossSection16x16.png", "", "");
+    m_intersection.uiCapability()->setUiHidden(true);
 
-    CAF_PDM_InitField(&name, "UserDescription", QString(""), "Name", "", "", "");
+    CAF_PDM_InitFieldNoDefault(&m_legendConfig,  "LegendDefinition", "Legend Definition", "", "", "");
+    m_legendConfig.uiCapability()->setUiHidden(true);
+    m_legendConfig.uiCapability()->setUiTreeChildrenHidden(true);
+    m_legendConfig.xmlCapability()->disableIO();
+    m_legendConfig = new RimLegendConfig();
 
-    CAF_PDM_InitField(&m_cameraPosition, "CameraPosition", cvf::Mat4d::IDENTITY, "", "", "", "");
-    m_cameraPosition.uiCapability()->setUiHidden(true);
+    CAF_PDM_InitFieldNoDefault(&m_ternaryLegendConfig, "TernaryLegendDefinition", "Ternary Legend Definition", "", "", "");
+    m_ternaryLegendConfig.uiCapability()->setUiTreeHidden(true);
+    m_ternaryLegendConfig.uiCapability()->setUiTreeChildrenHidden(true);
+    m_ternaryLegendConfig.xmlCapability()->disableIO();
+    m_ternaryLegendConfig = new RimTernaryLegendConfig();
 
-    CAF_PDM_InitField(&m_cameraPointOfInterest, "CameraPointOfInterest", cvf::Vec3d::ZERO, "", "", "", "");
-    m_cameraPointOfInterest.uiCapability()->setUiHidden(true);
+    m_showWindow = false;
+    m_scaleTransform = new cvf::Transform();
+    m_intersectionVizModel = new cvf::ModelBasicList;
 
-    double defaultScaleFactor = preferences->defaultScaleFactorZ;
-    CAF_PDM_InitField(&scaleZ, "GridZScale", defaultScaleFactor, "Z Scale", "", "Scales the scene in the Z direction", "");
+    hasUserRequestedAnimation = true;
+    
+    ((RiuViewerToViewInterface*)this)->setCameraPosition(defaultIntersectinoViewMatrix );
 
-    cvf::Color3f defBackgColor = preferences->defaultViewerBackgroundColor();
-    CAF_PDM_InitField(&m_backgroundColor, "ViewBackgroundColor", defBackgColor, "Background", "", "", "");
-
-    CAF_PDM_InitField(&maximumFrameRate, "MaximumFrameRate", 10, "Maximum Frame Rate", "", "", "");
-    maximumFrameRate.uiCapability()->setUiHidden(true);
-    CAF_PDM_InitField(&hasUserRequestedAnimation, "AnimationMode", false, "Animation Mode", "", "", "");
-    hasUserRequestedAnimation.uiCapability()->setUiHidden(true);
-
-    CAF_PDM_InitField(&m_currentTimeStep, "CurrentTimeStep", 0, "Current Time Step", "", "", "");
-    m_currentTimeStep.uiCapability()->setUiHidden(true);
-
-    //CAF_PDM_InitFieldNoDefault(&m_overlayInfoConfig, "OverlayInfoConfig", "Info Box", "", "", "");
-    //m_overlayInfoConfig = new Rim3dOverlayInfoConfig();
-    //m_overlayInfoConfig->setReservoirView(this);
-    //m_overlayInfoConfig.uiCapability()->setUiHidden(true);
-
-    caf::AppEnum<Rim2dIntersectionView::MeshModeType> defaultMeshType = NO_MESH;
-    if (preferences->defaultGridLines) defaultMeshType = FULL_MESH;
-    CAF_PDM_InitField(&meshMode, "MeshMode", defaultMeshType, "Grid Lines",   "", "", "");
-    CAF_PDM_InitFieldNoDefault(&surfaceMode, "SurfaceMode", "Grid Surface",  "", "", "");
-
-    CAF_PDM_InitField(&m_disableLighting, "DisableLighting", false, "Disable Results Lighting", "", "Disable light model for scalar result colors", "");
-
-    m_previousGridModeMeshLinesWasFaults = false;
-
-    m_crossSectionVizModel = new cvf::ModelBasicList;
-    m_crossSectionVizModel->setName("CrossSectionModel");
-
-    m_highlightVizModel = new cvf::ModelBasicList;
-    m_highlightVizModel->setName("HighlightModel");
-
-    m_wellPathPipeVizModel = new cvf::ModelBasicList;
-    m_wellPathPipeVizModel->setName("WellPathPipeModel");
-
-    this->setAs3DViewMdiWindow();
+    disableGridBoxField();
+    disablePerspectiveProjectionField();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -144,593 +88,374 @@ Rim2dIntersectionView::Rim2dIntersectionView(void)
 //--------------------------------------------------------------------------------------------------
 Rim2dIntersectionView::~Rim2dIntersectionView(void)
 {
-    RimProject* proj = RiaApplication::instance()->project();
 
-    removeMdiWindowFromMdiArea();
-
-    deleteViewWidget();
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RiuViewer* Rim2dIntersectionView::viewer()
+void Rim2dIntersectionView::setVisible(bool isVisible)
 {
-    return m_viewer;
+    m_showWindow = isVisible;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-QWidget* Rim2dIntersectionView::createViewWidget(QWidget* mainWindowParent)
+void Rim2dIntersectionView::setIntersection(RimIntersection* intersection)
 {
-    QGLFormat glFormat;
-    glFormat.setDirectRendering(RiaApplication::instance()->useShaders());
+    CAF_ASSERT(intersection);
 
-    m_viewer = new RiuViewer(glFormat, NULL);
-    m_viewer->setOwnerReservoirView(this);
+    m_intersection = intersection;
+    Rim3dView * parentView = nullptr;
+    intersection->firstAncestorOrThisOfTypeAsserted(parentView);
+    name = parentView->name() + ": " + intersection->name();
 
-    m_viewer->showAxisCross(false);
+    
+}
 
-    return m_viewer->layoutWidget();
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RimIntersection* Rim2dIntersectionView::intersection()
+{
+    return m_intersection();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim2dIntersectionView::isUsingFormationNames() const
+{
+  // Todo:
+
+   return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::scheduleGeometryRegen(RivCellSetEnum geometryType)
+{
+    m_flatIntersectionPartMgr = nullptr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RimCase* Rim2dIntersectionView::ownerCase() const
+{
+    RimCase* rimCase = nullptr;
+    this->firstAncestorOrThisOfTypeAsserted(rimCase);
+    return rimCase;
 }
 
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::updateViewWidgetAfterCreation()
+bool Rim2dIntersectionView::isTimeStepDependentDataVisible() const
 {
-    m_viewer->setDefaultPerspectiveNearPlaneDistance(10);
-
-    this->resetLegendsInViewer();
-
-    m_viewer->updateNavigationPolicy();
-    m_viewer->enablePerfInfoHud(RiaApplication::instance()->showPerformanceInfo());
-
-    m_viewer->mainCamera()->setViewMatrix(m_cameraPosition);
-    m_viewer->setPointOfInterest(m_cameraPointOfInterest());
-    m_viewer->enableParallelProjection(true);
-
-    m_viewer->mainCamera()->viewport()->setClearColor(cvf::Color4f(backgroundColor()));
-
-    this->updateAnnotationItems();
-    this->createHighlightDisplayModel();
-
-    m_viewer->update();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::updateMdiWindowTitle()
-{
-    if (m_viewer)
+    if ( m_intersection() )
     {
-        QString windowTitle;
-        if (ownerCase())
-        {
-            windowTitle = QString("%1 - %2").arg(ownerCase()->caseUserDescription()).arg(name);
-        }
-        else
-        {
-            windowTitle = name;
-        }
-
-        m_viewer->layoutWidget()->setWindowTitle(windowTitle);
-    }
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::deleteViewWidget()
-{
-    if (m_viewer) 
-    {
-        m_viewer->deleteLater();
-        m_viewer = nullptr;
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
-{
-    caf::PdmUiGroup* viewGroup = uiOrdering.addNewGroup("Viewer");
-    viewGroup->add(&name);
-    viewGroup->add(&m_backgroundColor);
-    viewGroup->add(&m_disableLighting);
-
-    caf::PdmUiGroup* gridGroup = uiOrdering.addNewGroup("Grid Appearance");
-    gridGroup->add(&scaleZ);
-    gridGroup->add(&meshMode);
-    gridGroup->add(&surfaceMode);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-QImage Rim2dIntersectionView::snapshotWindowContent()
-{
-    if (m_viewer)
-    {
-        // Force update of scheduled display models before snapshotting
-        RiaApplication::instance()->slotUpdateScheduledDisplayModels();
-
-        m_viewer->repaint();
-
-        return m_viewer->snapshotImage();
+        RimGridView * gridView = nullptr;
+        m_intersection->firstAncestorOrThisOfTypeAsserted(gridView);
+        return gridView->isTimeStepDependentDataVisible();
     }
 
-    return QImage();
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::scheduleCreateDisplayModelAndRedraw()
+QList<caf::PdmOptionItemInfo> Rim2dIntersectionView::calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions,
+                                                                           bool* useOptionsOnly)
 {
-    RiaApplication::instance()->scheduleDisplayModelUpdateAndRedraw(this);
-    if (this->isMasterView())
+    QList<caf::PdmOptionItemInfo> options; 
+
+    return options;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim2dIntersectionView::hasResults()
+{
+    if (!m_intersection()) return false;
+
+    RimEclipseView * eclView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(eclView);
+    if (eclView)
     {
-        RimViewLinker* viewLinker = this->assosiatedViewLinker();
-        if (viewLinker)
-        {
-            viewLinker->scheduleCreateDisplayModelAndRedrawForDependentViews();
-        }
+        return (eclView->cellResult()->hasResult() || eclView->cellResult()->isTernarySaturationSelected());
+    }
+
+    RimGeoMechView * geoView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(geoView);
+    if (geoView)
+    {
+        return geoView->cellResult()->hasResult();
+    }
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+int Rim2dIntersectionView::timeStepCount()
+{
+    if ( isTimeStepDependentDataVisible() )
+    {
+        return static_cast<int>( this->ownerCase()->timeStepStrings().size());
+    }
+
+    return 0;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim2dIntersectionView::isWindowVisible()
+{
+    if (m_showWindow())
+    {
+        Rim2dIntersectionViewCollection* viewColl = nullptr;
+        this->firstAncestorOrThisOfTypeAsserted(viewColl);
+        return viewColl->isActive();
+    }
+    else 
+    {
+        return false;
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setCurrentTimeStepAndUpdate(int frameIndex)
+void Rim2dIntersectionView::axisLabels(cvf::String* xLabel, cvf::String* yLabel, cvf::String* zLabel)
 {
-    setCurrentTimeStep(frameIndex);
-
-    this->updateCurrentTimeStep();
-
-    RimProject* project;
-    firstAncestorOrThisOfTypeAsserted(project);
-    project->mainPlotCollection()->updateCurrentTimeStepInPlots();
+    
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-QString Rim2dIntersectionView::timeStepName(int frameIdx) const
+void Rim2dIntersectionView::createDisplayModel()
 {
-    return this->ownerCase()->timeStepName(frameIdx);
-}
+    if (m_viewer.isNull()) return;
+    if (!m_intersection()) return;
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setCurrentTimeStep(int frameIndex)
-{
-    const int oldTimeStep = m_currentTimeStep;
-
-    m_currentTimeStep = frameIndex;
-    clampCurrentTimestep();
-
-    if (m_currentTimeStep != oldTimeStep)
-    {
-        RiuTimeStepChangedHandler::instance()->handleTimeStepChanged(this);
-    }
-
-    this->hasUserRequestedAnimation = true;
-    if (this->propertyFilterCollection() && this->propertyFilterCollection()->hasActiveDynamicFilters())
-    {  
-        m_currentReservoirCellVisibility = NULL; 
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::updateCurrentTimeStepAndRedraw()
-{
-    this->updateCurrentTimeStep();
-
-    RimProject* project;
-    firstAncestorOrThisOfTypeAsserted(project);
-    project->mainPlotCollection()->updateCurrentTimeStepInPlots();
-
-    if (m_viewer) m_viewer->update();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::createDisplayModelAndRedraw()
-{
-    if (m_viewer)
-    {
-        this->clampCurrentTimestep();
-
-        createDisplayModel();
-        createHighlightDisplayModel();
-        updateDisplayModelVisibility();
-
-        if (m_cameraPosition().isIdentity())
-        {
-            setDefaultView();
-            m_cameraPosition = m_viewer->mainCamera()->viewMatrix();
-            m_cameraPointOfInterest = m_viewer->pointOfInterest();
-        }
-    }
-
-    RiuMainWindow::instance()->refreshAnimationActions();
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setDefaultView()
-{
-    if (m_viewer)
-    {
-        m_viewer->setDefaultView();
-    }
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::endAnimation()
-{
-    this->hasUserRequestedAnimation = false;
-    this->updateStaticCellColors();
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-RimWellPathCollection* Rim2dIntersectionView::wellPathCollection()
-{
-    RimProject* proj = nullptr;
-    this->firstAncestorOrThisOfTypeAsserted(proj);
-    CVF_ASSERT(proj && proj->activeOilField() && proj->activeOilField()->wellPathCollection());
-
-    return proj->activeOilField()->wellPathCollection();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setupBeforeSave()
-{
-    if (m_viewer)
-    {
-        hasUserRequestedAnimation = m_viewer->isAnimationActive(); // JJS: This is not conceptually correct. The variable is updated as we go, and store the user intentions. But I guess that in practice...
-        m_cameraPosition = m_viewer->mainCamera()->viewMatrix();
-        m_cameraPointOfInterest = m_viewer->pointOfInterest();
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-// Surf: No Fault Surf
-//  Mesh -------------
-//    No F  F     G
-// Fault F  F     G
-//  Mesh G  G     G
-//
-//--------------------------------------------------------------------------------------------------
-bool Rim2dIntersectionView::isGridVisualizationMode() const
-{
-    return (   this->surfaceMode() == SURFACE 
-            || this->meshMode()    == FULL_MESH);
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setMeshOnlyDrawstyle()
-{
-    if (isGridVisualizationMode())
-    {
-        meshMode.setValueWithFieldChanged(FULL_MESH);
-    }
-    else
-    {
-        meshMode.setValueWithFieldChanged(FAULTS_MESH);
-    }
-
-    surfaceMode.setValueWithFieldChanged(NO_SURFACE);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setMeshSurfDrawstyle()
-{
-    if (isGridVisualizationMode())
-    {
-        surfaceMode.setValueWithFieldChanged(SURFACE);
-        meshMode.setValueWithFieldChanged(FULL_MESH);
-    }
-    else
-    {
-        surfaceMode.setValueWithFieldChanged(FAULTS);
-        meshMode.setValueWithFieldChanged(FAULTS_MESH);
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setFaultMeshSurfDrawstyle()
-{
-    // Surf: No Fault Surf
-    //  Mesh -------------
-    //    No FF  FF    SF
-    // Fault FF  FF    SF
-    //  Mesh SF  SF    SF
-    if (this->isGridVisualizationMode())
-    {
-        surfaceMode.setValueWithFieldChanged(SURFACE);
-    }
-    else
-    {
-        surfaceMode.setValueWithFieldChanged(FAULTS);
-    }
-
-    meshMode.setValueWithFieldChanged(FAULTS_MESH);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setSurfOnlyDrawstyle()
-{
-    if (isGridVisualizationMode())
-    {
-        surfaceMode.setValueWithFieldChanged(SURFACE);
-    }
-    else
-    {
-        surfaceMode.setValueWithFieldChanged(FAULTS);
-    }
-
-    meshMode.setValueWithFieldChanged(NO_MESH);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::showGridCells(bool enableGridCells)
-{
-    if (!enableGridCells)
-    {
-        m_previousGridModeMeshLinesWasFaults = meshMode() == FAULTS_MESH;
-        if (surfaceMode() != NO_SURFACE) surfaceMode.setValueWithFieldChanged(FAULTS);
-        if (meshMode() != NO_MESH) meshMode.setValueWithFieldChanged(FAULTS_MESH);
-    }
-    else
-    {
-        if (surfaceMode() != NO_SURFACE) surfaceMode.setValueWithFieldChanged(SURFACE);
-        if (meshMode() != NO_MESH) meshMode.setValueWithFieldChanged(m_previousGridModeMeshLinesWasFaults ? FAULTS_MESH : FULL_MESH);
-    }
-
-    m_gridCollection->isActive = enableGridCells;
-    m_gridCollection->updateConnectedEditors();
-    m_gridCollection->updateUiIconFromState(enableGridCells);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setSurfaceDrawstyle()
-{
-    if (surfaceMode() != NO_SURFACE) surfaceMode.setValueWithFieldChanged(SURFACE);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::disableLighting(bool disable)
-{
-    m_disableLighting = disable;
-    updateCurrentTimeStepAndRedraw();
-    updateConnectedEditors();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-bool Rim2dIntersectionView::isLightingDisabled() const
-{
-    return m_disableLighting();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
-{
-    RimViewWindow::fieldChangedByUi(changedField, oldValue, newValue);
-
-    if (changedField == &meshMode)
-    {
-        createDisplayModel();
-        updateDisplayModelVisibility();
-        RiuMainWindow::instance()->refreshDrawStyleActions();
-        RiuMainWindow::instance()->refreshAnimationActions();
-    }
-    else if (changedField == &isPerspectiveView)
-    {
-        if (m_viewer) m_viewer->enableParallelProjection(!isPerspectiveView());
-    }
-    else if (changedField == &scaleZ)
-    {
-        if (scaleZ < 1) scaleZ = 1;
-
-        this->updateGridBoxData();
-
-        // Regenerate well paths
-        RimOilField* oilFields = RiaApplication::instance()->project() ? RiaApplication::instance()->project()->activeOilField() : NULL;
-        RimWellPathCollection* wellPathCollection = (oilFields) ? oilFields->wellPathCollection() : NULL;
-
-        crossSectionCollection->updateIntersectionBoxGeometry();
-
-        if (m_viewer)
-        {
-            cvf::Vec3d poi = m_viewer->pointOfInterest();
-            cvf::Vec3d eye, dir, up;
-            eye = m_viewer->mainCamera()->position();
-            dir = m_viewer->mainCamera()->direction();
-            up  = m_viewer->mainCamera()->up();
-
-            eye[2] = poi[2]*scaleZ()/this->scaleTransform()->worldTransform()(2, 2) + (eye[2] - poi[2]);
-            poi[2] = poi[2]*scaleZ()/this->scaleTransform()->worldTransform()(2, 2);
-
-            m_viewer->mainCamera()->setFromLookAt(eye, eye + dir, up);
-            m_viewer->setPointOfInterest(poi);
-
-            updateScaleTransform();
-            createDisplayModelAndRedraw();
-
-            m_viewer->update();
-
-            RimViewLinker* viewLinker = this->assosiatedViewLinker();
-            if (viewLinker)
-            {
-                viewLinker->updateScaleZ(this, scaleZ);
-                viewLinker->updateCamera(this);
-            }
-        }
-
-        RiuMainWindow::instance()->updateScaleValue();
-    }
-    else if (changedField == &surfaceMode)
-    {
-        createDisplayModel();
-        updateDisplayModelVisibility();
-        RiuMainWindow::instance()->refreshDrawStyleActions();
-        RiuMainWindow::instance()->refreshAnimationActions();
-    }
-    else if (changedField == &showGridBox)
-    {
-        createHighlightAndGridBoxDisplayModelWithRedraw();
-    }
-    else if (changedField == &m_disableLighting)
-    {
-        createDisplayModel();
-        RiuMainWindow::instance()->refreshDrawStyleActions();
-        RiuMainWindow::instance()->refreshAnimationActions();
-    }
-    else if (changedField == &name)
-    {
-        updateMdiWindowTitle();
-
-        if (viewController())
-        {
-            viewController()->updateDisplayNameAndIcon();
-            viewController()->updateConnectedEditors();
-        }
-        else
-        {
-            if (isMasterView())
-            {
-                assosiatedViewLinker()->updateUiNameAndIcon();
-                assosiatedViewLinker()->updateConnectedEditors();
-            }
-        }
-    }
-    else if (changedField == &m_currentTimeStep)
-    {
-        if (m_viewer)
-        {
-            m_viewer->update();
-
-            RimViewLinker* viewLinker = this->assosiatedViewLinker();
-            if (viewLinker)
-            {
-                viewLinker->updateTimeStep(this, m_currentTimeStep);
-            }
-        }
-    }
-    else if (changedField == &m_backgroundColor)
-    {
-        if (m_viewer != nullptr)
-        {
-            m_viewer->mainCamera()->viewport()->setClearColor(cvf::Color4f(backgroundColor()));
-        }
-        updateGridBoxData();
-        updateAnnotationItems();
-    }
-    else if (changedField == &maximumFrameRate)
-    {
-        // !! Use cvf::UNDEFINED_INT or something if we end up with frame rate 0?
-        // !! Should be able to specify legal range for number properties
-        if (m_viewer)
-        {
-            m_viewer->animationControl()->setTimeout(maximumFrameRate != 0 ? 1000/maximumFrameRate : INT_MAX);
-        }
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::addWellPathsToModel(cvf::ModelBasicList* wellPathModelBasicList, 
-                                    const cvf::BoundingBox& wellPathClipBoundingBox)
-{
-    if (!this->ownerCase()) return;
-
-    cvf::ref<caf::DisplayCoordTransform> transForm = displayCoordTransform();
-
-    wellPathCollection()->appendStaticGeometryPartsToModel(wellPathModelBasicList,
-                                                           this->ownerCase()->characteristicCellSize(),
-                                                           wellPathClipBoundingBox,
-                                                           transForm.p());
-
-    wellPathModelBasicList->updateBoundingBoxesRecursive();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::addDynamicWellPathsToModel(cvf::ModelBasicList* wellPathModelBasicList, const cvf::BoundingBox& wellPathClipBoundingBox)
-{
-    if (!this->ownerCase()) return;
-
-    cvf::ref<caf::DisplayCoordTransform> transForm = displayCoordTransform();
-
-    QDateTime currentTimeStamp;
-    std::vector<QDateTime> timeStamps = ownerCase()->timeStepDates();
-    if (currentTimeStep() < static_cast<int>(timeStamps.size()))
-    {
-        currentTimeStamp = timeStamps[currentTimeStep()];
-    }
-
-    wellPathCollection()->appendDynamicGeometryPartsToModel(wellPathModelBasicList,
-                                                            currentTimeStamp,
-                                                            this->ownerCase()->characteristicCellSize(),
-                                                            wellPathClipBoundingBox,
-                                                            transForm.p());
-
-    wellPathModelBasicList->updateBoundingBoxesRecursive();
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setScaleZAndUpdate(double scaleZ)
-{
-    this->scaleZ = scaleZ;
     updateScaleTransform();
 
-    this->updateGridBoxData();
+    m_viewer->removeAllFrames();
+
+    int tsCount = this->timeStepCount();
+
+    for (int i = 0; i < tsCount; ++i)
+    {
+        m_viewer->addFrame(new cvf::Scene());
+    }
+
+
+    if ( m_flatIntersectionPartMgr.isNull() || m_intersection() != m_flatIntersectionPartMgr->intersection())
+    {
+        m_flatIntersectionPartMgr = new RivIntersectionPartMgr(m_intersection(), true);
+    }
+
+    m_intersectionVizModel->removeAllParts();
+    
+    m_flatIntersectionPartMgr->appendNativeCrossSectionFacesToModel(m_intersectionVizModel.p(), scaleTransform());
+    m_flatIntersectionPartMgr->appendMeshLinePartsToModel(m_intersectionVizModel.p(), scaleTransform());
+    m_flatIntersectionPartMgr->appendPolylinePartsToModel(m_intersectionVizModel.p(), scaleTransform());
+    m_flatIntersectionPartMgr->appendWellPipePartsToModel(m_intersectionVizModel.p(), scaleTransform());
+
+    m_flatIntersectionPartMgr->applySingleColorEffect();
+
+    m_viewer->addStaticModelOnce(m_intersectionVizModel.p());
+    
+    m_intersectionVizModel->updateBoundingBoxesRecursive();
+
+    if ( this->hasUserRequestedAnimation() )
+    {
+        m_viewer->setCurrentFrame(m_currentTimeStep);
+        updateCurrentTimeStep();
+    }
+
+    if ( this->viewer()->mainCamera()->viewMatrix() == defaultIntersectinoViewMatrix )
+    {
+        this->zoomAll();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::createPartCollectionFromSelection(cvf::Collection<cvf::Part>* parts)
+{
+}
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::onTimeStepChanged()
+{
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::clampCurrentTimestep()
+{
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::updateCurrentTimeStep()
+{
+    updateLegends();
+
+    if ((this->hasUserRequestedAnimation() && this->hasResults()))
+    {
+        m_flatIntersectionPartMgr->updateCellResultColor(m_currentTimeStep, 
+                                                         m_legendConfig->scalarMapper(), 
+                                                         m_ternaryLegendConfig()->scalarMapper());
+    }
+    else
+    {
+        m_flatIntersectionPartMgr->applySingleColorEffect();
+    }
+
+}
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::updateLegends()
+{
+    if (m_viewer)
+    {
+        m_viewer->removeAllColorLegends();
+    }
+
+    if (!hasResults()) return;
+
+    RimCase* rimCase = nullptr;
+    m_intersection->firstAncestorOrThisOfType(rimCase);
+
+    QString overlayInfoText;
+
+    overlayInfoText += "<b>Case:</b> " + ownerCase()->caseUserDescription() + "<br>";
+
+    overlayInfoText += "<b>Intersection:</b> " + m_intersection->name() + "<br>";
+
+    if (m_intersection->simulationWell())
+    {
+        overlayInfoText += "<b>Simulation Well:</b> " + m_intersection->simulationWell()->name() + "<br>";;
+    }
+    else if (m_intersection->wellPath())
+    {
+        overlayInfoText += "<b>Well Path:</b> " + m_intersection->wellPath()->name() + "<br>";;
+    }
+
+    cvf::OverlayItem* legend = nullptr;
+
+    RimEclipseView * eclView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(eclView);
+    if (eclView)
+    {
+        overlayInfoText += "<b>Cell Result:</b> " + eclView->cellResult()->resultVariableUiShortName() + "</br>";
+
+        m_legendConfig()->setUiValuesFromLegendConfig(eclView->cellResult()->legendConfig());
+        m_ternaryLegendConfig()->setUiValuesFromLegendConfig(eclView->cellResult()->ternaryLegendConfig());
+        eclView->cellResult()->updateLegendData(m_currentTimeStep(), m_legendConfig(), m_ternaryLegendConfig());
+
+        if ( eclView->cellResult()->isTernarySaturationSelected() )
+        {
+            m_ternaryLegendConfig()->setTitle("Cell Result:");
+            legend = m_ternaryLegendConfig()->legend();
+        }
+        else
+        {
+            m_legendConfig()->setTitle("Cell Result:" + eclView->cellResult()->resultVariableUiShortName());
+            legend = m_legendConfig()->legend();
+        }
+    }
+
+    RimGeoMechView * geoView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(geoView);
+    if (geoView)
+    {
+        overlayInfoText += "<b>Cell Result:</b> " + geoView->cellResult()->legendConfig()->resultVariableName() + "</br>";
+
+        m_legendConfig()->setUiValuesFromLegendConfig(geoView->cellResult()->legendConfig());
+          
+        geoView->updateLegendTextAndRanges(m_legendConfig(), m_currentTimeStep());
+        legend = m_legendConfig()->legend();
+    }
+
+    if ( legend )
+    {
+        m_viewer->addColorLegendToBottomLeftCorner(legend);
+    }
+
+    m_viewer->setInfoText(overlayInfoText);
+    m_viewer->showInfoText(true);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::resetLegendsInViewer()
+{
+    m_viewer->showAxisCross(false);
+    m_viewer->showAnimationProgress(true);
+    m_viewer->showHistogram(false);
+    m_viewer->showInfoText(false);
+    m_viewer->showEdgeTickMarks(true);
+
+    m_viewer->setMainScene(new cvf::Scene());
+    m_viewer->enableNavigationRotation(false);
+
+    m_ternaryLegendConfig()->recreateLegend();
+    m_legendConfig()->recreateLegend();
+}
+
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::updateStaticCellColors()
+{
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::updateScaleTransform()
+{
+    cvf::Mat4d scale = cvf::Mat4d::IDENTITY;
+    scale(2, 2) = scaleZ();
+
+    this->scaleTransform()->setLocalTransform(scale);
+
+    if (m_viewer) m_viewer->updateCachedValuesInScene();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+cvf::Transform* Rim2dIntersectionView::scaleTransform()
+{
+   return m_scaleTransform.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::onLoadDataAndUpdate()
+{
+    updateMdiWindowVisibility();
 
     this->scheduleCreateDisplayModelAndRedraw();
 }
@@ -738,156 +463,23 @@ void Rim2dIntersectionView::setScaleZAndUpdate(double scaleZ)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimViewLinker* Rim2dIntersectionView::viewLinkerIfMasterView() const
+void Rim2dIntersectionView::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
 {
-    RimViewLinker* viewLinker = NULL;
-    std::vector<caf::PdmObjectHandle*> reffingObjs;
+    Rim3dView::fieldChangedByUi(changedField, oldValue, newValue);
 
-    this->objectsWithReferringPtrFields(reffingObjs);
-
-    for (size_t i = 0; i < reffingObjs.size(); ++i)
+    if (changedField == & m_intersection)
     {
-        viewLinker = dynamic_cast<RimViewLinker*>(reffingObjs[i]);
-        if (viewLinker) break;
-    }
-
-    return viewLinker;
-}
-
-
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::updateAnnotationItems()
-{
-    if (m_viewer)
-    {
-        m_viewer->updateAnnotationItems();
+        this->loadDataAndUpdate();
     }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-//Rim3dOverlayInfoConfig* Rim2dIntersectionView::overlayInfoConfig() const
-//{
-//    return m_overlayInfoConfig;
-//}
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::createHighlightDisplayModelWithRedraw()
+void Rim2dIntersectionView::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
 {
-    createHighlightDisplayModel();
+    uiOrdering.add(&m_intersection);
 
-    if (m_viewer)
-    {
-        m_viewer->update();
-    }
+    Rim3dView::defineUiOrdering(uiConfigName, uiOrdering);
 }
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::createHighlightDisplayModel()
-{
-    m_viewer->removeStaticModel(m_highlightVizModel.p());
-
-    m_highlightVizModel->removeAllParts();
-
-    cvf::Collection<cvf::Part> parts;
-    createPartCollectionFromSelection(&parts);
-    if (parts.size() > 0)
-    {
-        for (size_t i = 0; i < parts.size(); i++)
-        {
-            m_highlightVizModel->addPart(parts[i].p());
-        }
-
-        m_highlightVizModel->updateBoundingBoxesRecursive();
-        m_viewer->addStaticModelOnce(m_highlightVizModel.p());
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-bool Rim2dIntersectionView::showActiveCellsOnly()
-{
-    return false;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::selectOverlayInfoConfig()
-{
-    //RiuMainWindow::instance()->selectAsCurrentItem(m_overlayInfoConfig);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::zoomAll()
-{
-    if (m_viewer)
-    {
-        m_viewer->zoomAll();
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-cvf::ref<caf::DisplayCoordTransform> Rim2dIntersectionView::displayCoordTransform() const
-{
-    cvf::ref<caf::DisplayCoordTransform> coordTrans = new caf::DisplayCoordTransform;
-
-    cvf::Vec3d scale(1.0, 1.0, scaleZ);
-    coordTrans->setScale(scale);
-
-    RimCase* rimCase = ownerCase();
-    if (rimCase)
-    {
-        coordTrans->setTranslation(rimCase->displayModelOffset());
-    }
-
-    return coordTrans;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-QWidget* Rim2dIntersectionView::viewWidget()
-{
-    if ( m_viewer ) return m_viewer->layoutWidget();
-    else return nullptr;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::forceShowWindowOn()
-{
-    m_showWindow.setValueWithFieldChanged(true);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::handleMdiWindowClosed()
-{
-    RimViewWindow::handleMdiWindowClosed();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::setMdiWindowGeometry(const RimMdiWindowGeometry& windowGeometry)
-{
-    RimViewWindow::setMdiWindowGeometry(windowGeometry);
-}
-
-#endif

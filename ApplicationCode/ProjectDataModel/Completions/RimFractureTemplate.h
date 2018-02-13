@@ -32,9 +32,10 @@
 
 #include <vector>
 
-class RigEclipseCaseData;
 class RigFractureGrid;
 class RimFractureContainment;
+class MinMaxAccumulator;
+class PosNegAccumulator;
 
 //==================================================================================================
 ///  
@@ -45,54 +46,76 @@ class RimFractureTemplate : public caf::PdmObject
      CAF_PDM_HEADER_INIT;
 
 public:
-    RimFractureTemplate();
-    virtual ~RimFractureTemplate();
-    
-    caf::PdmField<QString>   name;
-    caf::PdmField<float>     azimuthAngle;
-    caf::PdmField<float>     skinFactor;
-
-    caf::PdmField<double>           perforationLength;
-    caf::PdmField<double>           perforationEfficiency;
-    caf::PdmField<double>           wellDiameter;
-
     enum FracOrientationEnum
     {
         AZIMUTH,
         ALONG_WELL_PATH,
         TRANSVERSE_WELL_PATH
     };
-    caf::PdmField< caf::AppEnum< FracOrientationEnum > > orientationType;
 
     enum FracConductivityEnum
     {
         INFINITE_CONDUCTIVITY,
         FINITE_CONDUCTIVITY,
     };
-    caf::PdmField< caf::AppEnum< FracConductivityEnum > >  conductivityType;
 
-    caf::PdmField< RiaEclipseUnitTools::UnitSystemType >  fractureTemplateUnit;
+public:
+    RimFractureTemplate();
+    virtual ~RimFractureTemplate();
 
-    void                            setDefaultWellDiameterFromUnit();
+    QString                         name() const;
+    RiaEclipseUnitTools::UnitSystemType fractureTemplateUnit() const;
+    FracOrientationEnum             orientationType() const;
+    float                           azimuthAngle() const;
+    float                           skinFactor() const;
     double                          wellDiameterInFractureUnit(RiaEclipseUnitTools::UnitSystemType fractureUnit);
+    FracConductivityEnum            conductivityType() const;
     double                          perforationLengthInFractureUnit(RiaEclipseUnitTools::UnitSystemType fractureUnit);
-    
-    virtual void                    fractureTriangleGeometry(std::vector<cvf::Vec3f>* nodeCoords, 
-                                                             std::vector<cvf::uint>*  triangleIndices, 
+
+    virtual void                    fractureTriangleGeometry(std::vector<cvf::Vec3f>*        nodeCoords,
+                                                             std::vector<cvf::uint>*         triangleIndices,
                                                              RiaEclipseUnitTools::UnitSystem neededUnit) = 0;
+
     virtual std::vector<cvf::Vec3f> fractureBorderPolygon(RiaEclipseUnitTools::UnitSystem neededUnit) = 0;
-
     virtual const RigFractureGrid*  fractureGrid() const = 0;
+    const RimFractureContainment*   fractureContainment();
 
-    const RimFractureContainment *  fractureContainment();
+    virtual void                    appendDataToResultStatistics(const QString&     resultName,
+                                                                 const QString&     unit,
+                                                                 MinMaxAccumulator& minMaxAccumulator,
+                                                                 PosNegAccumulator& posNegAccumulator) const = 0;
+
+    virtual std::vector<std::pair<QString, QString>> uiResultNamesWithUnit() const = 0;
+
+    void                            setName(const QString& name);
+    void                            setFractureTemplateUnit(RiaEclipseUnitTools::UnitSystemType unitSystem);
+    void                            setDefaultWellDiameterFromUnit();
 
 protected:
-    caf::PdmChildField<RimFractureContainment*> m_fractureContainment;
-
     virtual caf::PdmFieldHandle*    userDescriptionField() override;
     virtual void                    fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue) override;
     virtual void                    defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) override;
-
     virtual void                    defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute) override;
 
+private:
+    void                            prepareFieldsForUiDisplay();
+
+protected:
+    caf::PdmField<QString>                             m_name;
+    caf::PdmField<RiaEclipseUnitTools::UnitSystemType> m_fractureTemplateUnit;
+    caf::PdmField<caf::AppEnum<FracOrientationEnum>>   m_orientationType;
+    caf::PdmField<float>                               m_azimuthAngle;
+    caf::PdmField<float>                               m_skinFactor;
+    caf::PdmField<double>                              m_perforationLength;
+    caf::PdmField<double>                              m_perforationEfficiency;
+    caf::PdmField<double>                              m_wellDiameter;
+    caf::PdmField<caf::AppEnum<FracConductivityEnum>>  m_conductivityType;
+    caf::PdmChildField<RimFractureContainment*>        m_fractureContainment;
+
+    caf::PdmField<bool>                                m_useNonDarcyFlow;
+    caf::PdmField<double>                              m_fractureWidth;
+    caf::PdmField<double>                              m_inertialCoefficient;
+    caf::PdmField<double>                              m_effectivePermeability;
+    caf::PdmField<double>                              m_specificGasGravity;
+    caf::PdmField<double>                              m_gasViscosity;
 };

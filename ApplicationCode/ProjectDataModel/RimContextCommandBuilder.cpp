@@ -123,8 +123,10 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
         if (dynamic_cast<RimEclipseCaseCollection*>(uiItem))
         {
             menuBuilder << "RicImportEclipseCaseFeature";
+            menuBuilder << "RicImportEclipseCasesFeature";
             menuBuilder << "RicImportInputEclipseCaseFeature";
             menuBuilder << "RicCreateGridCaseGroupFeature";
+            menuBuilder << "RicCreateGridCaseGroupFromFilesFeature";
             menuBuilder << "RicEclipseCaseNewGroupFeature";
         }
         else if (dynamic_cast<RimGeoMechView*>(uiItem))
@@ -447,18 +449,32 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
         }
         else if (dynamic_cast<RimIntersectionCollection*>(uiItem))
         {
+            menuBuilder << "RicPasteIntersectionsFeature";
+            menuBuilder.addSeparator();
             menuBuilder << "RicAppendIntersectionFeature";
             menuBuilder << "RicAppendIntersectionBoxFeature";
+            menuBuilder.addSeparator();
+            menuBuilder << "RicCopyIntersectionsToAllViewsInCaseFeature";
         }
         else if (dynamic_cast<RimIntersection*>(uiItem))
         {
+            menuBuilder << "RicPasteIntersectionsFeature";
+            menuBuilder.addSeparator();
             menuBuilder << "RicAppendIntersectionFeature";
             menuBuilder << "RicAppendIntersectionBoxFeature";
+            menuBuilder.addSeparator();
+            menuBuilder << "RicNewIntersectionViewFeature";
+            menuBuilder.addSeparator();
+            menuBuilder << "RicCopyIntersectionsToAllViewsInCaseFeature";
         }
         else if (dynamic_cast<RimIntersectionBox*>(uiItem))
         {
+            menuBuilder << "RicPasteIntersectionsFeature";
+            menuBuilder.addSeparator();
             menuBuilder << "RicAppendIntersectionFeature";
             menuBuilder << "RicAppendIntersectionBoxFeature";
+            menuBuilder.addSeparator();
+            menuBuilder << "RicCopyIntersectionsToAllViewsInCaseFeature";
         }
         else if (dynamic_cast<RimSimWellInView*>(uiItem))
         {
@@ -556,6 +572,8 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
 
         menuBuilder << "RicPasteTimeHistoryCurveFeature";
         menuBuilder << "RicPasteAsciiDataCurveFeature";
+        menuBuilder << "RicPasteSummaryCaseFeature";
+        menuBuilder.addSeparator();
         menuBuilder << "RicCopyReferencesToClipboardFeature";
         
         menuBuilder << "RicShowPlotDataFeature";
@@ -581,7 +599,6 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
         menuBuilder << "RicExportCarfin";
 
         menuBuilder << "RicImportObservedDataFeature";
-        menuBuilder << "RicPasteSummaryCaseFeature";
         menuBuilder << "RicReloadSummaryCaseFeature";
         menuBuilder << "RicCreateSummaryCaseCollectionFeature";
         menuBuilder << "Separator";
@@ -651,6 +668,8 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
             menuBuilder << "RicNewSimWellFractureFeature";
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
         }
+        menuBuilder.addSeparator();
+        menuBuilder << "RicCopyIntersectionsToAllViewsInCaseFeature";
     }
 
     {

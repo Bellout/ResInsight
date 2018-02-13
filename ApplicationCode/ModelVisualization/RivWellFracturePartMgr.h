@@ -25,6 +25,7 @@
 
 #include "cafPdmPointer.h"
 
+#include <QString>
 #include <vector>
 
 namespace cvf
@@ -43,6 +44,7 @@ namespace caf
 class RimFracture;
 class RimStimPlanFractureTemplate;
 class RimEclipseView;
+class RigFractureCell;
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -55,7 +57,9 @@ public:
 
     void                                appendGeometryPartsToModel(cvf::ModelBasicList* model, const RimEclipseView& eclView);
 
-    static std::vector<double>          mirrorDataAtSingleDepth(std::vector<double> depthData);
+    const QString                       resultInfoText(const RimEclipseView& activeView, cvf::Vec3d domainIntersectionPoint) const;
+
+    const RigFractureCell*              getFractureCellAtDomainCoord(cvf::Vec3d domainCoord) const;
 
 private:
     cvf::ref<cvf::Part>                 createEllipseSurfacePart(const RimEclipseView& activeView);
@@ -66,6 +70,8 @@ private:
     cvf::ref<cvf::Part>                 createStimPlanElementColorSurfacePart(const RimEclipseView& activeView);
 
     cvf::ref<cvf::Part>                 createContainmentMaskPart(const RimEclipseView& activeView);
+    
+    void                                appendFracturePerforationLengthParts(const RimEclipseView& activeView, cvf::ModelBasicList* model);
 
     cvf::ref<cvf::Part>                 createStimPlanMeshPart(const RimEclipseView& activeView);
     cvf::ref<cvf::DrawableGeo>          createStimPlanMeshDrawable(RimStimPlanFractureTemplate* stimPlanFracTemplate, const RimEclipseView& activeView) const;
@@ -74,18 +80,8 @@ private:
                                                                          cvf::Mat4d m, 
                                                                          const caf::DisplayCoordTransform& displayCoordTransform);
 
-    static bool                         stimPlanCellTouchesPolygon(const std::vector<cvf::Vec3f>& polygon, 
-                                                                   double xMin, 
-                                                                   double xMax, 
-                                                                   double yMin, 
-                                                                   double yMax, 
-                                                                   float polygonXmin, 
-                                                                   float polygonXmax, 
-                                                                   float polygonYmin, 
-                                                                   float polygonYmax);
-
     static cvf::ref<cvf::DrawableGeo>   buildDrawableGeoFromTriangles(const std::vector<cvf::uint>& triangleIndices, const std::vector<cvf::Vec3f>& nodeCoords);
 
 private:
-    caf::PdmPointer<RimFracture>        m_rimFracture;
+    caf::PdmPointer<RimFracture>                    m_rimFracture;
 };

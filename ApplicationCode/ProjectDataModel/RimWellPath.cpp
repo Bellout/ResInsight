@@ -42,8 +42,6 @@
 
 #include "RiuMainWindow.h"
 
-#include "RivWellPathPartMgr.h"
-
 #include "cafPdmUiTreeOrdering.h"
 #include "cafUtils.h"
 
@@ -198,6 +196,23 @@ void RimWellPath::setSurveyType(QString surveyType)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+double RimWellPath::wellPathRadius(double characteristicCellSize) const
+{
+    double radius = characteristicCellSize * wellPathRadiusScaleFactor();
+
+    RimWellPathCollection* coll = nullptr;
+    this->firstAncestorOrThisOfType(coll);
+    if (coll)
+    {
+        radius *= coll->wellPathRadiusScaleFactor();
+    }
+
+    return radius;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 RimFishbonesCollection* RimWellPath::fishbonesCollection()
 {
     CVF_ASSERT(m_completions);
@@ -281,21 +296,6 @@ RigWellPath* RimWellPath::wellPathGeometry()
 const RigWellPath* RimWellPath::wellPathGeometry() const
 {
     return m_wellPath.p();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-RivWellPathPartMgr* RimWellPath::partMgr()
-{
-    if (m_wellPathPartMgr.isNull()) 
-    {
-        RimWellPathCollection* wpColl;
-        this->firstAncestorOrThisOfType(wpColl);
-        if (wpColl) m_wellPathPartMgr = new RivWellPathPartMgr(this);
-    }
-
-    return m_wellPathPartMgr.p();
 }
 
 //--------------------------------------------------------------------------------------------------

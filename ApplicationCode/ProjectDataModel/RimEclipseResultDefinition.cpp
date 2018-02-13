@@ -33,6 +33,7 @@
 #include "RimEclipseResultCase.h"
 #include "RimEclipseView.h"
 #include "RimFlowDiagSolution.h"
+#include "RimIntersectionCollection.h"
 #include "RimPlotCurve.h"
 #include "RimReservoirCellResultsStorage.h"
 #include "Rim3dView.h"
@@ -409,6 +410,8 @@ void RimEclipseResultDefinition::loadDataAndUpdate()
             {
                 viewLinker->updateCellResult();
             }
+            RimGridView* eclView = dynamic_cast<RimGridView*>(view);
+            if (eclView) eclView->crossSectionCollection()->scheduleCreateDisplayModelAndRedraw2dIntersectionViews();
         }
     }
 
@@ -458,7 +461,15 @@ QList<caf::PdmOptionItemInfo> RimEclipseResultDefinition::calculateValueOptions(
         bool enableSouring = false;
 
 #ifdef ENABLE_SOURING
-        enableSouring = true;
+        if (m_eclipseCase.notNull())
+        {
+            RigCaseCellResultsData* cellResultsData = m_eclipseCase->results(this->porosityModel());
+
+            if (cellResultsData->hasFlowDiagUsableFluxes())
+            {
+                enableSouring = true;
+            }
+        }
 #endif /* ENABLE_SOURING */
 
 
@@ -1107,13 +1118,11 @@ bool RimEclipseResultDefinition::isFlowDiagOrInjectionFlooding() const
 //--------------------------------------------------------------------------------------------------
 bool RimEclipseResultDefinition::hasDualPorFractureResult()
 {
-    if ( m_eclipseCase
-        && m_eclipseCase->eclipseCaseData()
-        && m_eclipseCase->eclipseCaseData()->activeCellInfo(RiaDefines::FRACTURE_MODEL) 
-        && m_eclipseCase->eclipseCaseData()->activeCellInfo(RiaDefines::FRACTURE_MODEL)->reservoirActiveCellCount() > 0 )
-        {
-            return true;
-        } 
+    if (m_eclipseCase
+        && m_eclipseCase->eclipseCaseData())
+    {
+        return m_eclipseCase->eclipseCaseData()->hasFractureResults();
+    }
 
     return false;
 }

@@ -30,13 +30,14 @@
 
 #include "Rim3dOverlayInfoConfig.h"
 #include "RimCellRangeFilterCollection.h"
-#include "RimIntersectionCollection.h"
 #include "RimEclipseView.h"
 #include "RimGeoMechCase.h"
 #include "RimGeoMechCellColors.h"
 #include "RimGeoMechPropertyFilterCollection.h"
 #include "RimGridCollection.h"
+#include "RimIntersectionCollection.h"
 #include "RimLegendConfig.h"
+#include "RimTensorResults.h"
 #include "RimViewLinker.h"
 
 #include "RiuMainWindow.h"
@@ -47,6 +48,7 @@
 #include "RivGeoMechPartMgrCache.h"
 #include "RivGeoMechVizLogic.h"
 #include "RivSingleCellPartGenerator.h"
+#include "RivTensorResultPartMgr.h"
 
 #include "cafCadNavigation.h"
 #include "cafCeetronPlusNavigation.h"
@@ -81,12 +83,18 @@ RimGeoMechView::RimGeoMechView(void)
     cellResult = new RimGeoMechCellColors();
     cellResult.uiCapability()->setUiHidden(true);
 
+
+    CAF_PDM_InitFieldNoDefault(&m_tensorResults, "TensorResults", "Tensor Results", "", "", "");
+    m_tensorResults = new RimTensorResults();
+    m_tensorResults.uiCapability()->setUiHidden(true);
+
     CAF_PDM_InitFieldNoDefault(&m_propertyFilterCollection, "PropertyFilters", "Property Filters", "", "", "");
     m_propertyFilterCollection = new RimGeoMechPropertyFilterCollection();
     m_propertyFilterCollection.uiCapability()->setUiHidden(true);
 
     m_scaleTransform = new cvf::Transform();
     m_vizLogic = new RivGeoMechVizLogic(this);
+    m_tensorPartMgr = new RivTensorResultPartMgr(this);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -96,6 +104,7 @@ RimGeoMechView::~RimGeoMechView(void)
 {
     m_geomechCase = NULL;
 
+    delete m_tensorResults;
     delete cellResult;
     delete m_propertyFilterCollection;
 }
@@ -205,6 +214,7 @@ void RimGeoMechView::createDisplayModel()
    cvf::ref<cvf::ModelBasicList> mainSceneGridVizModel =  new cvf::ModelBasicList;
    mainSceneGridVizModel->setName("GridModel");
    m_vizLogic->appendNoAnimPartsToModel(mainSceneGridVizModel.p());
+
    mainSceneGridVizModel->updateBoundingBoxesRecursive();
    mainScene->addModel(mainSceneGridVizModel.p());
 
@@ -280,6 +290,19 @@ void RimGeoMechView::updateCurrentTimeStep()
 
                     frameScene->addModel(wellPathModelBasicList.p());
                 }
+
+                {
+                    // Tensors
+                    cvf::String name = "Tensor";
+                    this->removeModelByName(frameScene, name);
+
+                    cvf::ref<cvf::ModelBasicList> frameParts = new cvf::ModelBasicList;
+                    frameParts->setName(name);
+                    m_tensorPartMgr->appendDynamicGeometryPartsToModel(frameParts.p(), m_currentTimeStep);
+                    frameParts->updateBoundingBoxesRecursive();
+
+                    frameScene->addModel(frameParts.p());
+                }
             }
         }
 
@@ -290,7 +313,9 @@ void RimGeoMechView::updateCurrentTimeStep()
 
         if (this->cellResult()->hasResult())
         {
-            m_crossSectionCollection->updateCellResultColor(m_currentTimeStep);
+            m_crossSectionCollection->updateCellResultColor(m_currentTimeStep, 
+                                                            this->cellResult()->legendConfig()->scalarMapper(), 
+                                                            nullptr);
         }
         else
         {
@@ -317,46 +342,6 @@ void RimGeoMechView::updateStaticCellColors()
     m_vizLogic->updateStaticCellColors(-1);
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimGeoMechView::updateDisplayModelVisibility()
-{
-    if (m_viewer.isNull()) return;
-
-    const cvf::uint uintSurfaceBit      = surfaceBit;
-    const cvf::uint uintMeshSurfaceBit  = meshSurfaceBit;
-    const cvf::uint uintFaultBit        = faultBit;
-    const cvf::uint uintMeshFaultBit    = meshFaultBit;
- 
-    // Initialize the mask to show everything except the the bits controlled here
-    unsigned int mask = 0xffffffff & ~uintSurfaceBit & ~uintFaultBit & ~uintMeshSurfaceBit & ~uintMeshFaultBit ;
-
-    // Then turn the appropriate bits on according to the user settings
-
-    if (surfaceMode == SURFACE)
-    {
-         mask |= uintSurfaceBit;
-         mask |= uintFaultBit;
-    }
-    else if (surfaceMode == FAULTS)
-    {
-        mask |= uintFaultBit;
-    }
-
-    if (meshMode == FULL_MESH)
-    {
-        mask |= uintMeshSurfaceBit;
-        mask |= uintMeshFaultBit;
-    }
-    else if (meshMode == FAULTS_MESH)
-    {
-        mask |= uintMeshFaultBit;
-    }
-
-    m_viewer->setEnableMask(mask);
-    m_viewer->update();
-}
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -384,12 +369,22 @@ void RimGeoMechView::resetLegendsInViewer()
 //--------------------------------------------------------------------------------------------------
 void RimGeoMechView::updateLegends()
 {
-    if (m_viewer)
+    if ( m_viewer )
     {
         m_viewer->removeAllColorLegends();
-    }
 
-    if (!m_geomechCase || !m_viewer || !m_geomechCase->geoMechData()
+        this->updateLegendTextAndRanges(cellResult()->legendConfig(), m_currentTimeStep());
+
+        m_viewer->addColorLegendToBottomLeftCorner(cellResult()->legendConfig->legend());
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimGeoMechView::updateLegendTextAndRanges(RimLegendConfig* legendConfig, int timeStepIndex)
+{
+    if (!m_geomechCase || !m_geomechCase->geoMechData()
         || !this->isTimeStepDependentDataVisible() 
         || !(cellResult()->resultAddress().isValid()) )
     {
@@ -406,16 +401,16 @@ void RimGeoMechView::updateLegends()
 
     RigFemResultAddress resVarAddress = cellResult()->resultAddress();
 
-    gmCase->femPartResults()->minMaxScalarValues(resVarAddress, m_currentTimeStep, &localMin, &localMax);
-    gmCase->femPartResults()->posNegClosestToZero(resVarAddress, m_currentTimeStep, &localPosClosestToZero, &localNegClosestToZero);
+    gmCase->femPartResults()->minMaxScalarValues(resVarAddress, timeStepIndex, &localMin, &localMax);
+    gmCase->femPartResults()->posNegClosestToZero(resVarAddress, timeStepIndex, &localPosClosestToZero, &localNegClosestToZero);
 
     gmCase->femPartResults()->minMaxScalarValues(resVarAddress, &globalMin, &globalMax);
     gmCase->femPartResults()->posNegClosestToZero(resVarAddress, &globalPosClosestToZero, &globalNegClosestToZero);
 
 
-    cellResult()->legendConfig->setClosestToZeroValues(globalPosClosestToZero, globalNegClosestToZero, localPosClosestToZero, localNegClosestToZero);
-    cellResult()->legendConfig->setAutomaticRanges(globalMin, globalMax, localMin, localMax);
-    
+    legendConfig->setClosestToZeroValues(globalPosClosestToZero, globalNegClosestToZero, localPosClosestToZero, localNegClosestToZero);
+    legendConfig->setAutomaticRanges(globalMin, globalMax, localMin, localMax);
+
     if (cellResult()->hasCategoryResult())
     {
         std::vector<QString> fnVector;
@@ -423,18 +418,16 @@ void RimGeoMechView::updateLegends()
         {
             fnVector = gmCase->femPartResults()->activeFormationNames()->formationNames(); 
         }
-        cellResult()->legendConfig->setNamedCategoriesInverse(fnVector);
+        legendConfig->setNamedCategoriesInverse(fnVector);
     }
-    
-    m_viewer->addColorLegendToBottomLeftCorner(cellResult()->legendConfig->legend());
 
-    cvf::String legendTitle = cvfqt::Utils::toString(
+    QString legendTitle = 
         caf::AppEnum<RigFemResultPosEnum>(cellResult->resultPositionType()).uiText() + "\n"
-        + cellResult->resultFieldUiName());
+        + cellResult->resultFieldUiName();
 
     if (!cellResult->resultComponentUiName().isEmpty())
     {
-        legendTitle += ", " + cvfqt::Utils::toString(cellResult->resultComponentUiName());
+        legendTitle += ", " + cellResult->resultComponentUiName();
     }
 
     if (   cellResult->resultFieldName() == "SE" || cellResult->resultFieldName() == "ST" || cellResult->resultFieldName() == "POR-Bar" 
@@ -443,7 +436,28 @@ void RimGeoMechView::updateLegends()
         legendTitle += " [Bar]";
     }
 
-    cellResult()->legendConfig->setTitle(legendTitle);
+    if (cellResult->resultFieldName() == "MODULUS")
+    {
+        legendTitle += " [GPa]";
+    }
+
+    legendConfig->setTitle(legendTitle);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+const cvf::ref<RivGeoMechVizLogic> RimGeoMechView::vizLogic() const
+{
+    return m_vizLogic;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+const RimTensorResults* RimGeoMechView::tensorResults() const
+{
+    return m_tensorResults;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -472,7 +486,7 @@ void RimGeoMechView::clampCurrentTimestep()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RimGeoMechView::isTimeStepDependentDataVisible()
+bool RimGeoMechView::isTimeStepDependentDataVisible() const
 {
     return this->hasUserRequestedAnimation() && (this->cellResult()->hasResult() || this->geoMechPropertyFilterCollection()->hasActiveFilters());
 }
@@ -649,6 +663,7 @@ void RimGeoMechView::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering
     uiTreeOrdering.add(m_gridCollection());
 
     uiTreeOrdering.add(cellResult());
+    uiTreeOrdering.add(m_tensorResults());
 
     uiTreeOrdering.add(m_crossSectionCollection());
     

@@ -70,19 +70,6 @@
 
 CAF_PDM_XML_ABSTRACT_SOURCE_INIT(RimFracture, "Fracture");
 
-namespace caf {
-
-template<>
-void caf::AppEnum< RimFracture::StimPlanResultColorType >::setUp()
-{
-    addItem(RimFracture::COLOR_INTERPOLATION,   "COLOR_INTERPOLATION",  "On");
-    addItem(RimFracture::SINGLE_ELEMENT_COLOR,  "SINGLE_ELEMENT_COLOR", "Off");
-
-    setDefault(RimFracture::COLOR_INTERPOLATION);
-}
-
-} // End namespace caf
-
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
@@ -100,7 +87,7 @@ void setDefaultFractureColorResult()
 
             for (RimStimPlanColors* const stimPlanColors : fractureColors)
             {
-                stimPlanColors->setDefaultResultNameForStimPlan();
+                stimPlanColors->setDefaultResultName();
             }
         }
     }
@@ -154,8 +141,6 @@ RimFracture::RimFracture(void)
     m_wellFractureAzimuthAngleWarning.uiCapability()->setUiReadOnly(true);
     m_wellFractureAzimuthAngleWarning.xmlCapability()->disableIO();
 
-    CAF_PDM_InitFieldNoDefault(&m_stimPlanCellVizMode, "StimPlanCellVizMode", "StimPlan Color Interpolation",   "", "", "");
-
     m_fracturePartMgr = new RivWellFracturePartMgr(this);
 }
 
@@ -193,14 +178,6 @@ void RimFracture::setStimPlanTimeIndexToPlot(int timeIndex)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimFracture::StimPlanResultColorType RimFracture::stimPlanResultColorType() const
-{
-    return m_stimPlanCellVizMode();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
 std::vector<size_t> RimFracture::getPotentiallyFracturedCells(const RigMainGrid* mainGrid)
 {
     std::vector<size_t> cellindecies;
@@ -227,10 +204,10 @@ void RimFracture::fieldChangedByUi(const caf::PdmFieldHandle* changedField, cons
     if (changedField == &m_azimuth || 
         changedField == &m_fractureTemplate ||
         changedField == &m_stimPlanTimeIndexToPlot ||
-        changedField == &m_stimPlanCellVizMode ||
         changedField == this->objectToggleField() ||
         changedField == &m_dip ||
-        changedField == &m_tilt)
+        changedField == &m_tilt ||
+        changedField == &m_perforationLength)
     {
         Rim3dView* rimView = nullptr;
         this->firstAncestorOrThisOfType(rimView);
@@ -461,15 +438,15 @@ void RimFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
 
     if (fractureTemplate())
     {
-        if (fractureTemplate()->orientationType == RimFractureTemplate::ALONG_WELL_PATH
-            || fractureTemplate()->orientationType == RimFractureTemplate::TRANSVERSE_WELL_PATH)
+        if (fractureTemplate()->orientationType() == RimFractureTemplate::ALONG_WELL_PATH
+            || fractureTemplate()->orientationType() == RimFractureTemplate::TRANSVERSE_WELL_PATH)
         {
             m_uiWellPathAzimuth.uiCapability()->setUiHidden(true);
             m_uiWellFractureAzimuthDiff.uiCapability()->setUiHidden(true);
             m_wellFractureAzimuthAngleWarning.uiCapability()->setUiHidden(true);
         }
 
-        else if (fractureTemplate()->orientationType == RimFractureTemplate::AZIMUTH)
+        else if (fractureTemplate()->orientationType() == RimFractureTemplate::AZIMUTH)
         {
             m_uiWellPathAzimuth.uiCapability()->setUiHidden(false);
             m_uiWellFractureAzimuthDiff.uiCapability()->setUiHidden(false);
@@ -485,17 +462,17 @@ void RimFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
             }
         }
 
-        if (fractureTemplate()->orientationType == RimFractureTemplate::ALONG_WELL_PATH
-            || fractureTemplate()->orientationType == RimFractureTemplate::TRANSVERSE_WELL_PATH)
+        if (fractureTemplate()->orientationType() == RimFractureTemplate::ALONG_WELL_PATH
+            || fractureTemplate()->orientationType() == RimFractureTemplate::TRANSVERSE_WELL_PATH)
         {
             m_azimuth.uiCapability()->setUiReadOnly(true);
         }
-        else if (fractureTemplate()->orientationType == RimFractureTemplate::AZIMUTH)
+        else if (fractureTemplate()->orientationType() == RimFractureTemplate::AZIMUTH)
         {
             m_azimuth.uiCapability()->setUiReadOnly(false);
         }
 
-        if (fractureTemplate()->orientationType == RimFractureTemplate::ALONG_WELL_PATH)
+        if (fractureTemplate()->orientationType() == RimFractureTemplate::ALONG_WELL_PATH)
         {
             m_perforationEfficiency.uiCapability()->setUiHidden(false);
             m_perforationLength.uiCapability()->setUiHidden(false);
@@ -506,11 +483,11 @@ void RimFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
             m_perforationLength.uiCapability()->setUiHidden(true);
         }
 
-        if (fractureTemplate()->conductivityType == RimFractureTemplate::FINITE_CONDUCTIVITY)
+        if (fractureTemplate()->conductivityType() == RimFractureTemplate::FINITE_CONDUCTIVITY)
         {
             m_wellDiameter.uiCapability()->setUiHidden(false);
         }
-        else if (fractureTemplate()->conductivityType == RimFractureTemplate::INFINITE_CONDUCTIVITY)
+        else if (fractureTemplate()->conductivityType() == RimFractureTemplate::INFINITE_CONDUCTIVITY)
         {
             m_wellDiameter.uiCapability()->setUiHidden(true);
         }
@@ -519,14 +496,12 @@ void RimFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
         if (dynamic_cast<RimStimPlanFractureTemplate*>(fracTemplate))
         {
             m_stimPlanTimeIndexToPlot.uiCapability()->setUiHidden(false);
-            m_stimPlanCellVizMode.uiCapability()->setUiHidden(false);
 
             m_stimPlanTimeIndexToPlot.uiCapability()->setUiReadOnly(true);
         }
         else
         {
             m_stimPlanTimeIndexToPlot.uiCapability()->setUiHidden(true);
-            m_stimPlanCellVizMode.uiCapability()->setUiHidden(true);
         }
     }
     else
@@ -651,9 +626,9 @@ void RimFracture::setFractureTemplate(RimFractureTemplate* fractureTemplate)
         m_stimPlanTimeIndexToPlot = stimPlanFracTemplate->activeTimeStepIndex();
     }
 
-    if (fractureTemplate->orientationType == RimFractureTemplate::AZIMUTH)
+    if (fractureTemplate->orientationType() == RimFractureTemplate::AZIMUTH)
     {
-        m_azimuth = fractureTemplate->azimuthAngle;
+        m_azimuth = fractureTemplate->azimuthAngle();
     }
     else
     {

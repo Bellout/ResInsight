@@ -38,9 +38,12 @@ class RimGeoMechCase;
 class RimGeoMechCellColors;
 class RimGeoMechResultDefinition;
 class RimGeoMechPropertyFilterCollection;
+class RimTensorResults;
 class RiuViewer;
 class RivGeoMechPartMgr;
 class RivGeoMechVizLogic;
+class RimLegendConfig;
+class RivTensorResultPartMgr;
 
 namespace cvf {
     class CellRangeFilter;
@@ -72,7 +75,7 @@ public:
     const RimGeoMechPropertyFilterCollection*           geoMechPropertyFilterCollection() const;
     void                                                setOverridePropertyFilterCollection(RimGeoMechPropertyFilterCollection* pfc);
 
-    bool                                                isTimeStepDependentDataVisible();
+    bool                                                isTimeStepDependentDataVisible() const override ;
 
     virtual cvf::Transform*                             scaleTransform() override;
     virtual void                                        scheduleGeometryRegen(RivCellSetEnum geometryType) override;
@@ -84,6 +87,11 @@ public:
 
     virtual void                                        calculateCurrentTotalCellVisibility(cvf::UByteArray* totalVisibility, int timeStep) override;
 
+    void                                                updateLegendTextAndRanges(RimLegendConfig* legendConfig, int timeStepIndex);
+
+    const cvf::ref<RivGeoMechVizLogic>                  vizLogic() const;
+    const RimTensorResults*                             tensorResults() const;
+
 protected:
     virtual void                                        defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName = "") override;
     virtual void                                        onLoadDataAndUpdate() override;
@@ -92,7 +100,6 @@ protected:
 
 private:
     virtual void                                        createDisplayModel() override;
-    virtual void                                        updateDisplayModelVisibility() override;
     virtual void                                        updateScaleTransform() override;
 
     virtual void                                        clampCurrentTimestep() override;
@@ -108,7 +115,7 @@ private:
     virtual void                                        initAfterRead() override;
 
 
-
+    caf::PdmChildField<RimTensorResults*>                   m_tensorResults;
     caf::PdmChildField<RimGeoMechPropertyFilterCollection*> m_propertyFilterCollection;
     caf::PdmPointer<RimGeoMechPropertyFilterCollection>     m_overridePropertyFilterCollection;
 
@@ -116,5 +123,6 @@ private:
     cvf::ref<RivGeoMechVizLogic>                        m_vizLogic;
     cvf::ref<cvf::Transform>                            m_scaleTransform;
 
+    cvf::ref<RivTensorResultPartMgr>                    m_tensorPartMgr;
 };
 

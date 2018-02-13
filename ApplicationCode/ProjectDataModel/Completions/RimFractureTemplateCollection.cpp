@@ -18,11 +18,26 @@
 
 #include "RimFractureTemplateCollection.h"
 
+#include "RigStatisticsMath.h"
+
+#include "RimCase.h"
+#include "RimEclipseView.h"
 #include "RimEllipseFractureTemplate.h"
+#include "RimFracture.h"
 #include "RimFractureTemplate.h"
+#include "RimOilField.h"
+#include "RimProject.h"
+#include "RimSimWellInViewCollection.h"
+#include "RimStimPlanColors.h"
 #include "RimStimPlanFractureTemplate.h"
+#include "RimWellPath.h"
+#include "RimWellPathCollection.h"
+#include "RimWellPathFracture.h"
+#include "RimWellPathFractureCollection.h"
 
 #include "cafPdmObject.h"
+
+#include <map>
 
 
 
@@ -54,21 +69,17 @@ RimFractureTemplateCollection::~RimFractureTemplateCollection()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<std::pair<QString, QString> > RimFractureTemplateCollection::stimPlanResultNamesAndUnits() const
+std::vector<std::pair<QString, QString> > RimFractureTemplateCollection::resultNamesAndUnits() const
 {
     std::set<std::pair<QString, QString> > nameSet;
 
     for (const RimFractureTemplate* f : fractureDefinitions())
     {
-        auto stimPlanFracture = dynamic_cast<const RimStimPlanFractureTemplate*>(f);
-        if (stimPlanFracture)
-        {
-            std::vector<std::pair<QString, QString> > namesAndUnits = stimPlanFracture->resultNamesWithUnit();
+        std::vector<std::pair<QString, QString> > namesAndUnits = f->uiResultNamesWithUnit();
 
-            for (auto nameAndUnit : namesAndUnits)
-            {
-                nameSet.insert(nameAndUnit);
-            }
+        for (const auto& nameAndUnit : namesAndUnits)
+        {
+            nameSet.insert(nameAndUnit);
         }
     }
 
@@ -80,39 +91,24 @@ std::vector<std::pair<QString, QString> > RimFractureTemplateCollection::stimPla
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<QString> RimFractureTemplateCollection::stimPlanResultNames() const
+void RimFractureTemplateCollection::computeMinMax(const QString& uiResultName, const QString& unit, double* minValue,
+                                                  double* maxValue, double* posClosestToZero, double* negClosestToZero) const
 {
-    std::vector<QString> names;
+    MinMaxAccumulator minMaxAccumulator;
+    PosNegAccumulator posNegAccumulator;
 
-    for (auto nameAndUnit : stimPlanResultNamesAndUnits())
-    {
-        names.push_back(nameAndUnit.first);
-    }
-
-    return names;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimFractureTemplateCollection::computeMinMax(const QString& resultName, const QString& unit, double* minValue, double* maxValue, double* posClosestToZero, double* negClosestToZero) const
-{
     for (const RimFractureTemplate* f : fractureDefinitions())
     {
-        auto stimPlanFracture = dynamic_cast<const RimStimPlanFractureTemplate*>(f);
-        if (stimPlanFracture)
+        if (f)
         {
-            stimPlanFracture->computeMinMax(resultName, unit, minValue, maxValue, posClosestToZero, negClosestToZero);
+            f->appendDataToResultStatistics(uiResultName, unit, minMaxAccumulator, posNegAccumulator);
         }
     }
-}
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimFractureTemplateCollection::deleteFractureDefinitions()
-{
-    fractureDefinitions.deleteAllChildObjects();
+    if (*minValue) *minValue = minMaxAccumulator.min;
+    if (*maxValue) *maxValue = minMaxAccumulator.max;
+    if (*posClosestToZero) *posClosestToZero = posNegAccumulator.pos;
+    if (*negClosestToZero) *negClosestToZero = posNegAccumulator.neg;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -126,6 +122,21 @@ void RimFractureTemplateCollection::loadAndUpdateData()
         if (stimPlanFracture)
         {
             stimPlanFracture->loadDataAndUpdate();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimFractureTemplateCollection::setDefaultConductivityResultIfEmpty()
+{
+    for (RimFractureTemplate* f : fractureDefinitions())
+    {
+        RimStimPlanFractureTemplate* stimPlanFracture = dynamic_cast<RimStimPlanFractureTemplate*>(f);
+        if (stimPlanFracture)
+        {
+            stimPlanFracture->setDefaultConductivityResultIfEmpty();
         }
     }
 }
@@ -147,6 +158,110 @@ void RimFractureTemplateCollection::updateFilePathsFromProjectPath(const QString
         if (ellipseFracture)
         {
             ellipseFracture->loadDataAndUpdate();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimFractureTemplateCollection::initAfterRead()
+{
+    RimProject* proj = nullptr;
+    this->firstAncestorOrThisOfType(proj);
+    if (proj && proj->isProjectFileVersionEqualOrOlderThan("2018.1.0.103"))
+    {
+        bool setAllShowMeshToFalseOnAllEclipseViews = false;
+
+        std::vector<RimWellPathFracture*> wellPathFractures;
+        RimWellPathCollection* wellPathCollection = proj->activeOilField()->wellPathCollection();
+        wellPathCollection->descendantsIncludingThisOfType(wellPathFractures);
+
+        for (RimWellPathFracture* fracture : wellPathFractures)
+        {
+            RimStimPlanFractureTemplate* stimPlanFractureTemplate = dynamic_cast<RimStimPlanFractureTemplate*>(fracture->fractureTemplate());
+            if (stimPlanFractureTemplate)
+            {
+                if (stimPlanFractureTemplate->showStimPlanMesh() == false)
+                {
+                    setAllShowMeshToFalseOnAllEclipseViews = true;
+                    break;
+                }
+            }
+        }
+
+        std::vector<RimEclipseView*> eclipseViews;
+        
+        std::vector<RimCase*> rimCases;
+        proj->allCases(rimCases);
+
+        for (RimCase* rimCase : rimCases)
+        {
+            for (Rim3dView* view : rimCase->views())
+            {
+                RimEclipseView* eclView = dynamic_cast<RimEclipseView*>(view);
+                if (eclView)
+                {
+                    eclipseViews.push_back(eclView);
+                }
+            }
+        }
+
+        for (RimEclipseView* eclipseView : eclipseViews)
+        {
+            if (setAllShowMeshToFalseOnAllEclipseViews)
+            {
+                eclipseView->fractureColors->setShowStimPlanMesh(false);
+                continue;
+            }
+
+            //Find all fractures in all simWells
+            std::map<RimStimPlanFractureTemplate*, bool> stimPlanFractureTemplatesInView;
+
+            std::vector<RimFracture*> fractures;
+            if (eclipseView->wellCollection)
+            {
+                eclipseView->wellCollection->descendantsIncludingThisOfType(fractures);
+            }
+            if (fractures.empty()) continue;
+
+            for (RimFracture* fracture : fractures)
+            {
+                RimStimPlanFractureTemplate* stimPlanFractureTemplate = dynamic_cast<RimStimPlanFractureTemplate*>(fracture->fractureTemplate());
+                if (stimPlanFractureTemplate)
+                {
+                    stimPlanFractureTemplatesInView[stimPlanFractureTemplate];
+                }
+            }
+
+            if (stimPlanFractureTemplatesInView.empty()) continue;
+
+            auto templateIt = stimPlanFractureTemplatesInView.begin();
+
+            if (stimPlanFractureTemplatesInView.size() == 1)
+            {
+                eclipseView->fractureColors->setShowStimPlanMesh(templateIt->first->showStimPlanMesh());
+            }
+            else
+            {
+                bool anySetShowStimPlanMeshIsSetToFalse = false;
+                for (templateIt; templateIt != stimPlanFractureTemplatesInView.end(); templateIt++)
+                {
+                    if (templateIt->first->showStimPlanMesh() == false)
+                    {
+                        anySetShowStimPlanMeshIsSetToFalse = true;
+                        break;
+                    }
+                }
+                if (anySetShowStimPlanMeshIsSetToFalse)
+                {
+                    eclipseView->fractureColors->setShowStimPlanMesh(false);
+                }
+                else
+                {
+                    eclipseView->fractureColors->setShowStimPlanMesh(true);
+                }
+            }
         }
     }
 }

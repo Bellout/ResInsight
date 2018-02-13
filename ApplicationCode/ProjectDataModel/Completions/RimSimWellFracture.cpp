@@ -30,6 +30,7 @@
 #include "RimSimWellInView.h"
 
 #include "cafPdmUiDoubleSliderEditor.h"
+#include "RigWellPath.h"
 
 
 
@@ -83,16 +84,16 @@ void RimSimWellFracture::updateAzimuthBasedOnWellAzimuthAngle()
     updateBranchGeometry();
     
     if (!fractureTemplate()) return;
-    if (fractureTemplate()->orientationType == RimFractureTemplate::ALONG_WELL_PATH 
-        || fractureTemplate()->orientationType == RimFractureTemplate::TRANSVERSE_WELL_PATH)
+    if (fractureTemplate()->orientationType() == RimFractureTemplate::ALONG_WELL_PATH 
+        || fractureTemplate()->orientationType() == RimFractureTemplate::TRANSVERSE_WELL_PATH)
     {
         double simWellAzimuth = wellAzimuthAtFracturePosition();
 
-        if (fractureTemplate()->orientationType == RimFractureTemplate::ALONG_WELL_PATH )
+        if (fractureTemplate()->orientationType() == RimFractureTemplate::ALONG_WELL_PATH )
         {
             m_azimuth = simWellAzimuth;
         }
-        else if (fractureTemplate()->orientationType == RimFractureTemplate::TRANSVERSE_WELL_PATH)
+        else if (fractureTemplate()->orientationType() == RimFractureTemplate::TRANSVERSE_WELL_PATH)
         {
             if (simWellAzimuth + 90 < 360) m_azimuth = simWellAzimuth + 90;
             else m_azimuth = simWellAzimuth - 90;
@@ -129,6 +130,29 @@ void RimSimWellFracture::loadDataAndUpdate()
     setBranchGeometry();
     updateFracturePositionFromLocation();
     updateAzimuthBasedOnWellAzimuthAngle();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<cvf::Vec3d> RimSimWellFracture::perforationLengthCenterLineCoords() const
+{
+    std::vector<cvf::Vec3d> coords;
+
+    if (!m_branchCenterLines.empty() && m_branchIndex < static_cast<int>(m_branchCenterLines.size()))
+    {
+        RigWellPath wellPathGeometry;
+
+        wellPathGeometry.m_wellPathPoints = m_branchCenterLines[m_branchIndex].wellPathPoints();
+        wellPathGeometry.m_measuredDepths = m_branchCenterLines[m_branchIndex].measuredDepths();
+
+        double startMd = m_location - perforationLength() / 2.0;
+        double endMd = m_location + perforationLength() / 2.0;
+
+        coords = wellPathGeometry.clippedPointSubset(startMd, endMd).first;
+    }
+
+    return coords;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -197,6 +221,7 @@ void RimSimWellFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrderi
     RimFracture::defineUiOrdering(uiConfigName, uiOrdering);
 
     uiOrdering.add(nameField());
+    uiOrdering.add(&m_fractureTemplate);
 
     caf::PdmUiGroup* locationGroup = uiOrdering.addNewGroup("Location / Orientation");
     locationGroup->add(&m_location);
@@ -210,9 +235,7 @@ void RimSimWellFracture::defineUiOrdering(QString uiConfigName, caf::PdmUiOrderi
 
     caf::PdmUiGroup* propertyGroup = uiOrdering.addNewGroup("Properties");
     propertyGroup->add(&m_fractureUnit);
-    propertyGroup->add(&m_fractureTemplate);
     propertyGroup->add(&m_stimPlanTimeIndexToPlot);
-    propertyGroup->add(&m_stimPlanCellVizMode);
     propertyGroup->add(&m_perforationLength);
     propertyGroup->add(&m_perforationEfficiency);
     propertyGroup->add(&m_wellDiameter);

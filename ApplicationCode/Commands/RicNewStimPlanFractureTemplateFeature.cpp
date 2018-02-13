@@ -20,8 +20,9 @@
 
 #include "RiaApplication.h"
 
-#include "RimOilField.h"
+#include "RimEclipseView.h"
 #include "RimFractureTemplateCollection.h"
+#include "RimOilField.h"
 #include "RimProject.h"
 #include "RimStimPlanFractureTemplate.h"
 
@@ -44,7 +45,7 @@ void RicNewStimPlanFractureTemplateFeature::onActionTriggered(bool isChecked)
 {
     RiaApplication* app = RiaApplication::instance();
     QString defaultDir = app->lastUsedDialogDirectory("BINARY_GRID");
-    QString fileName = QFileDialog::getOpenFileName(NULL, "Open StimPlan XML File", defaultDir, "StimPlan XML File (*.xml);;All files(*.*)");
+    QString fileName = QFileDialog::getOpenFileName(nullptr, "Open StimPlan XML File", defaultDir, "StimPlan XML File (*.xml);;All files(*.*)");
 
     if (fileName.isEmpty()) return;
 
@@ -60,13 +61,26 @@ void RicNewStimPlanFractureTemplateFeature::onActionTriggered(bool isChecked)
     {
         RimStimPlanFractureTemplate* fractureDef = new RimStimPlanFractureTemplate();
         fracDefColl->fractureDefinitions.push_back(fractureDef);
-        fractureDef->name = "StimPlan Fracture Template";
+        fractureDef->setName("StimPlan Fracture Template");
         fractureDef->setFileName(fileName);
         fractureDef->loadDataAndUpdate();
         fractureDef->setDefaultsBasedOnXMLfile();
         fractureDef->setDefaultWellDiameterFromUnit();
+        fractureDef->updateFractureGrid();
 
         fracDefColl->updateConnectedEditors();
+
+        std::vector<Rim3dView*> views;
+        project->allVisibleViews(views);
+
+        for (Rim3dView* view : views)
+        {
+            if (dynamic_cast<RimEclipseView*>(view))
+            {
+                view->updateConnectedEditors();
+            }
+        }
+
         RiuMainWindow::instance()->selectAsCurrentItem(fractureDef);
     }
 }

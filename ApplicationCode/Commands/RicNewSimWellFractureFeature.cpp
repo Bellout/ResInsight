@@ -32,6 +32,7 @@
 #include "RimOilField.h"
 #include "RimProject.h"
 #include "RimSimWellFracture.h"
+#include "RimStimPlanColors.h"
 #include "RimSimWellFractureCollection.h"
 #include "RimSimWellInView.h"
 
@@ -50,6 +51,9 @@ CAF_CMD_SOURCE_INIT(RicNewSimWellFractureFeature, "RicNewSimWellFractureFeature"
 //--------------------------------------------------------------------------------------------------
 void RicNewSimWellFractureFeature::onActionTriggered(bool isChecked)
 {
+    RimProject* proj = RiaApplication::instance()->project();
+    if (proj->allFractureTemplates().empty()) return;
+
     caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
     if (!pdmUiItem) return;
 
@@ -60,6 +64,15 @@ void RicNewSimWellFractureFeature::onActionTriggered(bool isChecked)
     objHandle->firstAncestorOrThisOfType(eclipseWell);
 
     RimSimWellFracture* fracture = new RimSimWellFracture();
+    if (eclipseWell->simwellFractureCollection()->simwellFractures.empty())
+    {
+        RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
+        if (activeView)
+        {
+            activeView->fractureColors->setDefaultResultName();
+        }
+    }
+
     eclipseWell->simwellFractureCollection()->simwellFractures.push_back(fracture);
 
     RimOilField* oilfield = nullptr;
@@ -109,6 +122,9 @@ void RicNewSimWellFractureFeature::setupActionLook(QAction* actionToSetup)
 //--------------------------------------------------------------------------------------------------
 bool RicNewSimWellFractureFeature::isCommandEnabled()
 {
+    RimProject* proj = RiaApplication::instance()->project();
+    if (proj->allFractureTemplates().empty()) return false;
+
     caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
     if (!pdmUiItem) return false;
 

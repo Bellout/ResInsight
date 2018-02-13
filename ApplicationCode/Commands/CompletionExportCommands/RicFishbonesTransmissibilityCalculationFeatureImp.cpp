@@ -19,13 +19,14 @@
 #include "RicFishbonesTransmissibilityCalculationFeatureImp.h"
 
 #include "RicExportCompletionDataSettingsUi.h"
-#include "RicWellPathExportCompletionDataFeature.h"
+#include "RicWellPathExportCompletionDataFeatureImpl.h"
 
 #include "RigActiveCellInfo.h"
 #include "RigCompletionData.h"
 #include "RigEclipseCaseData.h"
 #include "RigMainGrid.h"
 #include "RigWellPath.h"
+#include "RigWellPathIntersectionTools.h"
 
 #include "RimFishboneWellPath.h"
 #include "RimFishboneWellPathCollection.h"
@@ -34,6 +35,28 @@
 #include "RimWellPath.h"
 #include "RimWellPathCompletions.h"
 #include "RigWellLogExtractor.h"
+
+//==================================================================================================
+/// 
+//==================================================================================================
+struct WellBorePartForTransCalc
+{
+    WellBorePartForTransCalc(cvf::Vec3d lengthsInCell, double wellRadius, double skinFactor, bool isMainBore, QString metaData)
+        : lengthsInCell(lengthsInCell), wellRadius(wellRadius), skinFactor(skinFactor), isMainBore(isMainBore), metaData(metaData)
+    {
+        intersectionWithWellMeasuredDepth = HUGE_VAL;
+        lateralIndex = cvf::UNDEFINED_SIZE_T;
+    }
+
+    cvf::Vec3d lengthsInCell;
+    double     wellRadius;
+    double     skinFactor;
+    QString    metaData;
+    bool       isMainBore;
+
+    double      intersectionWithWellMeasuredDepth;
+    size_t      lateralIndex;
+};
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -44,7 +67,7 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findFishboneLateralsWell
 {
     // Generate data
     const RigEclipseCaseData* caseData = settings.caseToApply()->eclipseCaseData();
-    std::vector<WellSegmentLocation> locations = RicWellPathExportCompletionDataFeature::findWellSegmentLocations(settings.caseToApply, wellPath);
+    std::vector<WellSegmentLocation> locations = RicWellPathExportCompletionDataFeatureImpl::findWellSegmentLocations(settings.caseToApply, wellPath);
 
     RiaEclipseUnitTools::UnitSystem unitSystem = caseData->unitsType();
     bool isMainBore = false;
@@ -63,7 +86,10 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findFishboneLateralsWell
                                                                                  isMainBore,
                                                                                  completionMetaData);
 
-                wellBorePartsInCells[intersection.cellIndex].push_back(wellBorePart);
+                wellBorePart.intersectionWithWellMeasuredDepth = location.measuredDepth;
+                wellBorePart.lateralIndex = lateral.lateralIndex;
+
+                wellBorePartsInCells[intersection.globalCellIndex].push_back(wellBorePart);
 
             }
         }
@@ -80,24 +106,21 @@ std::vector<RigCompletionData> RicFishbonesTransmissibilityCalculationFeatureImp
     std::map<size_t, std::vector<WellBorePartForTransCalc> > wellBorePartsInCells; //wellBore = main bore or fishbone lateral
     findFishboneLateralsWellBoreParts(wellBorePartsInCells, wellPath, settings);
     findFishboneImportedLateralsWellBoreParts(wellBorePartsInCells, wellPath, settings);
-    if (!wellBorePartsInCells.empty())
+    if (!wellBorePartsInCells.empty() && !settings.excludeMainBoreForFishbones)
     {
         findMainWellBoreParts(wellBorePartsInCells, wellPath, settings);
     }
 
     std::vector<RigCompletionData> completionData;
 
-    RigMainGrid* grid = settings.caseToApply->eclipseCaseData()->mainGrid();
     const RigActiveCellInfo* activeCellInfo = settings.caseToApply->eclipseCaseData()->activeCellInfo(RiaDefines::MATRIX_MODEL);
 
     for (const auto& cellAndWellBoreParts : wellBorePartsInCells)
     {
-        size_t cellIndex = cellAndWellBoreParts.first;
+        size_t globalCellIndex = cellAndWellBoreParts.first;
         const std::vector<WellBorePartForTransCalc>& wellBoreParts = cellAndWellBoreParts.second;
-        size_t i, j, k;
-        grid->ijkFromCellIndex(cellIndex, &i, &j, &k);
 
-        bool cellIsActive = activeCellInfo->isActive(cellIndex);
+        bool cellIsActive = activeCellInfo->isActive(globalCellIndex);
         if (!cellIsActive) continue;
 
         // Find main bore and number of laterals
@@ -112,46 +135,47 @@ std::vector<RigCompletionData> RicFishbonesTransmissibilityCalculationFeatureImp
             }
             else
             {
-                mainBoreDirection = RicWellPathExportCompletionDataFeature::calculateDirectionInCell(settings.caseToApply,
-                                                                                                     cellIndex,
+                mainBoreDirection = RicWellPathExportCompletionDataFeatureImpl::calculateDirectionInCell(settings.caseToApply,
+                                                                                                     globalCellIndex,
                                                                                                      wellBorePart.lengthsInCell);
             }
         }
         
         for (WellBorePartForTransCalc wellBorePart : wellBoreParts)
         {
-            RigCompletionData completion(wellPath->completions()->wellNameForExport(), IJKCellIndex(i, j, k));
+            RigCompletionData completion(wellPath->completions()->wellNameForExport(), RigCompletionDataGridCell(globalCellIndex, settings.caseToApply->mainGrid()), wellBorePart.intersectionWithWellMeasuredDepth);
+            completion.setSecondOrderingValue(wellBorePart.lateralIndex);
 
             double transmissibility = 0.0;
             if (wellBorePart.isMainBore)
             {
                 //No change in transmissibility for main bore
-                transmissibility = RicWellPathExportCompletionDataFeature::calculateTransmissibility(settings.caseToApply,
+                transmissibility = RicWellPathExportCompletionDataFeatureImpl::calculateTransmissibility(settings.caseToApply,
                                                                                                             wellPath,
                                                                                                             wellBorePart.lengthsInCell,
                                                                                                             wellBorePart.skinFactor,
                                                                                                             wellBorePart.wellRadius,
-                                                                                                            cellIndex,
+                                                                                                            globalCellIndex,
                                                                                                             settings.useLateralNTG);
 
             }
             else
             {
                 //Adjust transmissibility for fishbone laterals
-                transmissibility = RicWellPathExportCompletionDataFeature::calculateTransmissibility(settings.caseToApply,
+                transmissibility = RicWellPathExportCompletionDataFeatureImpl::calculateTransmissibility(settings.caseToApply,
                                                                                                      wellPath,
                                                                                                      wellBorePart.lengthsInCell,
                                                                                                      wellBorePart.skinFactor,
                                                                                                      wellBorePart.wellRadius,
-                                                                                                     cellIndex,
+                                                                                                     globalCellIndex,
                                                                                                      settings.useLateralNTG,
                                                                                                      numberOfLaterals,
                                                                                                      mainBoreDirection);
 
             }
 
-            CellDirection direction = RicWellPathExportCompletionDataFeature::calculateDirectionInCell(settings.caseToApply, 
-                                                                                                       cellIndex, 
+            CellDirection direction = RicWellPathExportCompletionDataFeatureImpl::calculateDirectionInCell(settings.caseToApply, 
+                                                                                                       globalCellIndex, 
                                                                                                        wellBorePart.lengthsInCell);
 
             completion.setTransAndWPImultBackgroundDataFromFishbone(transmissibility,  
@@ -176,7 +200,7 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findFishboneImportedLate
                                                                                                   const RicExportCompletionDataSettingsUi& settings)
 {
     RiaEclipseUnitTools::UnitSystem unitSystem = settings.caseToApply->eclipseCaseData()->unitsType();
-    std::set<size_t> wellPathCells = RicWellPathExportCompletionDataFeature::findIntersectedCells(settings.caseToApply()->eclipseCaseData(), 
+    std::set<size_t> wellPathCells = RicFishbonesTransmissibilityCalculationFeatureImp::findIntersectedCells(settings.caseToApply()->eclipseCaseData(), 
                                                                                                    wellPath->wellPathGeometry()->m_wellPathPoints);
     bool isMainBore = false;
 
@@ -197,6 +221,8 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findFishboneImportedLate
                                                                              skinFactor, 
                                                                              isMainBore,
                                                                              completionMetaData);
+            wellBorePart.intersectionWithWellMeasuredDepth = cell.startMD;
+
             wellBorePartsInCells[cell.globCellIndex].push_back(wellBorePart); 
         }
     }
@@ -234,6 +260,24 @@ void RicFishbonesTransmissibilityCalculationFeatureImp::findMainWellBoreParts(st
                                                                          isMainBore,
                                                                          completionMetaData);
 
+        wellBorePart.intersectionWithWellMeasuredDepth = cell.startMD;
+
         wellBorePartsInCells[cell.globCellIndex].push_back(wellBorePart);
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::set<size_t> RicFishbonesTransmissibilityCalculationFeatureImp::findIntersectedCells(const RigEclipseCaseData* caseData, const std::vector<cvf::Vec3d>& coords)
+{
+    std::set<size_t> cells;
+
+    std::vector<HexIntersectionInfo> intersections = RigWellPathIntersectionTools::findRawHexCellIntersections(caseData->mainGrid(), coords);
+    for (auto intersection : intersections)
+    {
+        cells.insert(intersection.m_hexIndex);
+    }
+
+    return cells;
 }

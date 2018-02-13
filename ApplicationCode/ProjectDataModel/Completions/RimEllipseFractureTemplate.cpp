@@ -18,18 +18,23 @@
 
 #include "RimEllipseFractureTemplate.h"
 
+#include "RiaApplication.h"
 #include "RiaEclipseUnitTools.h"
+#include "RiaFractureDefines.h"
 #include "RiaLogging.h"
 
 #include "RigCellGeometryTools.h"
 #include "RigFractureCell.h"
 #include "RigFractureGrid.h"
+#include "RigStatisticsMath.h"
 #include "RigTesselatorTools.h"
 
+#include "RimEclipseView.h"
 #include "RimFracture.h"
 #include "RimFractureContainment.h"
 #include "RimFractureTemplate.h"
 #include "RimProject.h"
+#include "RimStimPlanColors.h"
 
 #include "cafPdmObject.h"
 
@@ -70,6 +75,9 @@ RimEllipseFractureTemplate::~RimEllipseFractureTemplate()
 void RimEllipseFractureTemplate::loadDataAndUpdate()
 {
     setupFractureGridCells();
+
+    RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
+    if (activeView) activeView->loadDataAndUpdate();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -79,7 +87,10 @@ void RimEllipseFractureTemplate::fieldChangedByUi(const caf::PdmFieldHandle* cha
 {
     RimFractureTemplate::fieldChangedByUi(changedField, oldValue, newValue);
 
-    if (changedField == &m_halfLength || changedField == &m_height)
+    if (   changedField == &m_halfLength
+        || changedField == &m_height
+        || changedField == &m_width
+        || changedField == &m_permeability)
     {
         //Changes to one of these parameters should change all fractures with this fracture template attached. 
         RimProject* proj;
@@ -162,23 +173,25 @@ std::vector<cvf::Vec3f> RimEllipseFractureTemplate::fractureBorderPolygon(RiaEcl
 //--------------------------------------------------------------------------------------------------
 void RimEllipseFractureTemplate::changeUnits()
 {
-    if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_METRIC)
+    if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
     {
         m_halfLength         = RiaEclipseUnitTools::meterToFeet(m_halfLength);
         m_height             = RiaEclipseUnitTools::meterToFeet(m_height);
         m_width              = RiaEclipseUnitTools::meterToInch(m_width);
-        wellDiameter         = RiaEclipseUnitTools::meterToInch(wellDiameter);
-        perforationLength    = RiaEclipseUnitTools::meterToFeet(perforationLength);
-        fractureTemplateUnit = RiaEclipseUnitTools::UNITS_FIELD;
+        m_wellDiameter         = RiaEclipseUnitTools::meterToInch(m_wellDiameter);
+        m_perforationLength    = RiaEclipseUnitTools::meterToFeet(m_perforationLength);
+
+        setFractureTemplateUnit(RiaEclipseUnitTools::UNITS_FIELD);
     }
-    else if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_FIELD)
+    else if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
     {
         m_halfLength         = RiaEclipseUnitTools::feetToMeter(m_halfLength);
         m_height             = RiaEclipseUnitTools::feetToMeter(m_height);
         m_width              = RiaEclipseUnitTools::inchToMeter(m_width);
-        wellDiameter         = RiaEclipseUnitTools::inchToMeter(wellDiameter);
-        perforationLength    = RiaEclipseUnitTools::feetToMeter(perforationLength);
-        fractureTemplateUnit = RiaEclipseUnitTools::UNITS_METRIC;
+        m_wellDiameter         = RiaEclipseUnitTools::inchToMeter(m_wellDiameter);
+        m_perforationLength    = RiaEclipseUnitTools::feetToMeter(m_perforationLength);
+
+        setFractureTemplateUnit(RiaEclipseUnitTools::UNITS_METRIC);
     }
 
     this->updateConnectedEditors();
@@ -270,17 +283,17 @@ const RigFractureGrid* RimEllipseFractureTemplate::fractureGrid() const
 //--------------------------------------------------------------------------------------------------
 void RimEllipseFractureTemplate::setDefaultValuesFromUnit()
 {
-    if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_FIELD)
+    if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
     {
         m_width        = 0.5f;
-        m_permeability = 800000.0f;
+        m_permeability = 80000.0f;
         m_halfLength   = 300.0f;
         m_height       = 225.0f;
     }
     else
     {
         m_width        = 0.01f;
-        m_permeability = 1000000.0f;
+        m_permeability = 100000.0f;
         m_halfLength   = 100.0f;
         m_height       = 75.0f;
     }
@@ -294,12 +307,12 @@ void RimEllipseFractureTemplate::setDefaultValuesFromUnit()
 double RimEllipseFractureTemplate::conductivity() const
 {
     double cond = cvf::UNDEFINED_DOUBLE;
-    if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_METRIC)
+    if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
     {
         //Conductivity should be md-m, width is in m
         cond = m_permeability * m_width;
     }
-    else if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_FIELD)
+    else if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
     {
         //Conductivity should be md-ft, but width is in inches 
         cond = m_permeability * RiaEclipseUnitTools::inchToFeet(m_width);
@@ -310,59 +323,80 @@ double RimEllipseFractureTemplate::conductivity() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void RimEllipseFractureTemplate::appendDataToResultStatistics(const QString& uiResultName, const QString& unit, MinMaxAccumulator& minMaxAccumulator, PosNegAccumulator& posNegAccumulator) const
+{
+    if (uiResultName == RiaDefines::conductivityResultName())
+    {
+        minMaxAccumulator.addValue(conductivity());
+        posNegAccumulator.addValue(conductivity());
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<std::pair<QString, QString>> RimEllipseFractureTemplate::uiResultNamesWithUnit() const
+{
+    std::vector<std::pair<QString, QString>> propertyNamesAndUnits;
+
+    QString condUnit = RiaDefines::unitStringConductivity(fractureTemplateUnit());
+    propertyNamesAndUnits.push_back(std::make_pair(RiaDefines::conductivityResultName(), condUnit));
+
+    return propertyNamesAndUnits;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimEllipseFractureTemplate::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
 {
-    RimFractureTemplate::defineUiOrdering(uiConfigName, uiOrdering);
     
-    if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_METRIC)
+    if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
     {
         m_halfLength.uiCapability()->setUiName("Halflenght X<sub>f</sub> [m]");
         m_height.uiCapability()->setUiName("Height [m]");
         m_width.uiCapability()->setUiName("Width [m]");
-        wellDiameter.uiCapability()->setUiName("Well Diameter [m]");
+        m_wellDiameter.uiCapability()->setUiName("Well Diameter [m]");
     }
-    else if (fractureTemplateUnit == RiaEclipseUnitTools::UNITS_FIELD)
+    else if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
     {
         m_halfLength.uiCapability()->setUiName("Halflenght X<sub>f</sub> [Ft]");
         m_height.uiCapability()->setUiName("Height [Ft]");
         m_width.uiCapability()->setUiName("Width [inches]");
-        wellDiameter.uiCapability()->setUiName("Well Diameter [inches]");
+        m_wellDiameter.uiCapability()->setUiName("Well Diameter [inches]");
     }
 
-
-    if (conductivityType == FINITE_CONDUCTIVITY)
+    if (conductivityType() == FINITE_CONDUCTIVITY)
     {
         m_permeability.uiCapability()->setUiHidden(false);
         m_width.uiCapability()->setUiHidden(false);
     }
-    else if (conductivityType == INFINITE_CONDUCTIVITY)
+    else if (conductivityType() == INFINITE_CONDUCTIVITY)
     {
         m_permeability.uiCapability()->setUiHidden(true);
         m_width.uiCapability()->setUiHidden(true);
     }
-
     
-    uiOrdering.add(&name);
+    uiOrdering.add(&m_name);
 
     caf::PdmUiGroup* geometryGroup = uiOrdering.addNewGroup("Geometry");
     geometryGroup->add(&m_halfLength);
     geometryGroup->add(&m_height);
-    geometryGroup->add(&orientationType);
-    geometryGroup->add(&azimuthAngle);
+    geometryGroup->add(&m_orientationType);
+    geometryGroup->add(&m_azimuthAngle);
 
     caf::PdmUiGroup* trGr = uiOrdering.addNewGroup("Fracture Truncation");
     m_fractureContainment()->defineUiOrdering(uiConfigName, *trGr);
 
     caf::PdmUiGroup* propertyGroup = uiOrdering.addNewGroup("Properties");
-    propertyGroup->add(&conductivityType);
+    propertyGroup->add(&m_conductivityType);
     propertyGroup->add(&m_permeability);
     propertyGroup->add(&m_width);
-    propertyGroup->add(&skinFactor);
-    propertyGroup->add(&perforationLength);
-    propertyGroup->add(&perforationEfficiency);
-    propertyGroup->add(&wellDiameter);
+    propertyGroup->add(&m_skinFactor);
+    propertyGroup->add(&m_perforationLength);
+    propertyGroup->add(&m_perforationEfficiency);
+    propertyGroup->add(&m_wellDiameter);
 
-    uiOrdering.add(&fractureTemplateUnit);
-    uiOrdering.skipRemainingFields(true);
+    RimFractureTemplate::defineUiOrdering(uiConfigName, uiOrdering);
 }
 

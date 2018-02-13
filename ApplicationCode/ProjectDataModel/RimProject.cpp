@@ -28,7 +28,6 @@
 #include "RigGridBase.h"
 
 #include "RimCalcScript.h"
-#include "RimSummaryCalculationCollection.h"
 #include "RimCase.h"
 #include "RimCaseCollection.h"
 #include "RimCommandObject.h"
@@ -38,6 +37,7 @@
 #include "RimEclipseCaseCollection.h"
 #include "RimFlowPlotCollection.h"
 #include "RimFormationNamesCollection.h"
+#include "RimSummaryCalculationCollection.h"
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 #include "RimFractureTemplateCollection.h"
@@ -47,6 +47,7 @@
 #include "RimGeoMechCase.h"
 #include "RimGeoMechModels.h"
 #include "RimGridSummaryCase.h"
+#include "RimGridView.h"
 #include "RimIdenticalGridCaseGroup.h"
 #include "RimMainPlotCollection.h"
 #include "RimMultiSnapshotDefinition.h"
@@ -58,7 +59,7 @@
 #include "RimSummaryCaseMainCollection.h"
 #include "RimSummaryCrossPlotCollection.h"
 #include "RimSummaryPlotCollection.h"
-#include "Rim3dView.h"
+#include "RimTools.h"
 #include "RimViewLinker.h"
 #include "RimViewLinkerCollection.h"
 #include "RimWellLogFile.h"
@@ -67,15 +68,15 @@
 #include "RimWellPathCollection.h"
 #include "RimWellPathImport.h"
 
-#include "RiuMainWindow.h"
 #include "RiuMainPlotWindow.h"
+#include "RiuMainWindow.h"
 
 #include "OctaveScriptCommands/RicExecuteScriptForCasesFeature.h"
 
 #include "cafCmdFeature.h"
 #include "cafCmdFeatureManager.h"
-#include "cafPdmUiTreeOrdering.h"
 #include "cafCmdFeatureMenuBuilder.h"
+#include "cafPdmUiTreeOrdering.h"
 #include "cvfBoundingBox.h"
 
 #include <QDir>
@@ -206,7 +207,7 @@ void RimProject::close()
     calculationCollection->deleteAllContainedObjects();
 
     delete viewLinkerCollection->viewLinker();
-    viewLinkerCollection->viewLinker = NULL;
+    viewLinkerCollection->viewLinker = nullptr;
 
     fileName = "";
 
@@ -262,7 +263,7 @@ void RimProject::initScriptDirectories()
     }
 
     // Find largest used groupId read from file and make sure all groups have a valid groupId
-    RimEclipseCaseCollection* analysisModels = activeOilField() ? activeOilField()->analysisModels() : NULL;
+    RimEclipseCaseCollection* analysisModels = activeOilField() ? activeOilField()->analysisModels() : nullptr;
     if (analysisModels)
     {
         int largestGroupId = -1;
@@ -311,7 +312,7 @@ void RimProject::initAfterRead()
 
     // Handle old project files with obsolete structure.
     // Move caseGroupsObsolete and casesObsolete to oilFields()[idx]->analysisModels()
-    RimEclipseCaseCollection* analysisModels = activeOilField() ? activeOilField()->analysisModels() : NULL;
+    RimEclipseCaseCollection* analysisModels = activeOilField() ? activeOilField()->analysisModels() : nullptr;
     bool movedOneRimIdenticalGridCaseGroup = false;
     for (size_t cgIdx = 0; cgIdx < caseGroupsObsolete.size(); ++cgIdx)
     {
@@ -335,7 +336,7 @@ void RimProject::initAfterRead()
         if (analysisModels)
         {
             RimEclipseCase* sourceCase = casesObsolete[cIdx];
-            casesObsolete.set(cIdx, NULL);
+            casesObsolete.set(cIdx, nullptr);
             analysisModels->cases.push_back(sourceCase);
             //printf("Moved m_project->casesObsolete[%i] to first oil fields analysis models\n", cIdx);
             movedOneRimCase = true; // moved at least one so assume the others will be moved too...
@@ -357,7 +358,7 @@ void RimProject::initAfterRead()
     for (size_t oilFieldIdx = 0; oilFieldIdx < oilFields().size(); oilFieldIdx++)
     {
         RimOilField* oilField = oilFields[oilFieldIdx];
-        if (oilField == NULL || oilField->wellPathCollection == NULL) continue;
+        if (oilField == nullptr || oilField->wellPathCollection == nullptr) continue;
     }
 }
 
@@ -440,6 +441,18 @@ void RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName
 
     QFileInfo fileInfoOld(oldProjectFileName);
     QString oldProjectPath = fileInfoOld.path();
+    
+    std::vector<caf::FilePath*> filePaths;
+    fieldsByType(this, filePaths);
+
+    for (caf::FilePath* filePath : filePaths)
+    {
+        bool foundFile = false;
+        std::vector<QString> searchedPaths;
+
+        QString newFilePath = RimTools::relocateFile(filePath->path(), newProjectPath, oldProjectPath, &foundFile, &searchedPaths);
+        filePath->setPath(newFilePath);
+    }
 
     // Loop over all cases and update file path
 
@@ -458,16 +471,16 @@ void RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName
     // Update path to well path file cache
     for(RimOilField* oilField: oilFields)
     {
-        if (oilField == NULL) continue;
-        if (oilField->wellPathCollection() != NULL)
+        if (oilField == nullptr) continue;
+        if (oilField->wellPathCollection() != nullptr)
         {
             oilField->wellPathCollection()->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
         }
-        if (oilField->formationNamesCollection() != NULL)
+        if (oilField->formationNamesCollection() != nullptr)
         {
             oilField->formationNamesCollection()->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
         }
-        if (oilField->summaryCaseMainCollection() != NULL) {
+        if (oilField->summaryCaseMainCollection() != nullptr) {
             oilField->summaryCaseMainCollection()->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
         }
 
@@ -537,7 +550,7 @@ void RimProject::allCases(std::vector<RimCase*>& cases)
             {
                 // Load the Main case of each IdenticalGridCaseGroup
                 RimIdenticalGridCaseGroup* cg = analysisModels->caseGroups[cgIdx];
-                if (cg == NULL) continue;
+                if (cg == nullptr) continue;
 
                 if (cg->statisticsCaseCollection())
                 {
@@ -687,7 +700,7 @@ void RimProject::createDisplayModelAndRedrawAllViews()
     for (size_t caseIdx = 0; caseIdx < cases.size(); caseIdx++)
     {
         RimCase* rimCase = cases[caseIdx];
-        if (rimCase == NULL) continue;
+        if (rimCase == nullptr) continue;
         std::vector<Rim3dView*> views = rimCase->views();
 
         for (size_t viewIdx = 0; viewIdx < views.size(); viewIdx++)

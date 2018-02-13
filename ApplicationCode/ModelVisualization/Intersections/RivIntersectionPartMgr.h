@@ -24,7 +24,9 @@
 #include "cvfColor4.h"
 #include "cvfVector3.h"
 #include "cvfArray.h"
+#include "cafPdmPointer.h"
 
+#include <list>
 
 namespace cvf
 {
@@ -32,6 +34,7 @@ namespace cvf
     class Transform;
     class Part;
     class ScalarMapper;
+    class DrawableGeo;
 }
 
 class RigFemPart;
@@ -42,10 +45,11 @@ class RigResultAccessor;
 class RimCellEdgeColors;
 class RimEclipseCellColors;
 class RimIntersection;
+class RivTernaryScalarMapper;
 class RivIntersectionGeometryGenerator;
 class RivIntersectionHexGridInterface;
 class RivIntersectionVertexWeights;
-
+class RivPipeGeometryGenerator;
 
 //==================================================================================================
 ///
@@ -55,24 +59,21 @@ class RivIntersectionVertexWeights;
 class RivIntersectionPartMgr : public cvf::Object
 {
 public:
-    explicit RivIntersectionPartMgr(RimIntersection* rimCrossSection);
+    explicit RivIntersectionPartMgr(RimIntersection* rimCrossSection, bool isFlattened = false);
 
     void applySingleColorEffect();
-    void updateCellResultColor(size_t timeStepIndex);
+    void updateCellResultColor(size_t timeStepIndex, 
+                               const cvf::ScalarMapper* scalarColorMapper, 
+                               const RivTernaryScalarMapper* ternaryColorMapper);
 
 
     void appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
     void appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
     void appendPolylinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+    void appendWellPipePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
 
-private:
-    void updatePartEffect();
-    void generatePartGeometry();
+    const RimIntersection* intersection() const;
 
-    void createPolyLineParts(bool useBufferObjects);
-    void createExtrusionDirParts(bool useBufferObjects);
-
-    void computeData();
 
 public:
     static void calculateEclipseTextureCoordinates(cvf::Vec2fArray* textureCoords, 
@@ -104,13 +105,15 @@ public:
                                                  const cvf::Vec3fArray* triangelVertices, 
                                                  const RigFemResultAddress& resVarAddress, 
                                                  const cvf::ScalarMapper* mapper);
+private:
+    void generatePartGeometry();
+    void createPolyLineParts(bool useBufferObjects);
+    void createExtrusionDirParts(bool useBufferObjects);
 
     cvf::ref<RivIntersectionHexGridInterface> createHexGridInterface();
+
 private:
-
-    RimIntersection*            m_rimCrossSection;
-
-    cvf::Color3f                m_defaultColor;
+    caf::PdmPointer<RimIntersection> m_rimCrossSection;
 
     cvf::ref<RivIntersectionGeometryGenerator>   m_crossSectionGenerator;
     cvf::ref<cvf::Part>         m_crossSectionFaces;
@@ -122,5 +125,15 @@ private:
 
     cvf::ref<cvf::Part>         m_highlightLineAlongExtrusionDir;
     cvf::ref<cvf::Part>         m_highlightPointsForExtrusionDir;
+
+    struct RivPipeBranchData
+    {
+        cvf::ref<RivPipeGeometryGenerator>  m_pipeGeomGenerator;
+        cvf::ref<cvf::Part>                 m_surfacePart;
+        cvf::ref<cvf::Part>                 m_centerLinePart;
+    };
+    std::list<RivPipeBranchData> m_wellBranches;
+
+    bool                        m_isFlattened;
 };
 

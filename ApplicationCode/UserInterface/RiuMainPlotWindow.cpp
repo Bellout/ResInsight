@@ -185,11 +185,13 @@ void RiuMainPlotWindow::createMenus()
 
     QMenu* importMenu = fileMenu->addMenu("&Import");
     importMenu->addAction(cmdFeatureMgr->action("RicImportEclipseCaseFeature"));
+    importMenu->addAction(cmdFeatureMgr->action("RicImportEclipseCasesFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportInputEclipseCaseFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportSummaryCaseFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportSummaryCasesFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicImportObservedDataInMenuFeature"));
     importMenu->addAction(cmdFeatureMgr->action("RicCreateGridCaseGroupFeature"));
+    importMenu->addAction(cmdFeatureMgr->action("RicCreateGridCaseGroupFromFilesFeature"));
     importMenu->addSeparator();
 #ifdef USE_ODB_API
     importMenu->addAction(cmdFeatureMgr->action("RicImportGeoMechCaseFeature"));
@@ -424,7 +426,7 @@ void RiuMainPlotWindow::addToTemporaryWidgets(QWidget* widget)
 //--------------------------------------------------------------------------------------------------
 void RiuMainPlotWindow::updateSummaryPlotToolBar()
 {
-    RimSummaryPlot* summaryPlot = dynamic_cast<RimSummaryPlot*>(m_activePlotViewWindow);
+    RimSummaryPlot* summaryPlot = dynamic_cast<RimSummaryPlot*>(m_activePlotViewWindow.p());
     if (summaryPlot)
     {
         std::vector<caf::PdmFieldHandle*> toolBarFields;

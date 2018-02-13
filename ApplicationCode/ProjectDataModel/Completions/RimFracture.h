@@ -29,7 +29,6 @@
 #include "cvfMatrix4.h"
 #include "cvfPlane.h"
 
-#include "cafAppEnum.h"
 #include "cafPdmChildField.h"
 #include "cafPdmFieldCvfVec3d.h"
 #include "cafPdmProxyValueField.h"
@@ -53,13 +52,6 @@ class RimFracture : public RimCheckableNamedObject, public Rim3dPropertiesInterf
      CAF_PDM_HEADER_INIT;
 
 public:
-    enum StimPlanResultColorType
-    {
-        COLOR_INTERPOLATION,
-        SINGLE_ELEMENT_COLOR
-    };
-
-public:
     RimFracture(void);
     virtual ~RimFracture(void);
 
@@ -67,7 +59,6 @@ public:
     double                          perforationEfficiency() const;
     
     void                            setStimPlanTimeIndexToPlot(int timeIndex);
-    StimPlanResultColorType         stimPlanResultColorType() const;
 
     double                          wellRadius(RiaEclipseUnitTools::UnitSystem unitSystem) const;
     cvf::Vec3d                      anchorPosition() const ;
@@ -98,6 +89,7 @@ public:
     virtual double                  fractureMD() const = 0;
     
     virtual void                    loadDataAndUpdate() = 0;
+    virtual std::vector<cvf::Vec3d> perforationLengthCenterLineCoords() const = 0;
     
     friend class RimFractureTemplate;
 
@@ -131,8 +123,6 @@ protected:
     caf::PdmField<double>            m_perforationEfficiency;
     caf::PdmField<double>            m_wellDiameter;
     caf::PdmField<int>               m_stimPlanTimeIndexToPlot;
-
-    caf::PdmField<caf::AppEnum<StimPlanResultColorType>> m_stimPlanCellVizMode;
 
 private:
     caf::PdmField<cvf::Vec3d>        m_anchorPosition;

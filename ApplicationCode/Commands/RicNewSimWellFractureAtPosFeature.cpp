@@ -21,8 +21,10 @@
 #include "RiaApplication.h"
 #include "RigEclipseCaseData.h"
 
+#include "Rim3dView.h"
 #include "RimCase.h"
 #include "RimEclipseResultCase.h"
+#include "RimEclipseView.h"
 #include "RimEllipseFractureTemplate.h"
 #include "RimFractureTemplateCollection.h"
 #include "RimOilField.h"
@@ -30,7 +32,7 @@
 #include "RimSimWellFracture.h"
 #include "RimSimWellFractureCollection.h"
 #include "RimSimWellInView.h"
-#include "Rim3dView.h"
+#include "RimStimPlanColors.h"
 
 #include "RiuMainWindow.h"
 #include "RiuSelectionManager.h"
@@ -49,6 +51,9 @@ CAF_CMD_SOURCE_INIT(RicNewSimWellFractureAtPosFeature, "RicNewSimWellFractureAtP
 //--------------------------------------------------------------------------------------------------
 void RicNewSimWellFractureAtPosFeature::onActionTriggered(bool isChecked)
 {
+    RimProject* proj = RiaApplication::instance()->project();
+    if (proj->allFractureTemplates().empty()) return;
+
     Rim3dView* activeView = RiaApplication::instance()->activeReservoirView();
     if (!activeView) return;
 
@@ -65,6 +70,15 @@ void RicNewSimWellFractureAtPosFeature::onActionTriggered(bool isChecked)
     if (!fractureCollection) return;
 
     RimSimWellFracture* fracture = new RimSimWellFracture();
+    if (fractureCollection->simwellFractures.empty())
+    {
+        RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
+        if (activeView)
+        {
+            activeView->fractureColors->setDefaultResultName();
+        }
+    }
+
     fractureCollection->simwellFractures.push_back(fracture);
 
     fracture->setClosestWellCoord(simWellItem->m_domainCoord, simWellItem->m_branchIndex);
@@ -120,6 +134,9 @@ void RicNewSimWellFractureAtPosFeature::setupActionLook(QAction* actionToSetup)
 //--------------------------------------------------------------------------------------------------
 bool RicNewSimWellFractureAtPosFeature::isCommandEnabled()
 {
+    RimProject* proj = RiaApplication::instance()->project();
+    if (proj->allFractureTemplates().empty()) return false;
+
     caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
     if (!pdmUiItem) return false;
 

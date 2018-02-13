@@ -57,7 +57,6 @@ public:
     RimGeoMechView*                         createAndAddReservoirView();
 
     virtual void                            updateFilePathsFromProjectPath(const QString& projectPath, const QString& oldProjectPath);
-    virtual std::vector<Rim3dView*>         views() override;
 
     virtual std::vector<QDateTime>          timeStepDates() const override;
     virtual QStringList                     timeStepStrings() const override;
@@ -81,6 +80,7 @@ private:
 
     virtual void                            fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue) override;
     virtual void                            defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) override;
+    virtual void                            defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName = "") override;
     virtual void                            defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute) override;
     virtual QList<caf::PdmOptionItemInfo>   calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool * useOptionsOnly) override;
 
@@ -91,10 +91,11 @@ private:
 
     void                                    closeSelectedElementPropertyFiles();
     void                                    reloadSelectedElementPropertyFiles();
+    virtual std::vector<Rim3dView*>         allSpecialViews() const override;
 
 private:
     cvf::ref<RigGeoMechCaseData>              m_geoMechCaseData;
-    caf::PdmField<QString>                    m_caseFileName;
+    caf::PdmField<caf::FilePath>              m_caseFileName;
     caf::PdmField<double>                     m_cohesion;
     caf::PdmField<double>                     m_frictionAngleDeg;
     caf::PdmField<std::vector<caf::FilePath>> m_elementPropertyFileNames;

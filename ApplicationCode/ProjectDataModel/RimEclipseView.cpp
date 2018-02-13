@@ -21,6 +21,7 @@
 #include "RimEclipseView.h"
 
 #include "RiaApplication.h"
+#include "RiaColorTables.h"
 #include "RiaPreferences.h"
 
 #include "RigActiveCellInfo.h"
@@ -68,9 +69,11 @@
 #include "RivReservoirViewPartMgr.h"
 #include "RivSingleCellPartGenerator.h"
 #include "RivTernarySaturationOverlayItem.h"
+#include "RivWellPathsPartMgr.h" 
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 #include "RimFracture.h"
+#include "RimFractureTemplateCollection.h"
 #include "RimSimWellFracture.h"
 #include "RivWellFracturePartMgr.h"
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
@@ -121,9 +124,9 @@ RimEclipseView::RimEclipseView()
     faultResultSettings.uiCapability()->setUiHidden(true);
   
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    CAF_PDM_InitFieldNoDefault(&stimPlanColors, "StimPlanColors", "Fracture Colors", "", "", "");
-    stimPlanColors = new RimStimPlanColors();
-    stimPlanColors.uiCapability()->setUiHidden(true);
+    CAF_PDM_InitFieldNoDefault(&fractureColors, "StimPlanColors", "Fracture", "", "", "");
+    fractureColors = new RimStimPlanColors();
+    fractureColors.uiCapability()->setUiHidden(true);
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     CAF_PDM_InitFieldNoDefault(&wellCollection, "WellCollection", "Simulation Wells", "", "", "");
@@ -460,13 +463,13 @@ void RimEclipseView::createDisplayModel()
     // NB! StimPlan legend colors must be updated before well path geometry is added to the model
     // as the fracture geometry depends on the StimPlan legend colors
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    stimPlanColors->updateLegendData();
+    fractureColors->updateLegendData();
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     addWellPathsToModel(m_wellPathPipeVizModel.p(), currentActiveCellInfo()->geometryBoundingBox());
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    wellPathCollection()->appendStaticFracturePartsToModel(m_wellPathPipeVizModel.p(), *this);
+    m_wellPathsPartManager->appendStaticFracturePartsToModel(m_wellPathPipeVizModel.p());
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
     m_wellPathPipeVizModel->updateBoundingBoxesRecursive();
     m_viewer->addStaticModelOnce(m_wellPathPipeVizModel.p());
@@ -654,7 +657,9 @@ void RimEclipseView::updateCurrentTimeStep()
 
     if ((this->hasUserRequestedAnimation() && this->cellResult()->hasResult()) || this->cellResult()->isTernarySaturationSelected())
     {
-        m_crossSectionCollection->updateCellResultColor(m_currentTimeStep);
+        m_crossSectionCollection->updateCellResultColor(m_currentTimeStep, 
+                                                        this->cellResult()->legendConfig()->scalarMapper(),
+                                                        this->cellResult()->ternaryLegendConfig()->scalarMapper());
     }
     else
     {
@@ -766,7 +771,7 @@ void RimEclipseView::onLoadDataAndUpdate()
 
     this->faultResultSettings()->customFaultResult()->loadResult();
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    this->stimPlanColors->loadDataAndUpdate();
+    this->fractureColors->loadDataAndUpdate();
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     updateMdiWindowVisibility();
@@ -850,10 +855,10 @@ void RimEclipseView::updateStaticCellColors(RivCellSetEnum geometryType)
                                                                     color = cvf::Color4f(cvf::Color3f(cvf::Color3::BROWN), opacity ); break;
         case VISIBLE_WELL_FENCE_CELLS_OUTSIDE_RANGE_FILTER:   
                                                                     color = cvf::Color4f(cvf::Color3::ORANGE);      break;
-        case INACTIVE:                    color = cvf::Color4f(cvf::Color3::LIGHT_GRAY);  break;
+        case INACTIVE:                    color = cvf::Color4f(RiaColorTables::undefinedCellColor());  break;
         case RANGE_FILTERED:              color = cvf::Color4f(cvf::Color3::ORANGE);      break;
         case RANGE_FILTERED_WELL_CELLS:   color = cvf::Color4f(cvf::Color3f(cvf::Color3::BROWN), opacity ); break;
-        case RANGE_FILTERED_INACTIVE:     color = cvf::Color4f(cvf::Color3::LIGHT_GRAY);  break;   
+        case RANGE_FILTERED_INACTIVE:     color = cvf::Color4f(RiaColorTables::undefinedCellColor());  break;   
     }
 
     if (geometryType == PROPERTY_FILTERED || geometryType == PROPERTY_FILTERED_WELL_CELLS)
@@ -873,40 +878,7 @@ void RimEclipseView::updateStaticCellColors(RivCellSetEnum geometryType)
 //--------------------------------------------------------------------------------------------------
 void RimEclipseView::updateDisplayModelVisibility()
 {
-    if (m_viewer.isNull()) return;
-
-    const cvf::uint uintSurfaceBit      = surfaceBit;
-    const cvf::uint uintMeshSurfaceBit  = meshSurfaceBit;
-    const cvf::uint uintFaultBit        = faultBit;
-    const cvf::uint uintMeshFaultBit    = meshFaultBit;
- 
-    // Initialize the mask to show everything except the the bits controlled here
-    unsigned int mask = 0xffffffff & ~uintSurfaceBit & ~uintFaultBit & ~uintMeshSurfaceBit & ~uintMeshFaultBit ;
-
-    // Then turn the appropriate bits on according to the user settings
-
-    if (surfaceMode == SURFACE)
-    {
-         mask |= uintSurfaceBit;
-         mask |= uintFaultBit;
-    }
-    else if (surfaceMode == FAULTS)
-    {
-        mask |= uintFaultBit;
-    }
-
-    if (meshMode == FULL_MESH)
-    {
-        mask |= uintMeshSurfaceBit;
-        mask |= uintMeshFaultBit;
-    }
-    else if (meshMode == FAULTS_MESH)
-    {
-        mask |= uintMeshFaultBit;
-    }
-
-    m_viewer->setEnableMask(mask);
-    m_viewer->update();
+    Rim3dView::updateDisplayModelVisibility();
 
     faultCollection->updateConnectedEditors();
 
@@ -1066,7 +1038,7 @@ void RimEclipseView::updateLegends()
         }
 
         m_viewer->addColorLegendToBottomLeftCorner(this->cellEdgeResult()->legendConfig()->legend());
-        this->cellEdgeResult()->legendConfig()->setTitle(cvfqt::Utils::toString(QString("Edge Results: \n") + this->cellEdgeResult()->resultVariableUiShortName()));
+        this->cellEdgeResult()->legendConfig()->setTitle(QString("Edge Results: \n") + this->cellEdgeResult()->resultVariableUiShortName());
     }
     else
     {
@@ -1075,12 +1047,12 @@ void RimEclipseView::updateLegends()
     }
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    RimLegendConfig* stimPlanLegend = stimPlanColors()->activeLegend();
+    RimLegendConfig* stimPlanLegend = fractureColors()->activeLegend();
     if (stimPlanLegend)
     {
-        stimPlanColors->updateLegendData();
+        fractureColors->updateLegendData();
         
-        if (stimPlanColors()->isChecked() && stimPlanLegend->legend())
+        if (fractureColors()->isChecked() && stimPlanLegend->legend())
         {
             m_viewer->addColorLegendToBottomLeftCorner(stimPlanLegend->legend());
         }
@@ -1091,71 +1063,24 @@ void RimEclipseView::updateLegends()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimEclipseView::updateMinMaxValuesAndAddLegendToView(QString legendLabel, RimEclipseCellColors* resultColors, RigCaseCellResultsData* cellResultsData)
+void RimEclipseView::updateMinMaxValuesAndAddLegendToView(QString legendLabel, 
+                                                          RimEclipseCellColors* resultColors, 
+                                                          RigCaseCellResultsData* cellResultsData)
 {
+    resultColors->updateLegendData(m_currentTimeStep);
+
     if (resultColors->hasResult())
     {
-        resultColors->updateLegendData(m_currentTimeStep);
-
         m_viewer->addColorLegendToBottomLeftCorner(resultColors->legendConfig()->legend());
-        resultColors->legendConfig()->setTitle(cvfqt::Utils::toString(legendLabel + resultColors->resultVariableUiShortName()));
+        resultColors->legendConfig()->setTitle(legendLabel + resultColors->resultVariableUiShortName());
     }
 
     size_t maxTimeStepCount = cellResultsData->maxTimeStepCount();
     if (resultColors->isTernarySaturationSelected() && maxTimeStepCount > 1)
     {
-        RigCaseCellResultsData* gridCellResults = resultColors->currentGridCellResults();
-        {
-            size_t scalarSetIndex = gridCellResults->findOrLoadScalarResult(RiaDefines::DYNAMIC_NATIVE, "SOIL");
-            if (scalarSetIndex != cvf::UNDEFINED_SIZE_T)
-            {
-                double globalMin = 0.0;
-                double globalMax = 1.0;
-                double localMin = 0.0;
-                double localMax = 1.0;
-
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, globalMin, globalMax);
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, m_currentTimeStep, localMin, localMax);
-
-                resultColors->ternaryLegendConfig()->setAutomaticRanges(RimTernaryLegendConfig::TERNARY_SOIL_IDX, globalMin, globalMax, localMin, localMax);
-            }
-        }
-
-        {
-            size_t scalarSetIndex = gridCellResults->findOrLoadScalarResult(RiaDefines::DYNAMIC_NATIVE, "SGAS");
-            if (scalarSetIndex != cvf::UNDEFINED_SIZE_T)
-            {
-                double globalMin = 0.0;
-                double globalMax = 1.0;
-                double localMin = 0.0;
-                double localMax = 1.0;
-
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, globalMin, globalMax);
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, m_currentTimeStep, localMin, localMax);
-
-                resultColors->ternaryLegendConfig()->setAutomaticRanges(RimTernaryLegendConfig::TERNARY_SGAS_IDX, globalMin, globalMax, localMin, localMax);
-            }
-        }
-
-        {
-            size_t scalarSetIndex = gridCellResults->findOrLoadScalarResult(RiaDefines::DYNAMIC_NATIVE, "SWAT");
-            if (scalarSetIndex != cvf::UNDEFINED_SIZE_T)
-            {
-                double globalMin = 0.0;
-                double globalMax = 1.0;
-                double localMin = 0.0;
-                double localMax = 1.0;
-
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, globalMin, globalMax);
-                cellResultsData->minMaxCellScalarValues(scalarSetIndex, m_currentTimeStep, localMin, localMax);
-
-                resultColors->ternaryLegendConfig()->setAutomaticRanges(RimTernaryLegendConfig::TERNARY_SWAT_IDX, globalMin, globalMax, localMin, localMax);
-            }
-        }
-
         if (resultColors->ternaryLegendConfig->legend())
         {
-            resultColors->ternaryLegendConfig->legend()->setTitle(cvfqt::Utils::toString(legendLabel));
+            resultColors->ternaryLegendConfig->setTitle(legendLabel);
             m_viewer->addColorLegendToBottomLeftCorner(resultColors->ternaryLegendConfig->legend());
         }
     }
@@ -1469,7 +1394,18 @@ void RimEclipseView::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering
     uiTreeOrdering.add(cellEdgeResult());
     uiTreeOrdering.add(faultResultSettings());
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    uiTreeOrdering.add(stimPlanColors());
+
+    RimProject* project = RiaApplication::instance()->project();
+    CVF_ASSERT(project);
+    RimOilField* oilfield = project->activeOilField();
+    
+    if (oilfield && oilfield->fractureDefinitionCollection().notNull())
+    {
+        if (!oilfield->fractureDefinitionCollection()->fractureDefinitions.empty())
+        {
+            uiTreeOrdering.add(fractureColors());
+        }
+    }
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     uiTreeOrdering.add(wellCollection());
@@ -1546,6 +1482,8 @@ bool RimEclipseView::isTimeStepDependentDataVisible() const
 
         if (this->faultResultSettings->customFaultResult()->isTernarySaturationSelected()) return true;
     }
+
+    if (this->wellPathCollection()->anyWellsContainingPerforationIntervals()) return true;
 
     return false;
 }

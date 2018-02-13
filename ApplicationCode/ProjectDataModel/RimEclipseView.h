@@ -69,14 +69,6 @@ namespace cvf
     class OverlayItem;
 }
 
-enum PartRenderMaskEnum
-{
-    surfaceBit      = 0x00000001,
-    meshSurfaceBit  = 0x00000002,
-    faultBit        = 0x00000004,
-    meshFaultBit    = 0x00000008,
-};
-
 //==================================================================================================
 ///  
 ///  
@@ -94,7 +86,7 @@ public:
     caf::PdmChildField<RimCellEdgeColors*>                  cellEdgeResult;
     caf::PdmChildField<RimEclipseFaultColors*>              faultResultSettings;
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    caf::PdmChildField<RimStimPlanColors*>                  stimPlanColors;
+    caf::PdmChildField<RimStimPlanColors*>                  fractureColors;
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     caf::PdmChildField<RimSimWellInViewCollection*>         wellCollection;

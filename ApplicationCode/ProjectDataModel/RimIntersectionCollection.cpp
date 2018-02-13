@@ -19,10 +19,13 @@
 
 #include "RimIntersectionCollection.h"
 
+#include "Rim2dIntersectionViewCollection.h"
+#include "Rim2dIntersectionView.h"
+#include "Rim3dView.h"
+#include "RimCase.h"
 #include "RimIntersection.h"
 #include "RimIntersectionBox.h"
 #include "RimSimWellInView.h"
-#include "Rim3dView.h"
 
 #include "RiuMainWindow.h"
 
@@ -93,7 +96,9 @@ void RimIntersectionCollection::applySingleColorEffect()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimIntersectionCollection::updateCellResultColor(size_t timeStepIndex)
+void RimIntersectionCollection::updateCellResultColor(size_t timeStepIndex, 
+                                                      const cvf::ScalarMapper* scalarColorMapper, 
+                                                      const RivTernaryScalarMapper* ternaryColorMapper)
 {
     if(!this->isActive()) return;
 
@@ -101,7 +106,7 @@ void RimIntersectionCollection::updateCellResultColor(size_t timeStepIndex)
     {
         if(cs->isActive)
         {
-            cs->intersectionPartMgr()->updateCellResultColor(timeStepIndex);
+            cs->intersectionPartMgr()->updateCellResultColor(timeStepIndex, scalarColorMapper, ternaryColorMapper);
         }
     }
 
@@ -149,14 +154,32 @@ void RimIntersectionCollection::appendPartsToModel(cvf::ModelBasicList* model, c
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimIntersectionCollection::appendIntersection(RimIntersection* intersection)
+std::vector<RimIntersection*> RimIntersectionCollection::intersections() const
+{
+    return m_intersections.childObjects();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<RimIntersectionBox*> RimIntersectionCollection::intersectionBoxes() const
+{
+    return m_intersectionBoxes.childObjects();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::appendIntersectionAndUpdate(RimIntersection* intersection)
 {
     m_intersections.push_back(intersection);
+
+    syncronize2dIntersectionViews();
 
     updateConnectedEditors();
     RiuMainWindow::instance()->selectAsCurrentItem(intersection);
 
-    Rim3dView* rimView = NULL;
+    Rim3dView* rimView = nullptr;
     firstAncestorOrThisOfType(rimView);
     if (rimView)
     {
@@ -167,7 +190,54 @@ void RimIntersectionCollection::appendIntersection(RimIntersection* intersection
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimIntersectionCollection::appendIntersectionBox(RimIntersectionBox* intersectionBox)
+void RimIntersectionCollection::appendIntersectionNoUpdate(RimIntersection* intersection)
+{
+    m_intersections.push_back(intersection);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::syncronize2dIntersectionViews()
+{
+    RimCase* ownerCase = nullptr;
+    this->firstAncestorOrThisOfTypeAsserted(ownerCase);
+    ownerCase->intersectionViewCollection()->syncFromExistingIntersections(true);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::scheduleCreateDisplayModelAndRedraw2dIntersectionViews()
+{
+    for (RimIntersection* isection: m_intersections)
+    {
+        isection->correspondingIntersectionView()->scheduleCreateDisplayModelAndRedraw();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::appendIntersectionBoxAndUpdate(RimIntersectionBox* intersectionBox)
+{
+    m_intersectionBoxes.push_back(intersectionBox);
+
+    updateConnectedEditors();
+    RiuMainWindow::instance()->selectAsCurrentItem(intersectionBox);
+
+    Rim3dView* rimView = nullptr;
+    firstAncestorOrThisOfType(rimView);
+    if (rimView)
+    {
+        rimView->scheduleCreateDisplayModelAndRedraw();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::appendIntersectionBoxNoUpdate(RimIntersectionBox* intersectionBox)
 {
     m_intersectionBoxes.push_back(intersectionBox);
 }
@@ -179,7 +249,7 @@ void RimIntersectionCollection::fieldChangedByUi(const caf::PdmFieldHandle* chan
 {
     if (changedField == &isActive)
     {
-        Rim3dView* rimView = NULL;
+        Rim3dView* rimView = nullptr;
         firstAncestorOrThisOfType(rimView);
         if (rimView)
         {

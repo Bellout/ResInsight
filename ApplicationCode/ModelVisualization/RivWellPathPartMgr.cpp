@@ -65,29 +65,10 @@
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RivWellPathPartMgr::RivWellPathPartMgr(RimWellPath* wellPath)
+RivWellPathPartMgr::RivWellPathPartMgr(RimWellPath* wellPath, Rim3dView* view)
 {
     m_rimWellPath = wellPath;
-
-    // Setup a scalar mapper
-    cvf::ref<cvf::ScalarMapperDiscreteLinear> scalarMapper = new cvf::ScalarMapperDiscreteLinear;
-    cvf::Color3ubArray legendColors;
-    legendColors.resize(4);
-    legendColors[0] = cvf::Color3::GRAY;
-    legendColors[1] = cvf::Color3::GREEN;
-    legendColors[2] = cvf::Color3::BLUE;
-    legendColors[3] = cvf::Color3::RED;
-    scalarMapper->setColors(legendColors);
-    scalarMapper->setRange(0.0 , 4.0);
-    scalarMapper->setLevelCount(4, true);
-
-    m_scalarMapper = scalarMapper;
-
-    caf::ScalarMapperEffectGenerator surfEffGen(scalarMapper.p(), caf::PO_1);
-    m_scalarMapperSurfaceEffect = surfEffGen.generateCachedEffect();
-
-    caf::ScalarMapperMeshEffectGenerator meshEffGen(scalarMapper.p());
-    m_scalarMapperMeshEffect = meshEffGen.generateCachedEffect();
+    m_rimView = view;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -102,15 +83,20 @@ RivWellPathPartMgr::~RivWellPathPartMgr()
 /// 
 //--------------------------------------------------------------------------------------------------
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-void RivWellPathPartMgr::appendStaticFracturePartsToModel(cvf::ModelBasicList* model, const RimEclipseView& eclView)
+void RivWellPathPartMgr::appendStaticFracturePartsToModel(cvf::ModelBasicList* model)
 {
+    if (m_rimView.isNull()) return;
+
+    const RimEclipseView* eclView = dynamic_cast<const RimEclipseView*>(m_rimView.p());
+    if (!eclView) return;
+
     if (!m_rimWellPath || !m_rimWellPath->showWellPath() || !m_rimWellPath->fractureCollection()->isChecked()) return;
 
     for (RimWellPathFracture* f : m_rimWellPath->fractureCollection()->fractures())
     {
         CVF_ASSERT(f);
 
-        f->fracturePartManager()->appendGeometryPartsToModel(model, eclView);
+        f->fracturePartManager()->appendGeometryPartsToModel(model, *eclView);
     }
 }
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
@@ -124,7 +110,7 @@ void RivWellPathPartMgr::appendFishboneSubsPartsToModel(cvf::ModelBasicList* mod
 {
     if ( !m_rimWellPath || !m_rimWellPath->fishbonesCollection()->isChecked() ) return;
 
-    for ( auto rimFishboneSubs : m_rimWellPath->fishbonesCollection()->fishbonesSubs() )
+    for (const auto& rimFishboneSubs : m_rimWellPath->fishbonesCollection()->fishbonesSubs() )
     {
         cvf::ref<RivFishbonesSubsPartMgr> fishbSubPartMgr = new RivFishbonesSubsPartMgr(rimFishboneSubs);
         fishbSubPartMgr->appendGeometryPartsToModel(model, displayCoordTransform, characteristicCellSize);
@@ -148,7 +134,7 @@ void RivWellPathPartMgr::appendImportedFishbonesToModel(cvf::ModelBasicList* mod
         if (!fbWellPath->isChecked()) continue;
 
         std::vector<cvf::Vec3d> displayCoords;
-        for (auto lateralDomainCoords : fbWellPath->coordinates())
+        for (const auto& lateralDomainCoords : fbWellPath->coordinates())
         {
             displayCoords.push_back(displayCoordTransform->transformToDisplayCoord(lateralDomainCoords));
         }
@@ -242,13 +228,10 @@ void RivWellPathPartMgr::buildWellPathParts(const caf::DisplayCoordTransform* di
 
     // Generate the well path geometry as a line and pipe structure
     {
-        RivPipeBranchData& pbd = m_pipeBranchData;
+        m_pipeGeomGenerator = new RivPipeGeometryGenerator;
 
-        pbd.m_pipeGeomGenerator = new RivPipeGeometryGenerator;
-
-        pbd.m_pipeGeomGenerator->setRadius(wellPathRadius);
-        pbd.m_pipeGeomGenerator->setCrossSectionVertexCount(wellPathCollection->wellPathCrossSectionVertexCount());
-        pbd.m_pipeGeomGenerator->setPipeColor( m_rimWellPath->wellPathColor());
+        m_pipeGeomGenerator->setRadius(wellPathRadius);
+        m_pipeGeomGenerator->setCrossSectionVertexCount(wellPathCollection->wellPathCrossSectionVertexCount());      
 
         cvf::ref<cvf::Vec3dArray> cvfCoords = new cvf::Vec3dArray;
         if (wellPathCollection->wellPathClip)
@@ -278,11 +261,11 @@ void RivWellPathPartMgr::buildWellPathParts(const caf::DisplayCoordTransform* di
                                           stepsize * (wellPathGeometry->m_wellPathPoints[firstVisibleSegmentIndex] - wellPathGeometry->m_wellPathPoints[firstVisibleSegmentIndex - 1]);
 
                     clippedPoints.push_back(newPoint);
-                    pbd.m_pipeGeomGenerator->setFirstVisibleSegmentIndex(firstVisibleSegmentIndex - 1);
+                    m_pipeGeomGenerator->setFirstVisibleSegmentIndex(firstVisibleSegmentIndex - 1);
                 }
                 else
                 {
-                    pbd.m_pipeGeomGenerator->setFirstVisibleSegmentIndex(firstVisibleSegmentIndex);
+                    m_pipeGeomGenerator->setFirstVisibleSegmentIndex(firstVisibleSegmentIndex);
                 }
 
                 for (size_t idx = firstVisibleSegmentIndex; idx < wellPathGeometry->m_wellPathPoints.size(); idx++)
@@ -309,33 +292,33 @@ void RivWellPathPartMgr::buildWellPathParts(const caf::DisplayCoordTransform* di
 
         textPosition = cvfCoords->get(0);
 
-        pbd.m_pipeGeomGenerator->setPipeCenterCoords(cvfCoords.p());
-        pbd.m_surfaceDrawable = pbd.m_pipeGeomGenerator->createPipeSurface();
-        pbd.m_centerLineDrawable = pbd.m_pipeGeomGenerator->createCenterLine();
+        m_pipeGeomGenerator->setPipeCenterCoords(cvfCoords.p());
+        m_surfaceDrawable = m_pipeGeomGenerator->createPipeSurface();
+        m_centerLineDrawable = m_pipeGeomGenerator->createCenterLine();
 
-        if (pbd.m_surfaceDrawable.notNull())
+        if (m_surfaceDrawable.notNull())
         {
-            pbd.m_surfacePart = new cvf::Part;
-            pbd.m_surfacePart->setDrawable(pbd.m_surfaceDrawable.p());
+            m_surfacePart = new cvf::Part;
+            m_surfacePart->setDrawable(m_surfaceDrawable.p());
             
-            RivWellPathSourceInfo* sourceInfo = new RivWellPathSourceInfo(m_rimWellPath);
-            pbd.m_surfacePart->setSourceInfo(sourceInfo);
+            RivWellPathSourceInfo* sourceInfo = new RivWellPathSourceInfo(m_rimWellPath, m_rimView);
+            m_surfacePart->setSourceInfo(sourceInfo);
 
             caf::SurfaceEffectGenerator surfaceGen(cvf::Color4f(m_rimWellPath->wellPathColor()), caf::PO_1);
             cvf::ref<cvf::Effect> eff = surfaceGen.generateCachedEffect();
 
-            pbd.m_surfacePart->setEffect(eff.p());
+            m_surfacePart->setEffect(eff.p());
         }
 
-        if (pbd.m_centerLineDrawable.notNull())
+        if (m_centerLineDrawable.notNull())
         {
-            pbd.m_centerLinePart = new cvf::Part;
-            pbd.m_centerLinePart->setDrawable(pbd.m_centerLineDrawable.p());
+            m_centerLinePart = new cvf::Part;
+            m_centerLinePart->setDrawable(m_centerLineDrawable.p());
 
             caf::MeshEffectGenerator gen(m_rimWellPath->wellPathColor());
             cvf::ref<cvf::Effect> eff = gen.generateCachedEffect();
 
-            pbd.m_centerLinePart->setEffect(eff.p());
+            m_centerLinePart->setEffect(eff.p());
         }
     }
 
@@ -343,7 +326,6 @@ void RivWellPathPartMgr::buildWellPathParts(const caf::DisplayCoordTransform* di
 
     textPosition.z() += 2.2 * characteristicCellSize; 
 
-    m_wellLabelPart = NULL;
     if (wellPathCollection->showWellPathLabel() && m_rimWellPath->showWellPathLabel() && !m_rimWellPath->name().isEmpty())
     {
         cvf::Font* font = RiaApplication::instance()->customFont();
@@ -396,14 +378,14 @@ void RivWellPathPartMgr::appendStaticGeometryPartsToModel(cvf::ModelBasicList* m
     // The pipe geometry needs to be rebuilt on scale change to keep the pipes round
     buildWellPathParts(displayCoordTransform, characteristicCellSize, wellPathClipBoundingBox);
 
-    if (m_pipeBranchData.m_surfacePart.notNull())
+    if (m_surfacePart.notNull())
     {
-        model->addPart(m_pipeBranchData.m_surfacePart.p());
+        model->addPart(m_surfacePart.p());
     }
 
-    if (m_pipeBranchData.m_centerLinePart.notNull())
+    if (m_centerLinePart.notNull())
     {
-        model->addPart(m_pipeBranchData.m_centerLinePart.p());
+        model->addPart(m_centerLinePart.p());
     }
 
     if (m_wellLabelPart.notNull())
@@ -445,11 +427,12 @@ void RivWellPathPartMgr::appendDynamicGeometryPartsToModel(cvf::ModelBasicList* 
 //--------------------------------------------------------------------------------------------------
 void RivWellPathPartMgr::clearAllBranchData()
 {
-    m_pipeBranchData.m_pipeGeomGenerator = NULL;
-    m_pipeBranchData.m_surfacePart = NULL;
-    m_pipeBranchData.m_surfaceDrawable = NULL;
-    m_pipeBranchData.m_centerLinePart = NULL;
-    m_pipeBranchData.m_centerLineDrawable = NULL;
+    m_pipeGeomGenerator = nullptr;
+    m_surfacePart = nullptr;
+    m_surfaceDrawable = nullptr;
+    m_centerLinePart = nullptr;
+    m_centerLineDrawable = nullptr;
+    m_wellLabelPart = nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -457,7 +440,7 @@ void RivWellPathPartMgr::clearAllBranchData()
 //--------------------------------------------------------------------------------------------------
 size_t RivWellPathPartMgr::segmentIndexFromTriangleIndex(size_t triangleIndex)
 {
-    return m_pipeBranchData.m_pipeGeomGenerator->segmentIndexFromTriangleIndex(triangleIndex);
+    return m_pipeGeomGenerator->segmentIndexFromTriangleIndex(triangleIndex);
 }
 
 //--------------------------------------------------------------------------------------------------

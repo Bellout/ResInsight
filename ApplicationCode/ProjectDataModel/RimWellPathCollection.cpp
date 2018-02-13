@@ -37,13 +37,12 @@
 #include "RimProject.h"
 #include "RimWellLogFile.h"
 #include "RimWellPath.h"
+#include "RimPerforationCollection.h"
 
 #include "RiuMainWindow.h"
 
 #include "RifWellPathFormationsImporter.h"
 #include "RifWellPathImporter.h"
-
-#include "RivWellPathPartMgr.h"
 
 #include "cafPdmUiEditorHandle.h"
 #include "cafProgressInfo.h"
@@ -101,7 +100,7 @@ RimWellPathCollection::RimWellPathCollection()
 
     m_wellPathImporter = new RifWellPathImporter;
     m_wellPathFormationsImporter = new RifWellPathFormationsImporter;
-    m_newestAddedWellPath = nullptr;
+    m_mostRecentlyUpdatedWellPath = nullptr;
 }
 
 
@@ -268,21 +267,18 @@ void RimWellPathCollection::readAndAddWellPaths(std::vector<RimWellPath*>& wellP
             // Let name from well path file override name from well log file
             existingWellPath->setName(wellPath->name());
 
+            m_mostRecentlyUpdatedWellPath = existingWellPath;
             delete wellPath;
         }
         else
         {
             wellPath->wellPathColor = cvf::Color3f(interpolatedWellColors[wpIdx]);
             wellPath->setUnitSystem(findUnitSystemForWellPath(wellPath));
+            m_mostRecentlyUpdatedWellPath = wellPath;
             wellPaths.push_back(wellPath);
         }
 
         progress.incrementProgress();
-    }
-
-    if (!wellPaths.empty())
-    {
-        m_newestAddedWellPath = wellPaths[wellPaths.size() - 1];
     }
 
     this->sortWellsByName();
@@ -360,7 +356,7 @@ void RimWellPathCollection::addWellPathFormations(const QStringList& filePaths)
 
             QString wellFormationsCount = QString("%1").arg(it->second->formationNamesCount());
             
-            m_newestAddedWellPath = wellPath;
+            m_mostRecentlyUpdatedWellPath = wellPath;
 
             outputMessage += it->first + "\t\t";
             outputMessage += wellPath->name() + " \t\t\t";
@@ -417,68 +413,24 @@ void RimWellPathCollection::scheduleRedrawAffectedViews()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimWellPathCollection::appendStaticGeometryPartsToModel(cvf::ModelBasicList* model,
-                                                             double characteristicCellSize,
-                                                             const cvf::BoundingBox& wellPathClipBoundingBox,
-                                                             const caf::DisplayCoordTransform* displayCoordTransform)
-{
-    if (!this->isActive()) return;
-    if (this->wellPathVisibility() == RimWellPathCollection::FORCE_ALL_OFF) return;
-
-    for (size_t wIdx = 0; wIdx < this->wellPaths.size(); wIdx++)
-    {
-        RivWellPathPartMgr* partMgr = this->wellPaths[wIdx]->partMgr();
-        partMgr->appendStaticGeometryPartsToModel(model, characteristicCellSize, wellPathClipBoundingBox, displayCoordTransform);
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-void RimWellPathCollection::appendStaticFracturePartsToModel(cvf::ModelBasicList* model, 
-                                                             const RimEclipseView& eclView)
-{
-    if (!this->isActive()) return;
-    if (this->wellPathVisibility() == RimWellPathCollection::FORCE_ALL_OFF) return;
-
-    for (size_t wIdx = 0; wIdx < this->wellPaths.size(); wIdx++)
-    {
-        RivWellPathPartMgr* partMgr = this->wellPaths[wIdx]->partMgr();
-        partMgr->appendStaticFracturePartsToModel(model, eclView);
-    }
-}
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimWellPathCollection::appendDynamicGeometryPartsToModel(cvf::ModelBasicList* model,
-                                                              const QDateTime& timeStamp,
-                                                              double characteristicCellSize,
-                                                              const cvf::BoundingBox& wellPathClipBoundingBox,
-                                                              const caf::DisplayCoordTransform* displayCoordTransform)
-
-{
-    if (!this->isActive()) return;
-    if (this->wellPathVisibility() == RimWellPathCollection::FORCE_ALL_OFF) return;
-
-    for (size_t wIdx = 0; wIdx < this->wellPaths.size(); wIdx++)
-    {
-        RivWellPathPartMgr* partMgr = this->wellPaths[wIdx]->partMgr();
-        partMgr->appendDynamicGeometryPartsToModel(model, timeStamp, characteristicCellSize, wellPathClipBoundingBox, displayCoordTransform);
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
 void RimWellPathCollection::updateFilePathsFromProjectPath(const QString& newProjectPath, const QString& oldProjectPath)
 {
     for (size_t wellPathIdx = 0; wellPathIdx < wellPaths.size(); wellPathIdx++)
     {
         wellPaths[wellPathIdx]->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RimWellPathCollection::anyWellsContainingPerforationIntervals() const
+{
+    for (const auto& wellPath : wellPaths)
+    {
+        if (!wellPath->perforationIntervalCollection()->perforations().empty()) return true;
+    }
+    return false;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -520,9 +472,9 @@ void RimWellPathCollection::deleteAllWellPaths()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimWellPath* RimWellPathCollection::newestAddedWellPath()
+RimWellPath* RimWellPathCollection::mostRecentlyUpdatedWellPath()
 {
-    return m_newestAddedWellPath;
+    return m_mostRecentlyUpdatedWellPath;
 }
 
 //--------------------------------------------------------------------------------------------------

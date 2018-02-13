@@ -20,8 +20,10 @@
 #include "RimTernaryLegendConfig.h"
 
 #include "RiaApplication.h"
+#include "RiaColorTables.h"
 
 #include "RimEclipseView.h"
+#include "RimIntersectionCollection.h"
 #include "RimViewLinker.h"
 
 #include "RivTernarySaturationOverlayItem.h"
@@ -89,7 +91,7 @@ RimTernaryLegendConfig::RimTernaryLegendConfig()
     m_localAutoMin.resize(3, 0.0);
     m_localAutoMax.resize(3, 1.0);
 
-    m_scalarMapper = new RivTernaryScalarMapper(cvf::Color3f::GRAY);
+    m_scalarMapper = new RivTernaryScalarMapper(RiaColorTables::undefinedCellColor());
 
     recreateLegend();
     updateLegend();
@@ -145,7 +147,7 @@ void RimTernaryLegendConfig::fieldChangedByUi(const caf::PdmFieldHandle* changed
     updateLabelText();
     updateLegend();
 
-    Rim3dView* view = nullptr;
+    RimGridView* view = nullptr;
     this->firstAncestorOrThisOfType(view);
 
     if (view)
@@ -157,6 +159,7 @@ void RimTernaryLegendConfig::fieldChangedByUi(const caf::PdmFieldHandle* changed
         }
         
         view->updateCurrentTimeStepAndRedraw();
+        view->crossSectionCollection()->scheduleCreateDisplayModelAndRedraw2dIntersectionViews();
     }
 }
 
@@ -243,6 +246,7 @@ void RimTernaryLegendConfig::setUiValuesFromLegendConfig(const RimTernaryLegendC
 {
     QString serializedObjectString = otherLegendConfig->writeObjectToXmlString();
     this->readObjectFromXmlString(serializedObjectString, caf::PdmDefaultObjectFactory::instance());
+    this->updateLegend();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -318,9 +322,25 @@ void RimTernaryLegendConfig::defineUiOrdering(QString uiConfigName, caf::PdmUiOr
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+const RivTernarySaturationOverlayItem* RimTernaryLegendConfig::legend() const
+{
+    return m_legend.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 RivTernarySaturationOverlayItem* RimTernaryLegendConfig::legend()
 {
     return m_legend.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimTernaryLegendConfig::setTitle(const QString& title)
+{
+    m_legend->setTitle(cvfqt::Utils::toString(title));
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -461,7 +481,7 @@ void RimTernaryLegendConfig::updateLabelText()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RivTernaryScalarMapper* RimTernaryLegendConfig::scalarMapper()
+const RivTernaryScalarMapper* RimTernaryLegendConfig::scalarMapper() const
 {
     return m_scalarMapper.p();
 }

@@ -45,19 +45,30 @@ class RimStimPlanColors : public RimCheckableNamedObject
     CAF_PDM_HEADER_INIT;
 
 public:
+    enum StimPlanResultColorType
+    {
+        COLOR_INTERPOLATION,
+        SINGLE_ELEMENT_COLOR
+    };
+public:
     RimStimPlanColors();
     virtual ~RimStimPlanColors();
 
     RimLegendConfig*    activeLegend() const;
-    QString             resultName() const;
-    void                setDefaultResultNameForStimPlan();
+    QString             uiResultName() const;
+    void                setDefaultResultName();
     QString             unit() const;
     cvf::Color3f        defaultColor() const;
+    bool                showStimPlanMesh() const { return m_showStimPlanMesh; }
+    void                setShowStimPlanMesh(bool showStimPlanMesh);
 
     void                loadDataAndUpdate();
     void                updateLegendData();
 
     void                updateStimPlanTemplates() const;
+    StimPlanResultColorType stimPlanResultColorType() const { return m_stimPlanCellVizMode(); };
+
+    void                updateConductivityResultName();
 
 protected:
     virtual QList<caf::PdmOptionItemInfo>   calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool* useOptionsOnly) override;
@@ -75,5 +86,8 @@ private:
     caf::PdmField<cvf::Color3f>                 m_defaultColor;
     caf::PdmField<QString>                      m_resultNameAndUnit;
     caf::PdmChildArrayField<RimLegendConfig*>   m_legendConfigurations;
+    caf::PdmField<bool>                         m_showStimPlanMesh;
+    caf::PdmField<caf::AppEnum<StimPlanResultColorType>> m_stimPlanCellVizMode;
+
 };
 

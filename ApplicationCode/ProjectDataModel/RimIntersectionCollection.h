@@ -27,10 +27,12 @@ class RimIntersection;
 class RimIntersectionBox;
 class RimEclipseCellColors;
 class RimSimWellInView;
+class RivTernaryScalarMapper;
 
 namespace cvf {
     class ModelBasicList;
     class Transform;
+    class ScalarMapper;
 }
 
 //==================================================================================================
@@ -48,18 +50,29 @@ public:
 
     caf::PdmField<bool> isActive;
 
-    void appendIntersection(RimIntersection* intersection);
-    void appendIntersectionBox(RimIntersectionBox* intersectionBox);
+    void appendIntersectionAndUpdate(RimIntersection* intersection);
+    void appendIntersectionNoUpdate(RimIntersection* intersection);
+    
+    void appendIntersectionBoxAndUpdate(RimIntersectionBox* intersectionBox);
+    void appendIntersectionBoxNoUpdate(RimIntersectionBox* intersectionBox);
 
     bool hasActiveIntersectionForSimulationWell(const RimSimWellInView* simWell) const;
 
     void updateIntersectionBoxGeometry();
 
+    void syncronize2dIntersectionViews();
+    void scheduleCreateDisplayModelAndRedraw2dIntersectionViews();
+
     // Visualization interface
 
     void applySingleColorEffect();
-    void updateCellResultColor(size_t timeStepIndex);
+    void updateCellResultColor(size_t timeStepIndex, 
+                               const cvf::ScalarMapper* scalarColorMapper, 
+                               const RivTernaryScalarMapper* ternaryColorMapper);
     void appendPartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+
+    std::vector<RimIntersection*>       intersections() const;
+    std::vector<RimIntersectionBox*>    intersectionBoxes() const;
 
 protected:
     virtual void                    fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue);

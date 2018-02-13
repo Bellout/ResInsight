@@ -59,6 +59,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QProgressBar>
+#include "WindowEdgeAxesOverlayItem/RivWindowEdgeAxesOverlayItem.h"
 
 using cvf::ManipulatorTrackball;
 
@@ -79,13 +80,14 @@ const double RI_MIN_NEARPLANE_DISTANCE = 0.1;
 /// 
 //--------------------------------------------------------------------------------------------------
 RiuViewer::RiuViewer(const QGLFormat& format, QWidget* parent)
-: caf::Viewer(format, parent)
+: caf::Viewer(format, parent), m_isNavigationRotationEnabled(true)
 {
     cvf::Font* standardFont = RiaApplication::instance()->standardFont();
     m_axisCross = new cvf::OverlayAxisCross(m_mainCamera.p(), standardFont);
     m_axisCross->setAxisLabels("X", "Y", "Z");
     m_axisCross->setLayout(cvf::OverlayItem::VERTICAL, cvf::OverlayItem::BOTTOM_LEFT);
     m_mainRendering->addOverlayItem(m_axisCross.p());
+    m_showAxisCross = true;
 
     this->enableOverlyPainting(true);
     this->setReleaseOGLResourcesEachFrame(true);
@@ -175,6 +177,9 @@ RiuViewer::RiuViewer(const QGLFormat& format, QWidget* parent)
     m_gridBoxGenerator = new RivGridBoxGenerator;
 
     m_cursorPositionDomainCoords = cvf::Vec3d::UNDEFINED;
+    m_windowEdgeAxisOverlay = new RivWindowEdgeAxesOverlayItem(standardFont);
+    m_showWindowEdgeAxes = false;
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -349,6 +354,8 @@ void RiuViewer::paintOverlayItems(QPainter* painter)
     //}
 
     int columnWidth = 200;
+    int edgeAxisFrameBorderWidth  = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderWidth(): 0;
+    int edgeAxisFrameBorderHeight = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderHeight(): 0;
     int margin = 5;
     int yPos = margin;
 
@@ -358,7 +365,7 @@ void RiuViewer::paintOverlayItems(QPainter* painter)
     //if (showAnimBar)       columnWidth = CVF_MAX(columnWidth, m_animationProgress->width());
     if (m_showInfoText) columnWidth = CVF_MAX(columnWidth, m_infoLabel->sizeHint().width());
 
-    int columnPos = this->width() - columnWidth - margin;
+    int columnPos = this->width() - columnWidth - margin - edgeAxisFrameBorderWidth;
 
     if (showAnimBar && m_showAnimProgress)
     {
@@ -401,7 +408,7 @@ void RiuViewer::paintOverlayItems(QPainter* painter)
     if (m_showInfoText) // Version Label
     {
         QSize size(m_versionInfoLabel->sizeHint().width(), m_versionInfoLabel->sizeHint().height());
-        QPoint pos(this->width() - size.width() - margin, this->height() - size.height() - margin);
+        QPoint pos(this->width() - size.width() - margin - edgeAxisFrameBorderWidth, this->height() - size.height() - margin - edgeAxisFrameBorderHeight);
         m_versionInfoLabel->resize(size.width(), size.height());
         m_versionInfoLabel->render(painter, pos);
     }
@@ -505,6 +512,19 @@ void RiuViewer::mousePressEvent(QMouseEvent* event)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+cvf::Collection<cvf::OverlayItem> RiuViewer::allOverlayItems()
+{
+    cvf::Collection<cvf::OverlayItem> allOverLays;
+    for (size_t oIdx = 0; oIdx < m_mainRendering->overlayItemCount(); ++oIdx)
+    {
+        allOverLays.push_back(m_mainRendering->overlayItem(oIdx));
+    }
+    return allOverLays;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RiuViewer::removeAllColorLegends()
 {
     for (size_t i = 0; i < m_visibleLegends.size(); i++)
@@ -541,6 +561,7 @@ void RiuViewer::addColorLegendToBottomLeftCorner(cvf::OverlayItem* legend)
     {
         legend->setLayout(cvf::OverlayItem::VERTICAL, cvf::OverlayItem::BOTTOM_LEFT);
 
+
         caf::CategoryLegend* catLegend = dynamic_cast<caf::CategoryLegend*>(legend.p());
         if (catLegend)
         {
@@ -559,23 +580,25 @@ void RiuViewer::addColorLegendToBottomLeftCorner(cvf::OverlayItem* legend)
         }
     }
 
-    if (categoryLegends.size() > 0)
+    if (categoryLegends.size() > 0 || m_showWindowEdgeAxes)
     {
         const int border = 3;
         const int categoryWidth = 150;
+        int edgeAxisBorderWidth  = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderWidth(): 0;
+        int edgeAxisBorderHeight = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderHeight(): 0;
 
         // This value is taken from OverlayAxisCross, as the axis cross is always shown in the lower left corner
-        const int axisCrossHeight = 120;
+        const int axisCrossHeight = m_showAxisCross? 120 : 0;
 
         int height = static_cast<int>(m_mainCamera->viewport()->height());
-        int xPos = border;
+        int xPos = border + edgeAxisBorderWidth;
 
-        int yPos = axisCrossHeight + 2*border;
+        int yPos = axisCrossHeight + 2*border + edgeAxisBorderHeight;
 
         for (auto catLegend : categoryLegends)
         {
             catLegend->setLayoutFixedPosition(cvf::Vec2i(xPos, yPos));
-            catLegend->setSizeHint(cvf::Vec2ui(categoryWidth, height - 2*border - axisCrossHeight));
+            catLegend->setSizeHint(cvf::Vec2ui(categoryWidth, height - 2*border - axisCrossHeight - edgeAxisBorderHeight));
 
             xPos += categoryWidth + border;
         }
@@ -584,9 +607,20 @@ void RiuViewer::addColorLegendToBottomLeftCorner(cvf::OverlayItem* legend)
         {
             item->setLayoutFixedPosition(cvf::Vec2i(xPos, yPos));
 
-            yPos += item->sizeHint().y() + border;
+            yPos += item->sizeHint().y() + border + edgeAxisBorderHeight;
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RiuViewer::enableNavigationRotation(bool enable)
+{
+    auto tbNavPol = dynamic_cast<caf::TrackBallBasedNavigation*>(m_navigationPolicy.p());
+    m_isNavigationRotationEnabled = enable;
+
+    if (tbNavPol) tbNavPol->enableRotation(m_isNavigationRotationEnabled);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -616,6 +650,8 @@ void RiuViewer::updateNavigationPolicy()
             CVF_ASSERT(0);
             break;
     }
+
+    enableNavigationRotation(m_isNavigationRotationEnabled);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -661,6 +697,7 @@ void RiuViewer::showAxisCross(bool enable)
     {
         m_mainRendering->addOverlayItem(m_axisCross.p());
     }
+    m_showAxisCross = enable;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -684,8 +721,13 @@ RimViewWindow* RiuViewer::ownerViewWindow() const
 //--------------------------------------------------------------------------------------------------
 void RiuViewer::optimizeClippingPlanes()
 {
-    m_gridBoxGenerator->updateFromCamera(mainCamera());
+    if (m_showWindowEdgeAxes)
+    {
+        m_windowEdgeAxisOverlay->setDisplayCoordTransform(m_rimView->displayCoordTransform().p());
+        m_windowEdgeAxisOverlay->updateFromCamera(this->mainCamera());
+    }
 
+    m_gridBoxGenerator->updateFromCamera(mainCamera());
     caf::Viewer::optimizeClippingPlanes();
 }
 
@@ -774,6 +816,21 @@ void RiuViewer::updateGridBoxData(double scaleZ,
     m_gridBoxGenerator->setGridBoxDomainCoordBoundingBox(domainCoordBoundingBox);
 
     m_gridBoxGenerator->createGridBoxParts();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RiuViewer::showEdgeTickMarks(bool enable)
+{
+    m_mainRendering->removeOverlayItem(m_windowEdgeAxisOverlay.p());
+
+    if (enable)
+    {
+        m_mainRendering->addOverlayItem(m_windowEdgeAxisOverlay.p());
+    }
+
+    m_showWindowEdgeAxes = enable;
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -41,12 +41,14 @@ public:
     caf::PdmChildArrayField<RimFractureTemplate*>           fractureDefinitions;
     caf::PdmField< RiaEclipseUnitTools::UnitSystemType >    defaultUnitsForFracTemplates;
 
-    std::vector<std::pair<QString, QString> >   stimPlanResultNamesAndUnits() const;
-    std::vector<QString>                        stimPlanResultNames() const;
-    void                                        computeMinMax(const QString& resultName, const QString& unit, double* minValue, double* maxValue, double* posClosestToZero, double* negClosestToZero) const;
+    std::vector<std::pair<QString, QString> >   resultNamesAndUnits() const;
+    void                                        computeMinMax(const QString& uiResultName, const QString& unit, double* minValue, double* maxValue, double* posClosestToZero, double* negClosestToZero) const;
 
-    void                                        deleteFractureDefinitions();
     void                                        loadAndUpdateData();
+    void                                        setDefaultConductivityResultIfEmpty();
 
     void                                        updateFilePathsFromProjectPath(const QString& newProjectPath, const QString& oldProjectPath);
+protected:
+    virtual void initAfterRead() override;
+
 };
