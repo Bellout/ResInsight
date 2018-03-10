@@ -3,17 +3,17 @@
 //  Copyright (C) 2011-     Statoil ASA
 //  Copyright (C) 2013-     Ceetron Solutions AS
 //  Copyright (C) 2011-2012 Ceetron AS
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 ////////////////////////////////////////////////////////////////////
@@ -73,12 +73,12 @@
 
 // The indexing conventions for vertices in ECLIPSE
 //
-//      2-------------3              
-//     /|            /|                  
-//    / |           / |               /j   
-//   /  |          /  |              /     
-//  0-------------1   |             *---i  
-//  |   |         |   |             | 
+//      2-------------3
+//     /|            /|
+//    / |           / |               /j
+//   /  |          /  |              /
+//  0-------------1   |             *---i
+//  |   |         |   |             |
 //  |   6---------|---7             |
 //  |  /          |  /              |k
 //  | /           | /
@@ -88,10 +88,10 @@
 //
 // The indexing conventions for vertices in ResInsight
 //
-//      7-------------6             |k     
-//     /|            /|             | /j   
-//    / |           / |             |/     
-//   /  |          /  |             *---i  
+//      7-------------6             |k
+//     /|            /|             | /j
+//    / |           / |             |/
+//   /  |          /  |             *---i
 //  4-------------5   |
 //  |   |         |   |
 //  |   3---------|---2
@@ -463,7 +463,7 @@ bool RifReaderEclipseOutput::open(const QString& fileName,
 }
 
 //------------------------------------------------------------------
-/// 
+///
 //------------------------------------------------------------------
 void RifReaderEclipseOutput::setHdf5FileName(const QString& fileName)
 {
@@ -577,7 +577,7 @@ void RifReaderEclipseOutput::setHdf5FileName(const QString& fileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::setFileDataAccess(RifEclipseRestartDataAccess* restartDataAccess)
 {
@@ -585,7 +585,7 @@ void RifReaderEclipseOutput::setFileDataAccess(RifEclipseRestartDataAccess* rest
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::importFaults(const QStringList& fileSet, cvf::Collection<RigFault>* faults)
 {
@@ -618,7 +618,7 @@ void RifReaderEclipseOutput::importFaults(const QStringList& fileSet, cvf::Colle
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::transferStaticNNCData(const ecl_grid_type* mainEclGrid , ecl_file_type* init_file, RigMainGrid* mainGrid)
 {
@@ -665,7 +665,7 @@ void RifReaderEclipseOutput::transferStaticNNCData(const ecl_grid_type* mainEclG
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::transferDynamicNNCData(const ecl_grid_type* mainEclGrid, RigMainGrid* mainGrid)
 {
@@ -687,7 +687,7 @@ void RifReaderEclipseOutput::transferDynamicNNCData(const ecl_grid_type* mainEcl
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RifReaderEclipseOutput::openAndReadActiveCellData(const QString& fileName, const std::vector<QDateTime>& mainCaseTimeSteps, RigEclipseCaseData* eclipseCase)
 {
@@ -724,7 +724,7 @@ bool RifReaderEclipseOutput::openAndReadActiveCellData(const QString& fileName, 
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 /// See also RigStatistics::computeActiveCellUnion()
 //--------------------------------------------------------------------------------------------------
 bool RifReaderEclipseOutput::readActiveCellInfo()
@@ -986,7 +986,7 @@ bool RifReaderEclipseOutput::staticResult(const QString& result, RiaDefines::Por
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::sourSimRlResult(const QString& result, size_t stepIndex, std::vector<double>* values)
 {
@@ -1020,7 +1020,7 @@ void RifReaderEclipseOutput::sourSimRlResult(const QString& result, size_t stepI
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::vector<QDateTime> RifReaderEclipseOutput::allTimeSteps() const
 {
@@ -1059,7 +1059,7 @@ bool RifReaderEclipseOutput::dynamicResult(const QString& result, RiaDefines::Po
 
 
 //--------------------------------------------------------------------------------------------------
-/// Helper struct to store info on how a well-to-grid connection contributes to the position of 
+/// Helper struct to store info on how a well-to-grid connection contributes to the position of
 /// well segments without any connections.
 //--------------------------------------------------------------------------------------------------
 struct SegmentPositionContribution
@@ -1147,7 +1147,7 @@ size_t localGridCellIndexFromErtConnection(const RigGridBase* grid, const well_c
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RigWellResultPoint RifReaderEclipseOutput::createWellResultPoint(const RigGridBase* grid, const well_conn_type* ert_connection, int ertBranchId, int ertSegmentId, const char* wellName)
 {
@@ -1186,7 +1186,7 @@ RigWellResultPoint RifReaderEclipseOutput::createWellResultPoint(const RigGridBa
 
 
 //--------------------------------------------------------------------------------------------------
-/// Inverse distance interpolation of the supplied points and distance weights for 
+/// Inverse distance interpolation of the supplied points and distance weights for
 /// the contributing points which are closest above, and closest below
 //--------------------------------------------------------------------------------------------------
 cvf::Vec3d interpolate3DPosition(const std::vector<SegmentPositionContribution>& positions)
@@ -1266,7 +1266,7 @@ cvf::Vec3d interpolate3DPosition(const std::vector<SegmentPositionContribution>&
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void propagatePosContribDownwards(std::map<int, std::vector<SegmentPositionContribution> > & segmentIdToPositionContrib,
                                   const well_segment_collection_type * allErtSegments,
@@ -2003,7 +2003,7 @@ void RifReaderEclipseOutput::readWellCells(const ecl_grid_type* mainEclGrid, boo
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QStringList RifReaderEclipseOutput::validKeywordsForPorosityModel(const QStringList& keywords,
                                                                   const std::vector<size_t>& keywordDataItemCounts,
@@ -2106,7 +2106,7 @@ QStringList RifReaderEclipseOutput::validKeywordsForPorosityModel(const QStringL
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::vector<RigEclipseTimeStepInfo> RifReaderEclipseOutput::createFilteredTimeStepInfos()
 {
@@ -2134,7 +2134,7 @@ std::vector<RigEclipseTimeStepInfo> RifReaderEclipseOutput::createFilteredTimeSt
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RifReaderEclipseOutput::isEclipseAndSoursimTimeStepsEqual(const QDateTime& eclipseDateTime, const QDateTime& sourSimDateTime)
 {
@@ -2166,7 +2166,7 @@ bool RifReaderEclipseOutput::isEclipseAndSoursimTimeStepsEqual(const QDateTime& 
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::extractResultValuesBasedOnPorosityModel(RiaDefines::PorosityModelType matrixOrFracture, std::vector<double>* destinationResultValues, const std::vector<double>& sourceResultValues)
 {
@@ -2211,23 +2211,21 @@ void RifReaderEclipseOutput::extractResultValuesBasedOnPorosityModel(RiaDefines:
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-void RifReaderEclipseOutput::openInitFile()
-{
-  if (m_ecl_init_file)
-  {
+void RifReaderEclipseOutput::openInitFile() {
+  if (m_ecl_init_file) {
     return;
   }
 
   QString initFileName = RifEclipseOutputFileTools::firstFileNameOfType(m_filesWithSameBaseName, ECL_INIT_FILE);
-  if (initFileName.size() > 0)
-  {
+  if (initFileName.size() > 0) {
     m_ecl_init_file = ecl_file_open(initFileName.toAscii().data(), ECL_FILE_CLOSE_STREAM);
   }
+}
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RifReaderEclipseOutput::transferCoarseningInfo(const ecl_grid_type* eclGrid, RigGridBase* grid)
 {
@@ -2249,7 +2247,7 @@ void RifReaderEclipseOutput::transferCoarseningInfo(const ecl_grid_type* eclGrid
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::set<RiaDefines::PhaseType> RifReaderEclipseOutput::availablePhases() const
 {
@@ -2262,7 +2260,7 @@ std::set<RiaDefines::PhaseType> RifReaderEclipseOutput::availablePhases() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::string RifReaderEclipseOutput::ertGridName(size_t gridNr)
 {
