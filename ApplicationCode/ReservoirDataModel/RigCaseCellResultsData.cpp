@@ -1296,8 +1296,7 @@ size_t RigCaseCellResultsData::findOrLoadScalarResultForTimeStep(RiaDefines::Res
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex)
-{
+void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex) {
   // Compute SGAS based on SWAT if the simulation contains no oil
   testAndComputeSgasForTimeStep(timeStepIndex);
 
@@ -1305,29 +1304,24 @@ void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex)
   size_t scalarIndexSGAS = findOrLoadScalarResultForTimeStep(RiaDefines::DYNAMIC_NATIVE, "SGAS", timeStepIndex);
 
   // Early exit if none of SWAT or SGAS is present
-  if (scalarIndexSWAT == cvf::UNDEFINED_SIZE_T && scalarIndexSGAS == cvf::UNDEFINED_SIZE_T)
-  {
+  if (scalarIndexSWAT == cvf::UNDEFINED_SIZE_T && scalarIndexSGAS == cvf::UNDEFINED_SIZE_T) {
     return;
   }
 
   size_t soilResultValueCount = 0;
   size_t soilTimeStepCount = 0;
 
-  if (scalarIndexSWAT != cvf::UNDEFINED_SIZE_T)
-  {
-    std::vector<double>& swatForTimeStep = this->cellScalarResults(scalarIndexSWAT, timeStepIndex);
-    if (swatForTimeStep.size() > 0)
-    {
+  if (scalarIndexSWAT != cvf::UNDEFINED_SIZE_T) {
+    std::vector<double> &swatForTimeStep = this->cellScalarResults(scalarIndexSWAT, timeStepIndex);
+    if (swatForTimeStep.size() > 0) {
       soilResultValueCount = swatForTimeStep.size();
       soilTimeStepCount = this->infoForEachResultIndex()[scalarIndexSWAT].m_timeStepInfos.size();
     }
   }
 
-  if (scalarIndexSGAS != cvf::UNDEFINED_SIZE_T)
-  {
-    std::vector<double>& sgasForTimeStep = this->cellScalarResults(scalarIndexSGAS, timeStepIndex);
-    if (sgasForTimeStep.size() > 0)
-    {
+  if (scalarIndexSGAS != cvf::UNDEFINED_SIZE_T) {
+    std::vector<double> &sgasForTimeStep = this->cellScalarResults(scalarIndexSGAS, timeStepIndex);
+    if (sgasForTimeStep.size() > 0) {
       soilResultValueCount = qMax(soilResultValueCount, sgasForTimeStep.size());
 
       size_t sgasTimeStepCount = this->infoForEachResultIndex()[scalarIndexSGAS].m_timeStepInfos.size();
@@ -1340,58 +1334,50 @@ void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex)
   size_t soilResultScalarIndex = this->findScalarResultIndex(RiaDefines::DYNAMIC_NATIVE, "SOIL");
   this->cellScalarResults(soilResultScalarIndex).resize(soilTimeStepCount);
 
-  if (this->cellScalarResults(soilResultScalarIndex, timeStepIndex).size() > 0)
-  {
+  if (this->cellScalarResults(soilResultScalarIndex, timeStepIndex).size() > 0) {
     // Data is computed and allocated, nothing more to do
     return;
   }
 
   this->cellScalarResults(soilResultScalarIndex, timeStepIndex).resize(soilResultValueCount);
 
-    std::vector<double>* swatForTimeStep = nullptr;
-    std::vector<double>* sgasForTimeStep = nullptr;
+  std::vector<double> *swatForTimeStep = nullptr;
+  std::vector<double> *sgasForTimeStep = nullptr;
 
-  if (scalarIndexSWAT != cvf::UNDEFINED_SIZE_T)
-  {
+  if (scalarIndexSWAT != cvf::UNDEFINED_SIZE_T) {
     swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
-    if (swatForTimeStep->size() == 0)
-    {
-        swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
-        if (swatForTimeStep->size() == 0)
-        {
-            swatForTimeStep = nullptr;
+    if (swatForTimeStep->size() == 0) {
+      swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
+      if (swatForTimeStep->size() == 0) {
+        swatForTimeStep = nullptr;
+      }
     }
-  }
 
-  if (scalarIndexSGAS != cvf::UNDEFINED_SIZE_T)
-  {
-    sgasForTimeStep = &(this->cellScalarResults(scalarIndexSGAS, timeStepIndex));
-    if (sgasForTimeStep->size() == 0)
-    {
+    if (scalarIndexSGAS != cvf::UNDEFINED_SIZE_T) {
+      sgasForTimeStep = &(this->cellScalarResults(scalarIndexSGAS, timeStepIndex));
+      if (sgasForTimeStep->size() == 0) {
         sgasForTimeStep = &(this->cellScalarResults(scalarIndexSGAS, timeStepIndex));
-        if (sgasForTimeStep->size() == 0)
-        {
-            sgasForTimeStep = nullptr;
-    }
-  }
+        if (sgasForTimeStep->size() == 0) {
+          sgasForTimeStep = nullptr;
+        }
+      }
 
-  std::vector<double>& soilForTimeStep = this->cellScalarResults(soilResultScalarIndex, timeStepIndex);
+      std::vector<double> &soilForTimeStep = this->cellScalarResults(soilResultScalarIndex, timeStepIndex);
 
 #pragma omp parallel for
-  for (int idx = 0; idx < static_cast<int>(soilResultValueCount); idx++)
-  {
-    double soilValue = 1.0;
-    if (sgasForTimeStep)
-    {
-      soilValue -= sgasForTimeStep->at(idx);
-    }
+      for (int idx = 0; idx < static_cast<int>(soilResultValueCount); idx++) {
+        double soilValue = 1.0;
+        if (sgasForTimeStep) {
+          soilValue -= sgasForTimeStep->at(idx);
+        }
 
-    if (swatForTimeStep)
-    {
-      soilValue -= swatForTimeStep->at(idx);
-    }
+        if (swatForTimeStep) {
+          soilValue -= swatForTimeStep->at(idx);
+        }
 
-    soilForTimeStep[idx] = soilValue;
+        soilForTimeStep[idx] = soilValue;
+      }
+    }
   }
 }
 

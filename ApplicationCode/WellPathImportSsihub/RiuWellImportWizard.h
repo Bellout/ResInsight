@@ -1,17 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) 2011-2012 Statoil ASA, Ceetron AS
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -50,29 +50,29 @@ class PdmObjectCollection;
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class AuthenticationPage : public QWizardPage
 {
  Q_OBJECT
 
-public:
-    AuthenticationPage(const QString& webServiceAddress, QWidget *parent = nullptr);
+ public:
+  AuthenticationPage(const QString& webServiceAddress, QWidget *parent = nullptr);
 
   virtual void initializePage();
 };
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class FieldSelectionPage : public QWizardPage
 {
  Q_OBJECT
 
-public:
-    FieldSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
-    ~FieldSelectionPage();
+ public:
+  FieldSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+  ~FieldSelectionPage();
 
   virtual void initializePage();
 
@@ -95,7 +95,7 @@ class ObjectGroupWithHeaders : public caf::PdmObjectCollection
 };
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class DownloadEntity
 {
@@ -106,7 +106,7 @@ class DownloadEntity
 };
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class SummaryPageDownloadEntity : public caf::PdmObject
 {
@@ -121,15 +121,15 @@ class SummaryPageDownloadEntity : public caf::PdmObject
 };
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class WellSelectionPage : public QWizardPage
 {
  Q_OBJECT
 
-public:
-    WellSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
-    ~WellSelectionPage();
+ public:
+  WellSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+  ~WellSelectionPage();
 
   virtual void initializePage();
   void         buildWellTreeView();
@@ -148,14 +148,14 @@ public:
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class WellSummaryPage : public QWizardPage
 {
  Q_OBJECT
 
-public:
-    WellSummaryPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+ public:
+  WellSummaryPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
 
   virtual void initializePage();
 
@@ -174,7 +174,7 @@ public:
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class RiuWellImportWizard : public QWizard
 {
@@ -183,11 +183,9 @@ class RiuWellImportWizard : public QWizard
  public:
   enum DownloadState{DOWNLOAD_FIELDS, DOWNLOAD_WELLS, DOWNLOAD_WELL_PATH, DOWNLOAD_UNDEFINED};
 
-    enum DownloadState{ DOWNLOAD_FIELDS, DOWNLOAD_WELLS, DOWNLOAD_WELL_PATH, DOWNLOAD_UNDEFINED};
-
-public:
-    RiuWellImportWizard(const QString& webServiceAddress, const QString& downloadFolder, RimWellPathImport* wellPathImportObject, QWidget *parent = nullptr);
-    ~RiuWellImportWizard();
+ public:
+  RiuWellImportWizard(const QString& webServiceAddress, const QString& downloadFolder, RimWellPathImport* wellPathImportObject, QWidget *parent = nullptr);
+  ~RiuWellImportWizard();
 
   void        setCredentials(const QString& username,
                              const QString& password);
