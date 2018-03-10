@@ -24,13 +24,11 @@
 
 #include <cmath>
 
-RigActiveCellsResultAccessor::RigActiveCellsResultAccessor(const RigGridBase* grid,
-                                                           const std::vector<double>* reservoirResultValues,
-                                                           const RigActiveCellInfo* activeCellInfo)
-    : m_grid(grid),
 
-      m_reservoirResultValues(reservoirResultValues),
-      m_activeCellInfo(activeCellInfo)
+RigActiveCellsResultAccessor::RigActiveCellsResultAccessor(const RigGridBase* grid, const std::vector<double>* reservoirResultValues, const RigActiveCellInfo* activeCellInfo)
+    : m_activeCellInfo(activeCellInfo),
+    m_grid(grid),
+    m_reservoirResultValues(reservoirResultValues)
 {
 }
 
@@ -40,11 +38,11 @@ RigActiveCellsResultAccessor::RigActiveCellsResultAccessor(const RigGridBase* gr
 //--------------------------------------------------------------------------------------------------
 double RigActiveCellsResultAccessor::cellScalar(size_t gridLocalCellIndex) const
 {
-  if (m_reservoirResultValues == NULL || m_reservoirResultValues->size() == 0 ) return HUGE_VAL;
+    if (m_reservoirResultValues == nullptr || m_reservoirResultValues->size() == 0 ) return HUGE_VAL;
 
-  size_t reservoirCellIndex = m_grid->reservoirCellIndex(gridLocalCellIndex);
-  size_t resultValueIndex = m_activeCellInfo->cellResultIndex(reservoirCellIndex);
-  if (resultValueIndex == cvf::UNDEFINED_SIZE_T) return HUGE_VAL;
+    size_t reservoirCellIndex = m_grid->reservoirCellIndex(gridLocalCellIndex);
+    size_t resultValueIndex = m_activeCellInfo->cellResultIndex(reservoirCellIndex);
+    if (resultValueIndex == cvf::UNDEFINED_SIZE_T) return HUGE_VAL;
 
   if (resultValueIndex < m_reservoirResultValues->size())
     return m_reservoirResultValues->at(resultValueIndex);
@@ -68,9 +66,9 @@ double RigActiveCellsResultAccessor::cellFaceScalar(size_t gridLocalCellIndex,
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-double RigActiveCellsResultAccessor::cellScalarGlobIdx(size_t reservoirCellIndex) const {
-
-  if (m_reservoirResultValues == NULL || m_reservoirResultValues->size() == 0) return HUGE_VAL;
+double RigActiveCellsResultAccessor::cellScalarGlobIdx(size_t reservoirCellIndex) const
+{
+    if (m_reservoirResultValues == nullptr || m_reservoirResultValues->size() == 0) return HUGE_VAL;
 
   size_t resultValueIndex = m_activeCellInfo->cellResultIndex(reservoirCellIndex);
   if (resultValueIndex == cvf::UNDEFINED_SIZE_T) return HUGE_VAL;

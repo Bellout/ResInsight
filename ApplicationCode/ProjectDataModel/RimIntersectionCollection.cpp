@@ -19,15 +19,15 @@
 
 #include "RimIntersectionCollection.h"
 
-#include "Rim2dIntersectionViewCollection.h"
 #include "Rim2dIntersectionView.h"
+#include "Rim2dIntersectionViewCollection.h"
 #include "Rim3dView.h"
 #include "RimCase.h"
 #include "RimIntersection.h"
 #include "RimIntersectionBox.h"
 #include "RimSimWellInView.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 #include "RivIntersectionBoxPartMgr.h"
 #include "RivIntersectionPartMgr.h"
@@ -170,6 +170,17 @@ std::vector<RimIntersectionBox*> RimIntersectionCollection::intersectionBoxes() 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void RimIntersectionCollection::recomputeSimWellBranchData()
+{
+    for (const auto& intersection : intersections())
+    {
+        intersection->recomputeSimulationWellBranchData();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimIntersectionCollection::appendIntersectionAndUpdate(RimIntersection* intersection)
 {
     m_intersections.push_back(intersection);
@@ -177,7 +188,7 @@ void RimIntersectionCollection::appendIntersectionAndUpdate(RimIntersection* int
     syncronize2dIntersectionViews();
 
     updateConnectedEditors();
-    RiuMainWindow::instance()->selectAsCurrentItem(intersection);
+    Riu3DMainWindowTools::selectAsCurrentItem(intersection);
 
     Rim3dView* rimView = nullptr;
     firstAncestorOrThisOfType(rimView);
@@ -224,7 +235,7 @@ void RimIntersectionCollection::appendIntersectionBoxAndUpdate(RimIntersectionBo
     m_intersectionBoxes.push_back(intersectionBox);
 
     updateConnectedEditors();
-    RiuMainWindow::instance()->selectAsCurrentItem(intersectionBox);
+    Riu3DMainWindowTools::selectAsCurrentItem(intersectionBox);
 
     Rim3dView* rimView = nullptr;
     firstAncestorOrThisOfType(rimView);

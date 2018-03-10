@@ -43,6 +43,7 @@
 
 #include "RivHexGridIntersectionTools.h"
 #include "RivIntersectionGeometryGenerator.h"
+#include "RivObjectSourceInfo.h"
 #include "RivIntersectionSourceInfo.h"
 #include "RivPartPriority.h"
 #include "RivPipeGeometryGenerator.h"
@@ -81,13 +82,20 @@ RivIntersectionPartMgr::RivIntersectionPartMgr(RimIntersection* rimCrossSection,
     CVF_ASSERT(m_rimCrossSection);
 
     m_crossSectionFacesTextureCoords = new cvf::Vec2fArray;
+    
+    double horizontalLengthAlongWellToPolylineStart;
 
-    std::vector< std::vector <cvf::Vec3d> > polyLines = m_rimCrossSection->polyLines();
+    std::vector< std::vector <cvf::Vec3d> > polyLines = m_rimCrossSection->polyLines(&horizontalLengthAlongWellToPolylineStart);
     if (polyLines.size() > 0)
     {
         cvf::Vec3d direction = m_rimCrossSection->extrusionDirection();
         cvf::ref<RivIntersectionHexGridInterface> hexGrid = createHexGridInterface();
-        m_crossSectionGenerator = new RivIntersectionGeometryGenerator(m_rimCrossSection, polyLines, direction, hexGrid.p(), m_isFlattened);
+        m_crossSectionGenerator = new RivIntersectionGeometryGenerator(m_rimCrossSection, 
+                                                                       polyLines, 
+                                                                       direction, 
+                                                                       hexGrid.p(), 
+                                                                       m_isFlattened, 
+                                                                       horizontalLengthAlongWellToPolylineStart);
     }
 }
 
@@ -760,7 +768,7 @@ cvf::ref<cvf::Part> createStdLinePart(cvf::DrawableGeo* geometry,
 //--------------------------------------------------------------------------------------------------
 void RivIntersectionPartMgr::appendWellPipePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform)
 {
-    if (m_rimCrossSection.isNull()) return;
+    if (m_rimCrossSection.isNull() || m_crossSectionGenerator.isNull()) return;
 
     // Get information on how to draw the pipe
 
@@ -768,6 +776,7 @@ void RivIntersectionPartMgr::appendWellPipePartsToModel(cvf::ModelBasicList* mod
     double       pipeRadius = 1; 
     int          pipeCrossSectionVxCount = 6;
     cvf::Color3f wellPipeColor = cvf::Color3f::GRAY;
+    double       characteristicCellSize = 0;
 
     if ( m_rimCrossSection->type() == RimIntersection::CS_SIMULATION_WELL )
     {
@@ -783,7 +792,7 @@ void RivIntersectionPartMgr::appendWellPipePartsToModel(cvf::ModelBasicList* mod
         wellPipeColor = simWellInView->wellPipeColor();
 
         createSourceInfoFunc = [&](size_t brIdx) { return new RivSimWellPipeSourceInfo(simWellInView, brIdx); };
-
+        characteristicCellSize = eclView->eclipseCase()->characteristicCellSize();
     }
     else if (m_rimCrossSection->type() == RimIntersection::CS_WELL_PATH)
     {
@@ -804,7 +813,7 @@ void RivIntersectionPartMgr::appendWellPipePartsToModel(cvf::ModelBasicList* mod
         pipeCrossSectionVxCount = wellPathColl->wellPathCrossSectionVertexCount();
         wellPipeColor = wellPath->wellPathColor();
 
-        createSourceInfoFunc = [&](size_t brIdx) { return new RivWellPathSourceInfo(wellPath, m_rimCrossSection->correspondingIntersectionView()); };
+        createSourceInfoFunc = [&](size_t brIdx) { return new RivObjectSourceInfo(wellPath); };  //Temporary fix to avoid crash
     }
 
     // Create pipe geometry
@@ -846,6 +855,8 @@ void RivIntersectionPartMgr::appendWellPipePartsToModel(cvf::ModelBasicList* mod
             {
                 (*cvfCoords)[cIdx].transformPoint(scaleTransform->worldTransform());
             }
+
+            (*cvfCoords)[0].z() += characteristicCellSize;
 
             pbd.m_pipeGeomGenerator->setPipeCenterCoords(cvfCoords.p());
             auto surfaceDrawable = pbd.m_pipeGeomGenerator->createPipeSurface();
@@ -958,6 +969,14 @@ void RivIntersectionPartMgr::appendPolylinePartsToModel(cvf::ModelBasicList* mod
 const RimIntersection* RivIntersectionPartMgr::intersection() const
 {
     return m_rimCrossSection.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+cvf::Mat4d RivIntersectionPartMgr::unflattenTransformMatrix(const cvf::Vec3d& intersectionPointUtm)
+{
+    return m_crossSectionGenerator->unflattenTransformMatrix(intersectionPointUtm);
 }
 
 //--------------------------------------------------------------------------------------------------

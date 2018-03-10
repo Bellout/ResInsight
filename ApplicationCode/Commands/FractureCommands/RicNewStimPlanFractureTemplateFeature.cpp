@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2016-     Statoil ASA
+//  Copyright (C) 2017-     Statoil ASA
 // 
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,32 +16,39 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#include "RicNewEllipseFractureTemplateFeature.h"
+#include "RicNewStimPlanFractureTemplateFeature.h"
 
 #include "RiaApplication.h"
 
-#include "RimOilField.h"
 #include "RimEclipseView.h"
-#include "RimEllipseFractureTemplate.h"
 #include "RimFractureTemplateCollection.h"
+#include "RimOilField.h"
 #include "RimProject.h"
+#include "RimStimPlanFractureTemplate.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 #include "cafSelectionManager.h"
 
 #include "cvfAssert.h"
 
 #include <QAction>
+#include <QFileDialog>
 
 
-CAF_CMD_SOURCE_INIT(RicNewEllipseFractureTemplateFeature, "RicNewEllipseFractureTemplateFeature");
+CAF_CMD_SOURCE_INIT(RicNewStimPlanFractureTemplateFeature, "RicNewStimPlanFractureTemplateFeature");
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicNewEllipseFractureTemplateFeature::onActionTriggered(bool isChecked)
+void RicNewStimPlanFractureTemplateFeature::onActionTriggered(bool isChecked)
 {
+    RiaApplication* app = RiaApplication::instance();
+    QString defaultDir = app->lastUsedDialogDirectory("BINARY_GRID");
+    QString fileName = QFileDialog::getOpenFileName(nullptr, "Open StimPlan XML File", defaultDir, "StimPlan XML File (*.xml);;All files(*.*)");
+
+    if (fileName.isEmpty()) return;
+
     RimProject* project = RiaApplication::instance()->project();
     CVF_ASSERT(project);
 
@@ -49,18 +56,29 @@ void RicNewEllipseFractureTemplateFeature::onActionTriggered(bool isChecked)
     if (oilfield == nullptr) return;
 
     RimFractureTemplateCollection* fracDefColl = oilfield->fractureDefinitionCollection();
-    
+
     if (fracDefColl)
     {
-        RimEllipseFractureTemplate* ellipseFractureTemplate = new RimEllipseFractureTemplate();
-        fracDefColl->fractureDefinitions.push_back(ellipseFractureTemplate);
-        ellipseFractureTemplate->setName("Ellipse Fracture Template");
-        ellipseFractureTemplate->setFractureTemplateUnit(fracDefColl->defaultUnitsForFracTemplates());
-        ellipseFractureTemplate->setDefaultValuesFromUnit();
-        ellipseFractureTemplate->loadDataAndUpdate();
+        RimStimPlanFractureTemplate* fractureDef = new RimStimPlanFractureTemplate();
+        fracDefColl->addFractureTemplate(fractureDef);
+
+        QFileInfo stimplanfileFileInfo(fileName);
+        QString name = stimplanfileFileInfo.baseName();
+        if (name.isEmpty())
+        {
+            name = "StimPlan Fracture Template";
+        }
+
+        fractureDef->setName(name);
+
+        fractureDef->setFileName(fileName);
+        fractureDef->loadDataAndUpdate();
+        fractureDef->setDefaultsBasedOnXMLfile();
+        fractureDef->setDefaultWellDiameterFromUnit();
+        fractureDef->updateFractureGrid();
 
         fracDefColl->updateConnectedEditors();
-        
+
         std::vector<Rim3dView*> views;
         project->allVisibleViews(views);
 
@@ -72,23 +90,23 @@ void RicNewEllipseFractureTemplateFeature::onActionTriggered(bool isChecked)
             }
         }
 
-        RiuMainWindow::instance()->selectAsCurrentItem(ellipseFractureTemplate);
+        Riu3DMainWindowTools::selectAsCurrentItem(fractureDef);
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicNewEllipseFractureTemplateFeature::setupActionLook(QAction* actionToSetup)
+void RicNewStimPlanFractureTemplateFeature::setupActionLook(QAction* actionToSetup)
 {
     actionToSetup->setIcon(QIcon(":/FractureTemplate16x16.png"));
-    actionToSetup->setText("New Ellipse Fracture Template");
+    actionToSetup->setText("New StimPlan Fracture Template");
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RicNewEllipseFractureTemplateFeature::isCommandEnabled()
+bool RicNewStimPlanFractureTemplateFeature::isCommandEnabled()
 {
     return true;
 }

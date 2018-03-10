@@ -24,30 +24,36 @@
 #include "RiaBaseDefs.h"
 #include "RiaPreferences.h"
 #include "RiaRegressionTest.h"
+#include "RiaRegressionTestRunner.h"
 
+#include "Rim3dView.h"
+#include "RimCellEdgeColors.h"
 #include "RimCommandObject.h"
 #include "RimEclipseCase.h"
+#include "RimEclipseFaultColors.h"
+#include "RimEclipsePropertyFilter.h"
+#include "RimEclipseResultDefinition.h"
 #include "RimEclipseView.h"
 #include "RimFaultInViewCollection.h"
 #include "RimGeoMechCase.h"
 #include "RimGeoMechView.h"
 #include "RimProject.h"
 #include "RimSimWellInViewCollection.h"
-#include "Rim3dView.h"
 
 #include "RiuDragDrop.h"
 #include "RiuMdiSubWindow.h"
 #include "RiuMessagePanel.h"
+#include "RiuMohrsCirclePlot.h"
 #include "RiuProcessMonitor.h"
 #include "RiuProjectPropertyView.h"
 #include "RiuPropertyViewTabWidget.h"
+#include "RiuPvtPlotPanel.h"
+#include "RiuRelativePermeabilityPlotPanel.h"
 #include "RiuResultInfoPanel.h"
 #include "RiuResultQwtPlot.h"
 #include "RiuToolTipMenu.h"
 #include "RiuTreeViewEventFilter.h"
 #include "RiuViewer.h"
-#include "RiuRelativePermeabilityPlotPanel.h"
-#include "RiuPvtPlotPanel.h"
 
 #include "cafAnimationToolBar.h"
 #include "cafCmdExecCommandManager.h"
@@ -93,20 +99,21 @@
 //==================================================================================================
 
 
-RiuMainWindow* RiuMainWindow::sm_mainWindowInstance = NULL;
+RiuMainWindow* RiuMainWindow::sm_mainWindowInstance = nullptr;
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
 RiuMainWindow::RiuMainWindow()
-    : m_pdmRoot(NULL),
-    m_mainViewer(NULL),
-    m_relPermPlotPanel(NULL),
-    m_pvtPlotPanel(NULL),
-    m_windowMenu(NULL),
+    : m_pdmRoot(nullptr),
+    m_mainViewer(nullptr),
+    m_relPermPlotPanel(nullptr),
+    m_pvtPlotPanel(nullptr),
+    m_mohrsCirclePlot(nullptr),
+    m_windowMenu(nullptr),
     m_blockSlotSubWindowActivated(false)
 {
-    CVF_ASSERT(sm_mainWindowInstance == NULL);
+    CVF_ASSERT(sm_mainWindowInstance == nullptr);
 
     m_mdiArea = new QMdiArea;
     m_mdiArea->setOption(QMdiArea::DontMaximizeSubWindowOnActivation, true);
@@ -146,6 +153,14 @@ RiuMainWindow* RiuMainWindow::instance()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+QString RiuMainWindow::mainWindowName()
+{
+    return "RiuMainWindow";
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RiuMainWindow::initializeGuiNewProjectLoaded()
 {
     setPdmRoot(RiaApplication::instance()->project());
@@ -176,10 +191,11 @@ void RiuMainWindow::cleanupGuiCaseClose()
     m_resultQwtPlot->deleteAllCurves();
     if (m_relPermPlotPanel) m_relPermPlotPanel->clearPlot();
     if (m_pvtPlotPanel) m_pvtPlotPanel->clearPlot();
+    if (m_mohrsCirclePlot) m_mohrsCirclePlot->clearPlot();
 
     if (m_pdmUiPropertyView)
     {
-        m_pdmUiPropertyView->showProperties(NULL);
+        m_pdmUiPropertyView->showProperties(nullptr);
     }
 
     for (size_t i = 0; i < additionalProjectViews.size(); i++)
@@ -187,10 +203,10 @@ void RiuMainWindow::cleanupGuiCaseClose()
         RiuProjectAndPropertyView* projPropView = dynamic_cast<RiuProjectAndPropertyView*>(additionalProjectViews[i]->widget());
         if (projPropView)
         {
-            projPropView->showProperties(NULL);
+            projPropView->showProperties(nullptr);
         }
     }
-    m_processMonitor->startMonitorWorkProcess(NULL);
+    m_processMonitor->startMonitorWorkProcess(nullptr);
 
     RicEditSummaryPlotFeature* editSumCurves = dynamic_cast<RicEditSummaryPlotFeature*>(caf::CmdFeatureManager::instance()->getCommandFeature("RicEditSummaryPlotFeature"));
     if (editSumCurves)
@@ -206,7 +222,7 @@ void RiuMainWindow::cleanupGuiCaseClose()
 //--------------------------------------------------------------------------------------------------
 void RiuMainWindow::cleanupGuiBeforeProjectClose()
 {
-    setPdmRoot(NULL);
+    setPdmRoot(nullptr);
 
     cleanupGuiCaseClose();
 }
@@ -521,6 +537,15 @@ void RiuMainWindow::createToolBars()
         dsToolBar->addAction(m_showWellCellsAction);
     }
 
+    RiaApplication* app = RiaApplication::instance();
+    if (app->preferences()->showTestToolbar())
+    {
+        QToolBar* toolbar = addToolBar(tr("Test"));
+        toolbar->setObjectName(toolbar->windowTitle());
+        toolbar->addAction(cmdFeatureMgr->action("RicLaunchUnitTestsFeature"));
+        toolbar->addAction(cmdFeatureMgr->action("RicLaunchRegressionTestsFeature"));
+    }
+
     // Create animation toolbar
     m_animationToolBar = new caf::AnimationToolBar("Animation", this);
     addToolBar(m_animationToolBar);
@@ -593,6 +618,7 @@ void RiuMainWindow::createDockPanels()
     QDockWidget* resultPlotDock = nullptr;
     QDockWidget* relPermPlotDock = nullptr;
     QDockWidget* pvtPlotDock = nullptr;
+    QDockWidget* mohrsCirclePlotDock = nullptr;
 
     {
         QDockWidget* dockWidget = new QDockWidget("Property Editor", this);
@@ -636,6 +662,19 @@ void RiuMainWindow::createDockPanels()
         addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
         resultPlotDock = dockPanel;
     }
+
+#ifdef USE_ODB_API
+    {
+        QDockWidget* dockPanel = new QDockWidget("Mohr's Circle Plot", this);
+        dockPanel->setObjectName("dockTimeHistoryPanel");
+        dockPanel->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea | Qt::BottomDockWidgetArea);
+        m_mohrsCirclePlot = new RiuMohrsCirclePlot(dockPanel);
+        dockPanel->setWidget(m_mohrsCirclePlot);
+
+        addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
+        mohrsCirclePlotDock = dockPanel;
+    }
+#endif
  
     {
         QDockWidget* dockPanel = new QDockWidget("Relative Permeability Plot", this);
@@ -673,7 +712,13 @@ void RiuMainWindow::createDockPanels()
 
     // Tabify docks
     tabifyDockWidget(pvtPlotDock, relPermPlotDock);
+#ifdef USE_ODB_API
+    tabifyDockWidget(relPermPlotDock, mohrsCirclePlotDock);
+    tabifyDockWidget(mohrsCirclePlotDock, resultPlotDock);
+#else
     tabifyDockWidget(relPermPlotDock, resultPlotDock);
+#endif
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -741,7 +786,7 @@ void RiuMainWindow::slotRefreshViewActions()
 //--------------------------------------------------------------------------------------------------
 void RiuMainWindow::refreshAnimationActions()
 {
-    caf::FrameAnimationControl* animationControl = NULL;
+    caf::FrameAnimationControl* animationControl = nullptr;
     Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
 
     if (activeView && activeView->viewer())
@@ -769,7 +814,7 @@ void RiuMainWindow::refreshAnimationActions()
         else
         {
             RimEclipseView * activeRiv = dynamic_cast<RimEclipseView*>(activeView);
-            if ( activeRiv->currentGridCellResults() )
+            if ( activeRiv && activeRiv->currentGridCellResults() )
             {
                 timeStepStrings.push_back(tr("Static Property"));
             }
@@ -854,7 +899,7 @@ QMdiSubWindow* RiuMainWindow::findMdiSubWindow(QWidget* viewer)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -887,6 +932,14 @@ RiuRelativePermeabilityPlotPanel* RiuMainWindow::relativePermeabilityPlotPanel()
 RiuPvtPlotPanel* RiuMainWindow::pvtPlotPanel()
 {
     return m_pvtPlotPanel;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RiuMohrsCirclePlot* RiuMainWindow::mohrsCirclePlot()
+{
+    return m_mohrsCirclePlot;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1068,7 +1121,7 @@ void RiuMainWindow::slotSubWindowActivated(QMdiSubWindow* subWindow)
 
     // Find the activated 3D view
     
-    Rim3dView* activatedView = NULL;
+    Rim3dView* activatedView = nullptr;
 
     std::vector<RimCase*> allCases;
     proj->allCases(allCases);
@@ -1076,7 +1129,7 @@ void RiuMainWindow::slotSubWindowActivated(QMdiSubWindow* subWindow)
     for (size_t caseIdx = 0; caseIdx < allCases.size(); ++caseIdx)
     {
         RimCase* reservoirCase = allCases[caseIdx];
-        if (reservoirCase == NULL) continue;
+        if (reservoirCase == nullptr) continue;
 
         std::vector<Rim3dView*> views = reservoirCase->views();
 
@@ -1195,7 +1248,7 @@ void RiuMainWindow::setActiveViewer(QWidget* viewer)
 //--------------------------------------------------------------------------------------------------
 void RiuMainWindow::slotFramerateChanged(double frameRate)
 {
-    if (RiaApplication::instance()->activeReservoirView() != NULL)
+    if (RiaApplication::instance()->activeReservoirView() != nullptr)
     {
         RiaApplication::instance()->activeReservoirView()->maximumFrameRate.setValueWithFieldChanged(frameRate);
     }
@@ -1251,15 +1304,18 @@ void RiuMainWindow::selectedObjectsChanged()
     std::vector<caf::PdmUiItem*> uiItems;
     m_projectTreeView->selectedUiItems(uiItems);
 
-    caf::PdmObjectHandle* firstSelectedObject = NULL;
+    caf::PdmObjectHandle* firstSelectedObject = nullptr;
 
     if (uiItems.size() == 1)
     {
         firstSelectedObject = dynamic_cast<caf::PdmObjectHandle*>(uiItems[0]);
     }
+
+    updateUiFieldsFromActiveResult(firstSelectedObject);
+
     m_pdmUiPropertyView->showProperties(firstSelectedObject);
 
-    if (uiItems.size() == 1)
+    if (uiItems.size() == 1 && m_allowActiveViewChangeFromSelection)
     {
         // Find the reservoir view or the Plot that the selected item is within 
 
@@ -1433,7 +1489,7 @@ void RiuMainWindow::slotToggleFaultLabelsAction(bool showLabels)
     RimEclipseView* activeRiv = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
     if (!activeRiv) return;
 
-    activeRiv->faultCollection->showFaultLabel.setValueWithFieldChanged(showLabels);
+    activeRiv->faultCollection()->showFaultLabel.setValueWithFieldChanged(showLabels);
 
     refreshDrawStyleActions();
 }
@@ -1444,7 +1500,7 @@ void RiuMainWindow::slotToggleFaultLabelsAction(bool showLabels)
 void RiuMainWindow::refreshDrawStyleActions()
 {
     Rim3dView* view = RiaApplication::instance()->activeReservoirView();
-    bool enable = view != NULL;
+    bool enable = view != nullptr;
     bool isGridView = RiaApplication::instance()->activeGridView() != nullptr;
 
     m_drawStyleLinesAction->setEnabled(enable);
@@ -1542,17 +1598,43 @@ void RiuMainWindow::showDockPanel(const QString &dockPanelName)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RiuMainWindow::showProcessMonitorDockPanel()
+void RiuMainWindow::updateUiFieldsFromActiveResult(caf::PdmObjectHandle* objectToUpdate)
 {
-    showDockPanel(DOCK_PANEL_NAME_PROCESS_MONITOR);
+    RimEclipseResultDefinition* resultDefinition = nullptr;
+    resultDefinition = dynamic_cast<RimEclipseResultDefinition*>(objectToUpdate);
+    if (resultDefinition)
+    {
+        resultDefinition->updateUiFieldsFromActiveResult();
+    }
+
+    RimEclipsePropertyFilter* eclPropFilter = nullptr;
+    eclPropFilter = dynamic_cast<RimEclipsePropertyFilter*>(objectToUpdate);
+    if (eclPropFilter)
+    {
+        eclPropFilter->updateUiFieldsFromActiveResult();
+    }
+
+    RimEclipseFaultColors* eclFaultColors = nullptr;
+    eclFaultColors = dynamic_cast<RimEclipseFaultColors*>(objectToUpdate);
+    if (eclFaultColors)
+    {
+        eclFaultColors->updateUiFieldsFromActiveResult();
+    }
+
+    RimCellEdgeColors* cellEdgeColors = nullptr;
+    cellEdgeColors = dynamic_cast<RimCellEdgeColors*>(objectToUpdate);
+    if (cellEdgeColors)
+    {
+        cellEdgeColors->updateUiFieldsFromActiveResult();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RiuMainWindow::selectAsCurrentItem(const caf::PdmObject* object)
+void RiuMainWindow::showProcessMonitorDockPanel()
 {
-    m_projectTreeView->selectAsCurrentItem(object);
+    showDockPanel(DOCK_PANEL_NAME_PROCESS_MONITOR);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1635,9 +1717,7 @@ void RiuMainWindow::slotCreateCommandObject()
 void RiuMainWindow::slotShowRegressionTestDialog()
 {
     RiaRegressionTest regTestConfig;
-
-    RiaApplication* app = RiaApplication::instance();
-    caf::PdmSettings::readFieldsFromApplicationStore(&regTestConfig);
+    regTestConfig.readSettingsFromApplicationStore();
 
     caf::PdmUiPropertyViewDialog regressionTestDialog(this, &regTestConfig, "Regression Test", "");
     regressionTestDialog.resize(QSize(600, 300));
@@ -1645,17 +1725,9 @@ void RiuMainWindow::slotShowRegressionTestDialog()
     if (regressionTestDialog.exec() == QDialog::Accepted)
     {
         // Write preferences using QSettings and apply them to the application
-        caf::PdmSettings::writeFieldsToApplicationStore(&regTestConfig);
+        regTestConfig.writeSettingsToApplicationStore();
 
-        QString currentApplicationPath = QDir::currentPath();
-
-        QDir::setCurrent(regTestConfig.applicationWorkingFolder);
-
-        QStringList testFilter = regTestConfig.testFilter().split(";", QString::SkipEmptyParts);
-
-        app->executeRegressionTests(regTestConfig.regressionTestFolder, &testFilter);
-
-        QDir::setCurrent(currentApplicationPath);
+		RiaRegressionTestRunner::instance()->executeRegressionTests();
     }
 }
 

@@ -87,23 +87,10 @@ std::vector<RigCompletionData> RicExportFractureCompletionsImpl::generateCompdat
 {
     std::vector<RigCompletionData> completionData;
 
-    std::vector< std::vector <cvf::Vec3d> > pipeBranchesCLCoords;
-    std::vector< std::vector <RigWellResultPoint> > pipeBranchesCellIds;
-    
-    RimEclipseView* view = nullptr;
-    well->firstAncestorOrThisOfTypeAsserted(view);
-    
-    size_t timeStep = view->currentTimeStep();
+    auto branches = well->wellPipeBranches();
 
-    well->calculateWellPipeDynamicCenterLine(timeStep, pipeBranchesCLCoords, pipeBranchesCellIds);
-
-    for (size_t branchIndex = 0; branchIndex < pipeBranchesCLCoords.size(); ++branchIndex)
+    for (size_t branchIndex = 0; branchIndex < branches.size(); ++branchIndex)
     {
-        RigSimulationWellCoordsAndMD coordsAndMD(pipeBranchesCLCoords[branchIndex]);
-        RigWellPath wellPathGeometry;
-        wellPathGeometry.m_wellPathPoints = coordsAndMD.wellPathPoints();
-        wellPathGeometry.m_measuredDepths = coordsAndMD.measuredDepths();
-
         std::vector<RimFracture*> fractures;
         for (RimSimWellFracture* fracture : well->simwellFractureCollection->simwellFractures())
         {
@@ -113,7 +100,7 @@ std::vector<RigCompletionData> RicExportFractureCompletionsImpl::generateCompdat
             }
         }
 
-        std::vector<RigCompletionData> branchCompletions = generateCompdatValues(eclipseCase, well->name(), &wellPathGeometry, fractures, outputStreamForIntermediateResultsText);
+        std::vector<RigCompletionData> branchCompletions = generateCompdatValues(eclipseCase, well->name(), branches[branchIndex], fractures, outputStreamForIntermediateResultsText);
 
         completionData.insert(completionData.end(), branchCompletions.begin(), branchCompletions.end());
     }
@@ -290,7 +277,7 @@ std::vector<RigCompletionData> RicExportFractureCompletionsImpl::generateCompdat
                     double radialTrans = RigFractureTransmissibilityEquations::fractureCellToWellRadialTrans(wellCell.getConductivtyValue(),
                                                                                                              wellCell.cellSizeX(),
                                                                                                              wellCell.cellSizeZ(),
-                                                                                                             fracture->wellRadius(caseToApply->eclipseCaseData()->unitsType()),
+                                                                                                             fracture->wellRadius(),
                                                                                                              fracTemplate->skinFactor(),
                                                                                                              cDarcyInCorrectUnit);
 
@@ -339,6 +326,8 @@ std::vector<RigCompletionData> RicExportFractureCompletionsImpl::generateCompdat
         /////
         // Insert total transmissibility from eclipse-cell to well for this fracture into the map 
 
+        std::vector<RigCompletionData> allCompletionsForOneFracture;
+
         std::set<RigTransmissibilityCondenser::CellAddress> externalCells = transCondenser.externalCells();
         for (RigTransmissibilityCondenser::CellAddress externalCell : externalCells)
         {
@@ -352,11 +341,41 @@ std::vector<RigCompletionData> RicExportFractureCompletionsImpl::generateCompdat
                                           RigCompletionDataGridCell(externalCell.m_globalCellIdx, caseToApply->mainGrid()),
                                           fracture->fractureMD());
 
-                compDat.setFromFracture(trans, fracture->fractureTemplate()->skinFactor());
+                double diameter = 2.0 * fracture->wellRadius();
+                compDat.setFromFracture(trans, fracture->fractureTemplate()->skinFactor(), diameter);
                 compDat.addMetadata(fracture->name(), QString::number(trans));
-                fractureCompletions.push_back(compDat);
+                allCompletionsForOneFracture.push_back(compDat);
             }
         }
+
+        /////
+        // Compute Non-Dracy Flow parameters
+
+        if (fracture->fractureTemplate()->isNonDarcyFlowEnabled())
+        {
+            double dFactorForFracture = fracture->fractureTemplate()->dFactor();
+            double khForFracture = fracture->fractureTemplate()->kh();
+
+            double sumOfTransmissibilitiesInFracture = 0.0;
+            for (const auto& c : allCompletionsForOneFracture)
+            {
+                sumOfTransmissibilitiesInFracture += c.transmissibility();
+            }
+
+            for (auto& c : allCompletionsForOneFracture)
+            {
+                // NOTE : What is supposed to happen when the transmissibility is close to zero?
+
+                double dFactorForOneConnection = dFactorForFracture * sumOfTransmissibilitiesInFracture / c.transmissibility();
+                c.setDFactor(dFactorForOneConnection);
+
+                double khForOneConnection = khForFracture * c.transmissibility() / sumOfTransmissibilitiesInFracture;
+
+                c.setKh(khForOneConnection);
+            }
+        }
+
+        std::copy(allCompletionsForOneFracture.begin(), allCompletionsForOneFracture.end(), std::back_inserter(fractureCompletions));
 
         if ( outputStreamForIntermediateResultsText )
         {

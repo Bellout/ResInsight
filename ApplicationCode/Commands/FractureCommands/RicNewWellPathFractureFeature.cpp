@@ -36,7 +36,7 @@
 #include "RimWellPathFracture.h"
 #include "RimWellPathFractureCollection.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 #include "WellPathCommands/RicWellPathsUnitSystemSettingsImpl.h"
 
@@ -66,7 +66,7 @@ void RicNewWellPathFractureFeature::addFracture(RimWellPath* wellPath, double me
         RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
         if (activeView)
         {
-            activeView->fractureColors->setDefaultResultName();
+            activeView->fractureColors()->setDefaultResultName();
         }
     }
 
@@ -86,14 +86,14 @@ void RicNewWellPathFractureFeature::addFracture(RimWellPath* wellPath, double me
 
     fracture->setName(RicFractureNameGenerator::nameForNewFracture());
 
-    if (oilfield->fractureDefinitionCollection->fractureDefinitions.size() > 0)
-    {
-        RimFractureTemplate* fracDef = oilfield->fractureDefinitionCollection->fractureDefinitions[0];
-        fracture->setFractureTemplate(fracDef);
-    }
+    auto unitSet = wellPath->unitSystem();
+    fracture->setFractureUnit(unitSet);
+
+    RimFractureTemplate* fracDef = oilfield->fractureDefinitionCollection->firstFractureOfUnit(unitSet);
+    fracture->setFractureTemplate(fracDef);
 
     wellPath->updateConnectedEditors();
-    RiuMainWindow::instance()->selectAsCurrentItem(fracture);
+    Riu3DMainWindowTools::selectAsCurrentItem(fracture);
 
     RimProject* project = nullptr;
     fractureCollection->firstAncestorOrThisOfType(project);

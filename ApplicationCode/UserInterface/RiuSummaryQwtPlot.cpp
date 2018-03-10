@@ -26,7 +26,7 @@
 #include "RimSummaryCurveCollection.h"
 #include "RimSummaryPlot.h"
 
-#include "RiuMainPlotWindow.h"
+#include "RiuPlotMainWindowTools.h" 
 #include "RiuQwtCurvePointTracker.h"
 #include "RiuQwtPlotWheelZoomer.h"
 #include "RiuQwtPlotZoomer.h"
@@ -340,7 +340,7 @@ bool RiuSummaryQwtPlot::eventFilter(QObject* watched, QEvent* event)
 //--------------------------------------------------------------------------------------------------
 void RiuSummaryQwtPlot::selectClosestCurve(const QPoint& pos)
 {
-    QwtPlotCurve* closestCurve = NULL;
+    QwtPlotCurve* closestCurve = nullptr;
     double distMin = DBL_MAX;
 
     const QwtPlotItemList& itmList = itemList();
@@ -368,7 +368,8 @@ void RiuSummaryQwtPlot::selectClosestCurve(const QPoint& pos)
 
         if(proj && selectedCurve)
         {
-            RiaApplication::instance()->getOrCreateAndShowMainPlotWindow()->selectAsCurrentItem(selectedCurve);
+            RiuPlotMainWindowTools::showPlotMainWindow();
+            RiuPlotMainWindowTools::selectAsCurrentItem(selectedCurve);
         }
     }
 }

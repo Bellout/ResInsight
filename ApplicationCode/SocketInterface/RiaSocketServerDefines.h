@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2016-     Statoil ASA
+//  Copyright (C) 2018 Statoil ASA
 // 
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -16,24 +16,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <QDataStream>
 
-#include "cafCmdFeature.h"
-
-#include <vector>
-
-
-//==================================================================================================
-/// 
-//==================================================================================================
-class RicNewEllipseFractureTemplateFeature : public caf::CmdFeature
+namespace riOctavePlugin
 {
-    CAF_CMD_HEADER_INIT;
-protected:
+    const int qtDataStreamVersion = QDataStream::Qt_4_0;
+}
 
-    virtual void onActionTriggered(bool isChecked) override;
-    virtual void setupActionLook(QAction* actionToSetup) override;
-    virtual bool isCommandEnabled() override;
-
- 
-};

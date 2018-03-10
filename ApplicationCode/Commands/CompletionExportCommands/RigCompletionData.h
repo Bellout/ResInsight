@@ -75,8 +75,9 @@ public:
     bool operator<(const RigCompletionData& other) const;
     RigCompletionData& operator=(const RigCompletionData& other);
 
-    void        setFromFracture(double transmissibility, double skinFactor);
+    void        setFromFracture(double transmissibility, double skinFactor, double diameter);
     void        setSecondOrderingValue(double orderingValue);
+    void        setDiameter(double diameter);
     
     void        setTransAndWPImultBackgroundDataFromFishbone(double transmissibility, 
                                                              double skinFactor, 
@@ -97,6 +98,10 @@ public:
                                                       double wellDiameter, 
                                                       CompletionType completionType);
 
+    bool        isNonDarcyFlow() const;
+    void        setDFactor(double dFactor);
+    void        setKh(double kh);
+
     void        addMetadata(const QString& name, const QString& comment);
     static bool isDefaultValue(double val);
 
@@ -115,7 +120,6 @@ public:
     double                                    wpimult() const;
     CompletionType                            completionType() const;
     bool                                      isMainBore() const;
-    bool                                      readyForExport() const;
 
     double                                  firstOrderingValue() const;
     double                                  secondOrderingValue() const;
@@ -135,7 +139,6 @@ private:
     CellDirection                        m_direction;
 
     bool                                 m_isMainBore; //to use mainbore for Eclipse calculation
-    bool                                 m_readyForExport;
 
     size_t                               m_count; //TODO: Remove, usage replaced by WPImult
     double                               m_wpimult;

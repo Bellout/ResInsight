@@ -27,15 +27,12 @@
 #include "RimEclipseCellColors.h"
 #include "RimEclipseView.h"
 #include "RimGeoMechResultDefinition.h"
-
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 #include "RimStimPlanColors.h"
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
-
 #include "RimViewLinker.h"
 
 #include "cafCategoryLegend.h"
 #include "cafCategoryMapper.h"
+#include "cafOverlayScalarMapperLegend.h"
 
 #include "cafFactory.h"
 #include "cafPdmFieldCvfColor.h"
@@ -43,7 +40,6 @@
 #include "cafPdmUiComboBoxEditor.h"
 #include "cafPdmUiLineEditor.h"
 
-#include "cvfOverlayScalarMapperLegend.h"
 #include "cvfScalarMapperContinuousLinear.h"
 #include "cvfScalarMapperContinuousLog.h"
 #include "cvfScalarMapperDiscreteLinear.h"
@@ -52,6 +48,7 @@
 
 #include <cmath>
 #include "RimIntersectionCollection.h"
+#include "RiaPreferences.h"
 
 
 CAF_PDM_SOURCE_INIT(RimLegendConfig, "Legend");
@@ -147,7 +144,7 @@ RimLegendConfig::RimLegendConfig()
     m_categoryMapper = new caf::CategoryMapper;
 
     cvf::Font* standardFont = RiaApplication::instance()->standardFont();
-    m_scalarMapperLegend = new cvf::OverlayScalarMapperLegend(standardFont);
+    m_scalarMapperLegend = new caf::OverlayScalarMapperLegend(standardFont);
     m_categoryLegend = new caf::CategoryLegend(standardFont, m_categoryMapper.p());
 
     updateFieldVisibility();
@@ -208,8 +205,6 @@ void RimLegendConfig::fieldChangedByUi(const caf::PdmFieldHandle* changedField, 
         view->crossSectionCollection()->scheduleCreateDisplayModelAndRedraw2dIntersectionViews();
     }
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-
     // Update stim plan templates if relevant
     RimStimPlanColors* stimPlanColors;
     firstAncestorOrThisOfType(stimPlanColors);
@@ -217,7 +212,6 @@ void RimLegendConfig::fieldChangedByUi(const caf::PdmFieldHandle* changedField, 
     {
         stimPlanColors->updateStimPlanTemplates();
     }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -366,7 +360,7 @@ void RimLegendConfig::updateLegend()
 
    // Using Fixed format 
    NumberFormatType nft = m_tickNumberFormat();
-   m_scalarMapperLegend->setTickFormat((cvf::OverlayScalarMapperLegend::NumberFormat)nft);
+   m_scalarMapperLegend->setTickFormat((caf::OverlayScalarMapperLegend::NumberFormat)nft);
 
    // Set the fixed number of digits after the decimal point to the number needed to show all the significant digits.
    int numDecimalDigits = m_precision();
@@ -376,6 +370,10 @@ void RimLegendConfig::updateLegend()
    }
    m_scalarMapperLegend->setTickPrecision(cvf::Math::clamp(numDecimalDigits, 0, 20));
 
+   RiaApplication* app = RiaApplication::instance();
+   RiaPreferences* preferences = app->preferences();
+   m_scalarMapperLegend->enableBackground(preferences->showLegendBackground());
+   m_categoryLegend->enableBackground(preferences->showLegendBackground());
 
    if (m_globalAutoMax != cvf::UNDEFINED_DOUBLE )
    {
@@ -517,7 +515,7 @@ void RimLegendConfig::recreateLegend()
     // the legend disappeared because of this, so workaround: recreate the legend when needed:
 
     cvf::Font* standardFont = RiaApplication::instance()->standardFont();
-    m_scalarMapperLegend = new cvf::OverlayScalarMapperLegend(standardFont);
+    m_scalarMapperLegend = new caf::OverlayScalarMapperLegend(standardFont);
     m_categoryLegend = new caf::CategoryLegend(standardFont, m_categoryMapper.p());
 
     updateLegend();
@@ -775,11 +773,9 @@ QList<caf::PdmOptionItemInfo> RimLegendConfig::calculateValueOptions(const caf::
 {
     bool hasStimPlanParent = false;
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
     RimStimPlanColors* stimPlanColors = nullptr;
     this->firstAncestorOrThisOfType(stimPlanColors);
     if (stimPlanColors) hasStimPlanParent = true;
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     bool isCategoryResult = false;
     {

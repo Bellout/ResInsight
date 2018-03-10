@@ -45,6 +45,7 @@ class RimWellPath;
 class RivFishbonesSubsPartMgr;
 class RimWellPathCollection;
 class Rim3dView;
+class Riv3dWellLogPlanePartMgr;
 
 class QDateTime;
 
@@ -62,9 +63,7 @@ public:
                                                                    const cvf::BoundingBox& wellPathClipBoundingBox,
                                                                    const caf::DisplayCoordTransform* displayCoordTransform);
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
     void                          appendStaticFracturePartsToModel(cvf::ModelBasicList* model);
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     void                          appendDynamicGeometryPartsToModel(cvf::ModelBasicList* model, 
                                                                     const QDateTime& timeStamp,
@@ -107,4 +106,6 @@ private:
     cvf::ref<cvf::Part>                 m_centerLinePart;
     cvf::ref<cvf::DrawableGeo>          m_centerLineDrawable;
     cvf::ref<cvf::Part>                 m_wellLabelPart;
+
+    cvf::ref<Riv3dWellLogPlanePartMgr>  m_3dWellLogCurvePartMgr;
 };

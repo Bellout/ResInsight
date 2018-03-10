@@ -123,6 +123,10 @@ void RicCopyIntersectionsToAllViewsInCaseFeature::copyIntersectionsToOtherViews(
                 CVF_ASSERT(copy);
 
                 destCollection->appendIntersectionAndUpdate(copy);
+
+                // Resolve references after object has been inserted into the project data model
+                copy->resolveReferencesRecursively();
+                copy->updateConnectedEditors();
             }
         }
     }
@@ -218,6 +222,11 @@ RimCase* commonGridCase(std::vector<caf::PdmUiItem*> selectedItems)
     for (caf::PdmUiItem* item : selectedItems)
     {
         caf::PdmObjectHandle* obj = dynamic_cast<caf::PdmObjectHandle*>(item);
+        if (!obj)
+        {
+            continue;
+        }
+
         RimCase* itemCase = nullptr;
         obj->firstAncestorOrThisOfType(itemCase);
 

@@ -23,6 +23,7 @@
 #include "RiaApplication.h"
 #include "RiaBaseDefs.h"
 #include "RiaColorTools.h"
+#include "RiaRegressionTestRunner.h"
 
 #include "RimCase.h"
 #include "RimProject.h"
@@ -40,6 +41,7 @@
 #include "RiuViewerCommands.h"
 
 #include "cafCategoryLegend.h"
+#include "cafOverlayScalarMapperLegend.h"
 #include "cafCeetronPlusNavigation.h"
 #include "cafDisplayCoordTransform.h"
 #include "cafEffectGenerator.h"
@@ -49,7 +51,6 @@
 #include "cvfFont.h"
 #include "cvfOpenGLResourceManager.h"
 #include "cvfOverlayAxisCross.h"
-#include "cvfOverlayScalarMapperLegend.h"
 #include "cvfRenderQueueSorter.h"
 #include "cvfRenderSequence.h"
 #include "cvfRendering.h"
@@ -157,7 +158,7 @@ RiuViewer::RiuViewer(const QGLFormat& format, QWidget* parent)
 
     m_viewerCommands = new RiuViewerCommands(this);
 
-    if (RiaApplication::instance()->isRunningRegressionTests())
+    if (RiaRegressionTestRunner::instance()->isRunningRegressionTests())
     {
         QFont regTestFont = m_infoLabel->font();
         regTestFont.setPixelSize(11);
@@ -347,22 +348,17 @@ void RiuViewer::setEnableMask(unsigned int mask)
 //--------------------------------------------------------------------------------------------------
 void RiuViewer::paintOverlayItems(QPainter* painter)
 {
-    // No support for overlay items using SW rendering yet.
-    //if (!isShadersSupported())
-    //{
-    //    return;
-    //}
-
     int columnWidth = 200;
+
     int edgeAxisFrameBorderWidth  = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderWidth(): 0;
     int edgeAxisFrameBorderHeight = m_showWindowEdgeAxes ? m_windowEdgeAxisOverlay->frameBorderHeight(): 0;
+
     int margin = 5;
-    int yPos = margin;
+    int yPos = margin + edgeAxisFrameBorderHeight;
 
     bool showAnimBar = false;
     if (isAnimationActive() && frameCount() > 1) showAnimBar = true;
 
-    //if (showAnimBar)       columnWidth = CVF_MAX(columnWidth, m_animationProgress->width());
     if (m_showInfoText) columnWidth = CVF_MAX(columnWidth, m_infoLabel->sizeHint().width());
 
     int columnPos = this->width() - columnWidth - margin - edgeAxisFrameBorderWidth;
@@ -598,7 +594,7 @@ void RiuViewer::addColorLegendToBottomLeftCorner(cvf::OverlayItem* legend)
         for (auto catLegend : categoryLegends)
         {
             catLegend->setLayoutFixedPosition(cvf::Vec2i(xPos, yPos));
-            catLegend->setSizeHint(cvf::Vec2ui(categoryWidth, height - 2*border - axisCrossHeight - edgeAxisBorderHeight));
+            catLegend->setSizeHint(cvf::Vec2ui(categoryWidth, height - 2*border - axisCrossHeight - 2*edgeAxisBorderHeight));
 
             xPos += categoryWidth + border;
         }
@@ -913,17 +909,17 @@ void RiuViewer::updateLegendTextAndTickMarkColor(cvf::OverlayItem* legend)
 
     cvf::Color3f contrastColor = computeContrastColor();
 
-    cvf::OverlayScalarMapperLegend* scalarMapperLegend = dynamic_cast<cvf::OverlayScalarMapperLegend*>(legend);
+    caf::OverlayScalarMapperLegend* scalarMapperLegend = dynamic_cast<caf::OverlayScalarMapperLegend*>(legend);
     if (scalarMapperLegend)
     {
-        scalarMapperLegend->setColor(contrastColor);
+        scalarMapperLegend->setTextColor(contrastColor);
         scalarMapperLegend->setLineColor(contrastColor);
     }
 
     caf::CategoryLegend* categoryLegend = dynamic_cast<caf::CategoryLegend*>(legend);
     if (categoryLegend)
     {
-        categoryLegend->setColor(contrastColor);
+        categoryLegend->setTextColor(contrastColor);
         categoryLegend->setLineColor(contrastColor);
     }
 

@@ -298,7 +298,7 @@ class RiaSetNNCProperty: public RiaSocketCommand
 {
 public:
     RiaSetNNCProperty() :
-        m_currentReservoir(NULL),
+        m_currentReservoir(nullptr),
         m_currentScalarIndex(cvf::UNDEFINED_SIZE_T),
         m_timeStepCountToRead(0),
         m_bytesPerTimeStepToRead(0),
@@ -546,7 +546,7 @@ public:
                     if (m_currentReservoir->reservoirViews[i])
                     {
                         // As new result might have been introduced, update all editors connected
-                        m_currentReservoir->reservoirViews[i]->cellResult->updateConnectedEditors();
+                        m_currentReservoir->reservoirViews[i]->cellResult()->updateConnectedEditors();
 
                         // It is usually not needed to create new display model, but if any derived geometry based on generated data (from Octave) 
                         // a full display model rebuild is required

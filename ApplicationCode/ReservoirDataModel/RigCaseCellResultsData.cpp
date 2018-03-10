@@ -44,11 +44,10 @@
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-RigCaseCellResultsData::RigCaseCellResultsData(RigEclipseCaseData* ownerCaseData)
-    : m_activeCellInfo(NULL)
+RigCaseCellResultsData::RigCaseCellResultsData(RigEclipseCaseData* ownerCaseData) : m_activeCellInfo(nullptr)
 {
-  CVF_ASSERT(ownerCaseData != NULL);
-  CVF_ASSERT(ownerCaseData->mainGrid() != nullptr);
+    CVF_ASSERT(ownerCaseData != nullptr);
+    CVF_ASSERT(ownerCaseData->mainGrid() != nullptr);
 
   m_ownerCaseData = ownerCaseData;
   m_ownerMainGrid = ownerCaseData->mainGrid();
@@ -1349,15 +1348,18 @@ void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex)
 
   this->cellScalarResults(soilResultScalarIndex, timeStepIndex).resize(soilResultValueCount);
 
-  std::vector<double>* swatForTimeStep = NULL;
-  std::vector<double>* sgasForTimeStep = NULL;
+    std::vector<double>* swatForTimeStep = nullptr;
+    std::vector<double>* sgasForTimeStep = nullptr;
 
   if (scalarIndexSWAT != cvf::UNDEFINED_SIZE_T)
   {
     swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
     if (swatForTimeStep->size() == 0)
     {
-      swatForTimeStep = NULL;
+        swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
+        if (swatForTimeStep->size() == 0)
+        {
+            swatForTimeStep = nullptr;
     }
   }
 
@@ -1366,7 +1368,10 @@ void RigCaseCellResultsData::computeSOILForTimeStep(size_t timeStepIndex)
     sgasForTimeStep = &(this->cellScalarResults(scalarIndexSGAS, timeStepIndex));
     if (sgasForTimeStep->size() == 0)
     {
-      sgasForTimeStep = NULL;
+        sgasForTimeStep = &(this->cellScalarResults(scalarIndexSGAS, timeStepIndex));
+        if (sgasForTimeStep->size() == 0)
+        {
+            sgasForTimeStep = nullptr;
     }
   }
 
@@ -1438,15 +1443,15 @@ void RigCaseCellResultsData::testAndComputeSgasForTimeStep(size_t timeStepIndex)
 
   this->cellScalarResults(scalarIndexSGAS, timeStepIndex).resize(swatResultValueCount);
 
-  std::vector<double>* swatForTimeStep = NULL;
+    std::vector<double>* swatForTimeStep = nullptr;
 
-  {
-    swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
-    if (swatForTimeStep->size() == 0)
     {
-      swatForTimeStep = NULL;
+        swatForTimeStep = &(this->cellScalarResults(scalarIndexSWAT, timeStepIndex));
+        if (swatForTimeStep->size() == 0)
+        {
+            swatForTimeStep = nullptr;
+        }
     }
-  }
 
   std::vector<double>& sgasForTimeStep = this->cellScalarResults(scalarIndexSGAS, timeStepIndex);
 
@@ -1584,14 +1589,14 @@ void calculateConnectionGeometry(const RigCell& c1, const RigCell& c2, const std
   c1.faceIndices(faceId, &face1);
   c2.faceIndices(cvf::StructGridInterface::oppositeFace(faceId), &face2);
 
-  bool foundOverlap = cvf::GeometryTools::calculateOverlapPolygonOfTwoQuads(
-      &polygon,
-      &intersections,
-      (cvf::EdgeIntersectStorage<size_t>*)NULL,
-      cvf::wrapArrayConst(&nodes),
-      face1.data(),
-      face2.data(),
-      1e-6);
+    bool foundOverlap = cvf::GeometryTools::calculateOverlapPolygonOfTwoQuads(
+        &polygon,
+        &intersections,
+        (cvf::EdgeIntersectStorage<size_t>*)nullptr,
+        cvf::wrapArrayConst(&nodes),
+        face1.data(),
+        face2.data(),
+        1e-6);
 
 
   if (foundOverlap)
@@ -1721,7 +1726,7 @@ void RigCaseCellResultsData::computeRiTransComponent(const QString& riTransCompo
 
   std::vector<double> & permResults    = this->cellScalarResults(permResultIdx)[0];
   std::vector<double> & riTransResults = this->cellScalarResults(riTransResultIdx)[0];
-  std::vector<double> * ntgResults     = NULL;
+    std::vector<double> * ntgResults     = nullptr;
   if (hasNTGResults)
   {
     ntgResults = &(this->cellScalarResults(ntgResultIdx)[0]);
@@ -1732,9 +1737,9 @@ void RigCaseCellResultsData::computeRiTransComponent(const QString& riTransCompo
   riTransResults.resize(resultValueCount);
 
   // Prepare how to index the result values:
-  ResultIndexFunction riTranIdxFunc = NULL;
-  ResultIndexFunction permIdxFunc   = NULL;
-  ResultIndexFunction ntgIdxFunc    = NULL;
+    ResultIndexFunction riTranIdxFunc = nullptr;
+    ResultIndexFunction permIdxFunc   = nullptr;
+    ResultIndexFunction ntgIdxFunc    = nullptr;
   {
     bool isPermUsingResIdx  = this->isUsingGlobalActiveIndex(permResultIdx);
     bool isTransUsingResIdx = this->isUsingGlobalActiveIndex(riTransResultIdx);
@@ -1746,17 +1751,17 @@ void RigCaseCellResultsData::computeRiTransComponent(const QString& riTransCompo
 
     // Set up result index function pointers
 
-    riTranIdxFunc = isTransUsingResIdx ? &reservoirActiveCellIndex : &directReservoirCellIndex;
-    permIdxFunc   = isPermUsingResIdx  ? &reservoirActiveCellIndex : &directReservoirCellIndex;
+        riTranIdxFunc = isTransUsingResIdx ? &reservoirActiveCellIndex : &directReservoirCellIndex;
+        permIdxFunc   = isPermUsingResIdx  ? &reservoirActiveCellIndex : &directReservoirCellIndex;
     if (hasNTGResults)
     {
       ntgIdxFunc = isNtgUsingResIdx ? &reservoirActiveCellIndex : &directReservoirCellIndex;
     }
   }
 
-  const RigActiveCellInfo* activeCellInfo = this->activeCellInfo();
-  const std::vector<cvf::Vec3d>& nodes = m_ownerMainGrid->nodes();
-  bool isFaceNormalsOutwards = m_ownerMainGrid->isFaceNormalsOutwards();
+    const RigActiveCellInfo* activeCellInfo = this->activeCellInfo();
+    const std::vector<cvf::Vec3d>& nodes = m_ownerMainGrid->nodes();
+    bool isFaceNormalsOutwards = m_ownerMainGrid->isFaceNormalsOutwards();
 
   for (size_t nativeResvCellIndex = 0; nativeResvCellIndex < m_ownerMainGrid->globalCellArray().size(); nativeResvCellIndex++)
   {
@@ -1880,22 +1885,22 @@ void RigCaseCellResultsData::computeNncCombRiTrans()
     ntgResults = &(this->cellScalarResults(ntgResultIdx)[0]);
   }
 
-  // Prepare how to index the result values:
-  ResultIndexFunction permXIdxFunc = NULL;
-  ResultIndexFunction permYIdxFunc = NULL;
-  ResultIndexFunction permZIdxFunc = NULL;
-  ResultIndexFunction ntgIdxFunc   = NULL;
-  {
-    bool isPermXUsingResIdx = this->isUsingGlobalActiveIndex(permXResultIdx);
-    bool isPermYUsingResIdx = this->isUsingGlobalActiveIndex(permYResultIdx);
-    bool isPermZUsingResIdx = this->isUsingGlobalActiveIndex(permZResultIdx);
-    bool isNtgUsingResIdx   = false;
-    if (hasNTGResults)
+    // Prepare how to index the result values:
+    ResultIndexFunction permXIdxFunc = nullptr;
+    ResultIndexFunction permYIdxFunc = nullptr;
+    ResultIndexFunction permZIdxFunc = nullptr;
+    ResultIndexFunction ntgIdxFunc   = nullptr;
     {
-      isNtgUsingResIdx   = this->isUsingGlobalActiveIndex(ntgResultIdx);
-    }
+        bool isPermXUsingResIdx = this->isUsingGlobalActiveIndex(permXResultIdx);
+        bool isPermYUsingResIdx = this->isUsingGlobalActiveIndex(permYResultIdx);
+        bool isPermZUsingResIdx = this->isUsingGlobalActiveIndex(permZResultIdx);
+        bool isNtgUsingResIdx   = false;
+        if (hasNTGResults)
+        {
+            isNtgUsingResIdx   = this->isUsingGlobalActiveIndex(ntgResultIdx);
+        }
 
-    // Set up result index function pointers
+        // Set up result index function pointers
 
     permXIdxFunc = isPermXUsingResIdx ? &reservoirActiveCellIndex : &directReservoirCellIndex;
     permYIdxFunc = isPermYUsingResIdx ? &reservoirActiveCellIndex : &directReservoirCellIndex;
@@ -1917,27 +1922,28 @@ void RigCaseCellResultsData::computeNncCombRiTrans()
     size_t neighborResvCellIdx = nncConnections[connIdx].m_c2GlobIdx;
     cvf::StructGridInterface::FaceType faceId = nncConnections[connIdx].m_c1Face;
 
-    ResultIndexFunction permIdxFunc = NULL;
-    std::vector<double> * permResults;
+        ResultIndexFunction permIdxFunc = nullptr;
+        std::vector<double> * permResults;
 
-    switch (faceId)
-    {
-      case cvf::StructGridInterface::POS_I:
-      case cvf::StructGridInterface::NEG_I:
-        permIdxFunc = permXIdxFunc;
-        permResults = &permXResults;
-        break;
-      case cvf::StructGridInterface::POS_J:
-      case cvf::StructGridInterface::NEG_J:
-        permIdxFunc = permYIdxFunc;
-        permResults = &permYResults;
-        break;
-      case cvf::StructGridInterface::POS_K:
-      case cvf::StructGridInterface::NEG_K:
-        permIdxFunc = permZIdxFunc;
-        permResults = &permZResults;
-        break;
-    }
+        switch (faceId)
+        {
+            case cvf::StructGridInterface::POS_I:
+            case cvf::StructGridInterface::NEG_I:
+                permIdxFunc = permXIdxFunc;
+                permResults = &permXResults;
+                break;
+            case cvf::StructGridInterface::POS_J:
+            case cvf::StructGridInterface::NEG_J:
+                permIdxFunc = permYIdxFunc;
+                permResults = &permYResults;
+                break;
+            case cvf::StructGridInterface::POS_K:
+            case cvf::StructGridInterface::NEG_K:
+                permIdxFunc = permZIdxFunc;
+                permResults = &permZResults;
+                break;
+            default: break;
+        }
 
     if (!permIdxFunc) continue;
 

@@ -16,7 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#include "RicConvertAllFractureTemplatesToMetricFeature.h"
+#include "RicConvertAllFractureTemplatesToFieldFeature.h"
 
 #include "RiaApplication.h"
 #include "RiaEclipseUnitTools.h"
@@ -39,15 +39,15 @@
 #include "cvfAssert.h"
 
 #include <QAction>
-#include <QFileInfo>
 #include <QString>
+#include <QFileInfo>
 
-CAF_CMD_SOURCE_INIT(RicConvertAllFractureTemplatesToMetricFeature, "RicConvertAllFractureTemplatesToMetricFeature");
+CAF_CMD_SOURCE_INIT(RicConvertAllFractureTemplatesToFieldFeature, "RicConvertAllFractureTemplatesToFieldFeature");
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicConvertAllFractureTemplatesToMetricFeature::onActionTriggered(bool isChecked)
+void RicConvertAllFractureTemplatesToFieldFeature::onActionTriggered(bool isChecked)
 {
     caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
     if (!pdmUiItem) return;
@@ -63,27 +63,27 @@ void RicConvertAllFractureTemplatesToMetricFeature::onActionTriggered(bool isChe
 
     for (auto ellipseFracTemplate : ellipseFracTemplates)
     {
-        if (ellipseFracTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
+        if (ellipseFracTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
         {
             ellipseFracTemplate->changeUnits();
+
+            ellipseFracTemplate->disconnectAllFracturesAndRedrawViews();
         }
-
     }
-
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicConvertAllFractureTemplatesToMetricFeature::setupActionLook(QAction* actionToSetup)
+void RicConvertAllFractureTemplatesToFieldFeature::setupActionLook(QAction* actionToSetup)
 {
-    actionToSetup->setText("Convert All Ellipse Fracture Templates to Metric");
+    actionToSetup->setText("Convert All Ellipse Fracture Templates to Field");
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RicConvertAllFractureTemplatesToMetricFeature::isCommandEnabled()
+bool RicConvertAllFractureTemplatesToFieldFeature::isCommandEnabled()
 {
     return true;
 }

@@ -1,6 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
-//  Copyright (C) 2017-     Statoil ASA
+//  Copyright (C) 2017 Statoil ASA
 // 
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -18,22 +18,28 @@
 
 #pragma once
 
-#include "cafCmdFeature.h"
+#include "RicfCommandObject.h"
 
-#include <vector>
+#include "RicfCommandFileExecutor.h"
 
+#include "cafPdmField.h"
 
 //==================================================================================================
-/// 
+//
+//
+//
 //==================================================================================================
-class RicConvertFractureTemplateUnitFeature : public caf::CmdFeature
+class RicfSetFractureContainment : public RicfCommandObject
 {
-    CAF_CMD_HEADER_INIT;
-protected:
+    CAF_PDM_HEADER_INIT;
 
-    virtual void onActionTriggered(bool isChecked) override;
-    virtual void setupActionLook(QAction* actionToSetup) override;
-    virtual bool isCommandEnabled() override;
+public:
+    RicfSetFractureContainment();
 
- 
+    virtual void execute() override;
+
+private:
+    caf::PdmField<int>              m_id;
+    caf::PdmField<int>              m_topLayer;
+    caf::PdmField<int>              m_baseLayer;
 };

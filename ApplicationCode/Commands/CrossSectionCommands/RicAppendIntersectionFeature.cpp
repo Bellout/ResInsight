@@ -19,9 +19,11 @@
 
 #include "RicAppendIntersectionFeature.h"
 
+#include "RimGeoMechView.h"
+#include "RimGridView.h"
 #include "RimIntersection.h"
 #include "RimIntersectionCollection.h"
-#include "RimGridView.h"
+#include "RimTensorResults.h"
 
 #include "cafCmdExecCommandManager.h"
 #include "cafSelectionManager.h"
@@ -49,7 +51,7 @@ void RicAppendIntersectionFeature::onActionTriggered(bool isChecked)
     caf::SelectionManager::instance()->objectsByType(&collection);
     CVF_ASSERT(collection.size() == 1);
 
-    RimIntersectionCollection* intersectionCollection = NULL;
+    RimIntersectionCollection* intersectionCollection = nullptr;
     collection[0]->firstAncestorOrThisOfType(intersectionCollection);
 
     CVF_ASSERT(intersectionCollection);
@@ -71,7 +73,7 @@ void RicAppendIntersectionFeature::setupActionLook(QAction* actionToSetup)
 /// 
 //--------------------------------------------------------------------------------------------------
 RicAppendIntersectionFeatureCmd::RicAppendIntersectionFeatureCmd(RimIntersectionCollection* intersectionCollection)
-    : CmdExecuteCommand(NULL),
+    : CmdExecuteCommand(nullptr),
     m_intersectionCollection(intersectionCollection)
 {
 }
@@ -107,6 +109,13 @@ void RicAppendIntersectionFeatureCmd::redo()
 
     //Enable display of grid cells, to be able to show generated property filter
     view->showGridCells(false);
+
+    RimGeoMechView* geoMechView = nullptr;
+    geoMechView = dynamic_cast<RimGeoMechView*>(view);
+    if (geoMechView)
+    {
+        geoMechView->tensorResults()->setShowTensors(false);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

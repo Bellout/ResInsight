@@ -77,14 +77,15 @@
 
 #include "cafCmdExecCommandManager.h"
 #include "cafCmdFeatureManager.h"
-#include "cafDisplayCoordTransform.h"
-#include "cafSelectionManager.h"
 #include "cafCmdFeatureMenuBuilder.h"
+#include "cafDisplayCoordTransform.h"
+#include "cafPdmUiTreeView.h"
+#include "cafSelectionManager.h"
+#include "cafOverlayScalarMapperLegend.h"
 
 #include "cvfDrawableGeo.h"
 #include "cvfHitItemCollection.h"
 #include "cvfOverlayAxisCross.h"
-#include "cvfOverlayScalarMapperLegend.h"
 #include "cvfPart.h"
 #include "cvfTransform.h"
 
@@ -104,12 +105,13 @@
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RiuViewerCommands::RiuViewerCommands(RiuViewer* ownerViewer) 
-    : QObject(ownerViewer), 
-      m_viewer(ownerViewer), 
-      m_currentGridIdx(-1),
-      m_currentCellIndex(-1),
-      m_currentPickPositionInDomainCoords(cvf::Vec3d::UNDEFINED)
+RiuViewerCommands::RiuViewerCommands(RiuViewer* ownerViewer)
+    : QObject(ownerViewer)
+    , m_currentGridIdx(-1)
+    , m_currentCellIndex(-1)
+    , m_currentFaceIndex(cvf::StructGridInterface::NO_FACE)
+    , m_currentPickPositionInDomainCoords(cvf::Vec3d::UNDEFINED)
+    , m_viewer(ownerViewer)
 {
     {
         m_viewerEventHandlers.push_back(dynamic_cast<RicViewerEventInterface*>(RicIntersectionViewerEventHandler::instance()));
@@ -186,10 +188,12 @@ void RiuViewerCommands::displayContextMenu(QMouseEvent* event)
         cvf::Vec3d displayModelOffset = cvf::Vec3d::ZERO;
 
         Rim3dView* activeView = RiaApplication::instance()->activeReservoirView();
-        CVF_ASSERT(activeView);
+        if (activeView)
+        {
+            cvf::ref<caf::DisplayCoordTransform> transForm = activeView->displayCoordTransform();
+            m_currentPickPositionInDomainCoords = transForm->transformToDomainCoord(globalIntersectionPoint);
+        }
 
-        cvf::ref<caf::DisplayCoordTransform> transForm = activeView->displayCoordTransform();
-        m_currentPickPositionInDomainCoords = transForm->transformToDomainCoord(globalIntersectionPoint);
     }
 
     if (firstHitPart && firstPartTriangleIndex != cvf::UNDEFINED_UINT)
@@ -351,11 +355,13 @@ void RiuViewerCommands::displayContextMenu(QMouseEvent* event)
 
                 menuBuilder.addSeparator();
 
+                menuBuilder << "RicAdd3dWellLogCurveFeature";
+
+                menuBuilder.addSeparator();
+
                 menuBuilder.subMenuStart("Completions", QIcon(":/FishBoneGroup16x16.png"));
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
                 menuBuilder << "RicNewWellPathFractureAtPosFeature";
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
                 menuBuilder << "RicNewFishbonesSubsAtMeasuredDepthFeature";
                 menuBuilder << "RicNewPerforationIntervalAtMeasuredDepthFeature";
 
@@ -398,9 +404,7 @@ void RiuViewerCommands::displayContextMenu(QMouseEvent* event)
                 menuBuilder.addSeparator();
                 menuBuilder << "RicShowContributingWellsFeature";
                 menuBuilder.addSeparator();
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
                 menuBuilder << "RicNewSimWellFractureAtPosFeature";
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
                 menuBuilder.addSeparator();
                 menuBuilder << "RicNewSimWellIntersectionFeature";
             }
@@ -496,10 +500,33 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
 
             if (rivObjectSourceInfo)
             {
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-                RiuMainWindow::instance()->selectAsCurrentItem(rivObjectSourceInfo->object());
-
                 RimFracture* fracture = dynamic_cast<RimFracture*>(rivObjectSourceInfo->object());
+
+                {
+                    bool blockSelectionOfFracture = false;
+                    if (fracture)
+                    {
+                        std::vector<caf::PdmUiItem*> uiItems;
+                        RiuMainWindow::instance()->projectTreeView()->selectedUiItems(uiItems);
+
+                        if (uiItems.size() == 1)
+                        {
+                            auto selectedFractureTemplate = dynamic_cast<RimFractureTemplate*>(uiItems[0]);
+
+                            if (selectedFractureTemplate != nullptr && selectedFractureTemplate == fracture->fractureTemplate())
+                            {
+                                blockSelectionOfFracture = true;
+                            }
+                        }
+                    }
+
+                    if (!blockSelectionOfFracture)
+                    {
+                        RiuMainWindow::instance()->selectAsCurrentItem(fracture);
+                    }
+                }
+
+
                 RimStimPlanFractureTemplate* stimPlanTempl = fracture ? dynamic_cast<RimStimPlanFractureTemplate*>(fracture->fractureTemplate()) : nullptr;
                 RimEllipseFractureTemplate* ellipseTempl = fracture ? dynamic_cast<RimEllipseFractureTemplate*>(fracture->fractureTemplate()) : nullptr;
                 if (stimPlanTempl || ellipseTempl)
@@ -523,7 +550,6 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
                     // Display result info text
                     RiuMainWindow::instance()->setResultInfo(resultInfoText);
                 }
-#endif //USE_PROTOTYPE_FEATURE_FRACTURES
             }
             
             if (rivSourceInfo)
@@ -550,8 +576,9 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
                 intersectionHit = true;
                 intersectionTriangleHit = crossSectionSourceInfo->triangle(firstPartTriangleIndex);
 
-                RiuMainWindow::instance()->selectAsCurrentItem(crossSectionSourceInfo->crossSection());
-
+                bool allowActiveViewChange = dynamic_cast<Rim2dIntersectionView*>(m_viewer->ownerViewWindow()) == nullptr;
+               
+                RiuMainWindow::instance()->selectAsCurrentItem(crossSectionSourceInfo->crossSection(), allowActiveViewChange);
             }
             else if (intersectionBoxSourceInfo)
             {
@@ -564,7 +591,9 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
             }
             else if (eclipseWellSourceInfo)
             {
-                RiuMainWindow::instance()->selectAsCurrentItem(eclipseWellSourceInfo->well());
+                bool allowActiveViewChange = dynamic_cast<Rim2dIntersectionView*>(m_viewer->ownerViewWindow()) == nullptr;
+
+                RiuMainWindow::instance()->selectAsCurrentItem(eclipseWellSourceInfo->well(), allowActiveViewChange);
             }
         }
 
@@ -628,7 +657,7 @@ void RiuViewerCommands::handlePickAction(int winPosX, int winPosY, Qt::KeyboardM
                 else                  selItem = new RiuGeoMechSelectionItem(geomView, gridIndex, cellIndex, curveColor, gmFace, localIntersectionPoint);
             }
 
-            if (intersectionView) selItem = new Riu2dIntersectionSelectionItem(selItem);
+            if (intersectionView) selItem = new Riu2dIntersectionSelectionItem(intersectionView, selItem);
         }
 
         if (appendToSelection)

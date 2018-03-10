@@ -335,9 +335,14 @@ namespace caf {
         #pragma warning (push)
         #pragma warning (disable: 4996)
         AllocConsole();
-        freopen("conin$", "r", stdin);
-        freopen("conout$", "w", stdout);
-        freopen("conout$", "w", stderr);
+
+        FILE* consoleFilePointer;
+        errno_t err;
+
+        err = freopen_s(&consoleFilePointer, "conin$", "r", stdin);
+        err = freopen_s(&consoleFilePointer, "conout$", "w", stdout);
+        err = freopen_s(&consoleFilePointer, "conout$", "w", stderr);
+
         #pragma warning (pop)
     #endif
     }
@@ -407,7 +412,7 @@ namespace caf {
             //progressDialog()->setWindowModality(Qt::ApplicationModal);
             progressDialog()->setMinimum(0);
             progressDialog()->setWindowTitle(title);
-            progressDialog()->setCancelButton(NULL);
+            progressDialog()->setCancelButton(nullptr);
             progressDialog()->show();
         }
 
@@ -557,7 +562,7 @@ namespace caf {
         // If we are finishing the last level, clean up
         if (!maxProgressStack_v.size())
         {
-            if (progressDialog() != NULL)
+            if (progressDialog() != nullptr)
             {
                 progressDialog()->reset();
                 progressDialog()->close();

@@ -30,6 +30,7 @@
 #include "RigMainGrid.h"
 #include "RigSimWellData.h"
 
+#include "Rim2dIntersectionViewCollection.h"
 #include "RimCaseCollection.h"
 #include "RimCellEdgeColors.h"
 #include "RimCommandObject.h"
@@ -108,7 +109,7 @@ RimEclipseCase::RimEclipseCase()
     m_fractureModelResults.uiCapability()->setUiHidden(true);
     m_fractureModelResults.uiCapability()->setUiTreeChildrenHidden(true);
 
-    this->setReservoirData( NULL );
+    this->setReservoirData( nullptr );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -253,10 +254,7 @@ RimEclipseView* RimEclipseCase::createAndAddReservoirView()
 
         rimEclipseView->cellEdgeResult()->setResultVariable("MULT");
         rimEclipseView->cellEdgeResult()->enableCellEdgeColors = false;
-    
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
         rimEclipseView->fractureColors()->setDefaultResultName();
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
     }
 
     caf::PdmDocument::updateUiIconStateRecursively(rimEclipseView);
@@ -415,7 +413,12 @@ void RimEclipseCase::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering
 
     for (auto child : children) uiTreeOrdering.add(child); 
     
-    uiTreeOrdering.add(&m_2dIntersectionViewCollection);
+    if (!m_2dIntersectionViewCollection->views().empty())
+    {
+        uiTreeOrdering.add(&m_2dIntersectionViewCollection);
+    }
+
+    uiTreeOrdering.skipRemainingChildren(true);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -477,8 +480,8 @@ void RimEclipseCase::setReservoirData(RigEclipseCaseData* eclipseCase)
     }
     else
     {
-        m_fractureModelResults()->setCellResults(NULL);
-        m_matrixModelResults()->setCellResults(NULL);
+        m_fractureModelResults()->setCellResults(nullptr);
+        m_matrixModelResults()->setCellResults(nullptr);
     }
 }
 

@@ -37,18 +37,29 @@ class RimFractureTemplateCollection : public caf::PdmObject
 public:
     RimFractureTemplateCollection(void);
     virtual ~RimFractureTemplateCollection(void);
-    
-    caf::PdmChildArrayField<RimFractureTemplate*>           fractureDefinitions;
-    caf::PdmField< RiaEclipseUnitTools::UnitSystemType >    defaultUnitsForFracTemplates;
+
+    RimFractureTemplate*                        fractureTemplate(int id) const;
+    std::vector<RimFractureTemplate*>           fractureTemplates() const;
+    void                                        addFractureTemplate(RimFractureTemplate* templ);
+    RiaEclipseUnitTools::UnitSystemType         defaultUnitSystemType() const;
+
+    RimFractureTemplate* firstFractureOfUnit(RiaEclipseUnitTools::UnitSystem unitSet) const;
 
     std::vector<std::pair<QString, QString> >   resultNamesAndUnits() const;
     void                                        computeMinMax(const QString& uiResultName, const QString& unit, double* minValue, double* maxValue, double* posClosestToZero, double* negClosestToZero) const;
 
+    void                                        createAndAssignTemplateCopyForNonMatchingUnit();
     void                                        loadAndUpdateData();
-    void                                        setDefaultConductivityResultIfEmpty();
 
     void                                        updateFilePathsFromProjectPath(const QString& newProjectPath, const QString& oldProjectPath);
 protected:
-    virtual void initAfterRead() override;
+    virtual void                                initAfterRead() override;
+
+private:
+    int                                         nextFractureTemplateId();
+
+    caf::PdmChildArrayField<RimFractureTemplate*>           m_fractureDefinitions;
+    caf::PdmField< RiaEclipseUnitTools::UnitSystemType >    m_defaultUnitsForFracTemplates;
+    caf::PdmField<int>                                      m_nextValidFractureTemplateId;          // Unique fracture template ID within a project, used to identify a fracture template
 
 };

@@ -49,6 +49,9 @@ class RiaEclipseUnitTools
 
   static double convertSurfaceGasFlowRateToOilEquivalents(UnitSystem, double eclGasFlowRate);
 
-  static QString unitStringPressure(UnitSystem unitSystem);
+    static QString unitStringPressure(UnitSystem unitSystem);
+
+    static double convertToMeter(double sourceValue, const QString& unitText);
+    static double convertToFeet(double sourceValue, const QString& unitText);
 };
 

@@ -29,25 +29,26 @@
 #include "RigTimeHistoryResultAccessor.h"
 #include "RiuFemTimeHistoryResultAccessor.h"
 
+#include "Rim2dIntersectionView.h"
 #include "RimEclipseCase.h"
 #include "RimEclipseCellColors.h"
 #include "RimEclipseView.h"
 #include "RimGeoMechCase.h"
 #include "RimGeoMechResultDefinition.h"
 #include "RimGeoMechView.h"
-#include "Rim2dIntersectionView.h"
 #include "RimIntersection.h"
 #include "RimProject.h"
 
 #include "RiuFemResultTextBuilder.h"
 #include "RiuMainWindow.h"
+#include "RiuMohrsCirclePlot.h"
+#include "RiuPvtPlotPanel.h"
+#include "RiuPvtPlotUpdater.h"
+#include "RiuRelativePermeabilityPlotPanel.h"
+#include "RiuRelativePermeabilityPlotUpdater.h"
 #include "RiuResultQwtPlot.h"
 #include "RiuResultTextBuilder.h"
 #include "RiuSelectionManager.h"
-#include "RiuRelativePermeabilityPlotPanel.h"
-#include "RiuPvtPlotPanel.h"
-#include "RiuRelativePermeabilityPlotUpdater.h"
-#include "RiuPvtPlotUpdater.h"
 
 #include <QStatusBar>
 
@@ -84,12 +85,14 @@ void RiuSelectionChangedHandler::handleSelectionDeleted() const
     RiuMainWindow::instance()->resultPlot()->deleteAllCurves();
 
     RiuRelativePermeabilityPlotUpdater* relPermPlotUpdater = RiuMainWindow::instance()->relativePermeabilityPlotPanel()->plotUpdater();
-    relPermPlotUpdater->updateOnSelectionChanged(NULL);
+    relPermPlotUpdater->updateOnSelectionChanged(nullptr);
 
     RiuPvtPlotUpdater* pvtPlotUpdater = RiuMainWindow::instance()->pvtPlotPanel()->plotUpdater();
-    pvtPlotUpdater->updateOnSelectionChanged(NULL);
+    pvtPlotUpdater->updateOnSelectionChanged(nullptr);
 
-    updateResultInfo(NULL);
+    RiuMainWindow::instance()->mohrsCirclePlot()->clearPlot();
+
+    updateResultInfo(nullptr);
 
     scheduleUpdateForAllVisibleViews();
 }
@@ -107,6 +110,8 @@ void RiuSelectionChangedHandler::handleItemAppended(const RiuSelectionItem* item
     RiuPvtPlotUpdater* pvtPlotUpdater = RiuMainWindow::instance()->pvtPlotPanel()->plotUpdater();
     pvtPlotUpdater->updateOnSelectionChanged(item);
 
+    RiuMainWindow::instance()->mohrsCirclePlot()->appendSelection(item);
+
     updateResultInfo(item);
 
     scheduleUpdateForAllVisibleViews();
@@ -118,6 +123,8 @@ void RiuSelectionChangedHandler::handleItemAppended(const RiuSelectionItem* item
 void RiuSelectionChangedHandler::handleSetSelectedItem(const RiuSelectionItem* item) const
 {
     RiuMainWindow::instance()->resultPlot()->deleteAllCurves();
+
+    RiuMainWindow::instance()->mohrsCirclePlot()->clearPlot();
 
     handleItemAppended(item);
 }
@@ -156,7 +163,7 @@ void RiuSelectionChangedHandler::addCurveFromSelectionItem(const RiuEclipseSelec
         std::vector<double> timeHistoryValues = RigTimeHistoryResultAccessor::timeHistoryValues(eclipseView->eclipseCase()->eclipseCaseData(), eclipseView->cellResult(), eclipseSelectionItem->m_gridIndex, eclipseSelectionItem->m_gridLocalCellIndex, timeStepDates.size());
         CVF_ASSERT(timeStepDates.size() == timeHistoryValues.size());
 
-        RiuMainWindow::instance()->resultPlot()->addCurve(curveName, eclipseSelectionItem->m_color, timeStepDates, timeHistoryValues);
+        RiuMainWindow::instance()->resultPlot()->addCurve(eclipseView->eclipseCase(), curveName, eclipseSelectionItem->m_color, timeStepDates, timeHistoryValues);
     }
 }
 
@@ -225,7 +232,7 @@ void RiuSelectionChangedHandler::addCurveFromSelectionItem(const RiuGeoMechSelec
         std::vector<QDateTime> dates = geoMechView->geoMechCase()->timeStepDates();
         if (dates.size() == timeHistoryValues.size())
         {
-            RiuMainWindow::instance()->resultPlot()->addCurve(curveName, geomSelectionItem->m_color, dates, timeHistoryValues);
+            RiuMainWindow::instance()->resultPlot()->addCurve(geoMechView->geoMechCase(), curveName, geomSelectionItem->m_color, dates, timeHistoryValues);
         }
         else
         {
@@ -235,7 +242,7 @@ void RiuSelectionChangedHandler::addCurveFromSelectionItem(const RiuGeoMechSelec
                 dummyStepTimes.push_back(i);
             }
 
-            RiuMainWindow::instance()->resultPlot()->addCurve(curveName, geomSelectionItem->m_color, dummyStepTimes, timeHistoryValues);
+            RiuMainWindow::instance()->resultPlot()->addCurve(geoMechView->geoMechCase(), curveName, geomSelectionItem->m_color, dummyStepTimes, timeHistoryValues);
         }
     }
 }
@@ -308,11 +315,14 @@ void RiuSelectionChangedHandler::updateResultInfo(const RiuSelectionItem* itemAd
     QString pickInfo;
 
     RiuSelectionItem* selItem = const_cast<RiuSelectionItem*>(itemAdded);
-    if (selItem != NULL)
+    if (selItem != nullptr)
     {
+        Rim2dIntersectionView* intersectionView = nullptr;
+
         if (selItem->type() == RiuSelectionItem::INTERSECTION_SELECTION_OBJECT)
         {
             const Riu2dIntersectionSelectionItem* wrapperSelItem = dynamic_cast<Riu2dIntersectionSelectionItem*>(selItem);
+            intersectionView = wrapperSelItem->view();
             if (wrapperSelItem && wrapperSelItem->eclipseSelectionItem()) selItem = wrapperSelItem->eclipseSelectionItem();
             else if (wrapperSelItem && wrapperSelItem->geoMechSelectionItem()) selItem = wrapperSelItem->geoMechSelectionItem();
         }
@@ -327,6 +337,7 @@ void RiuSelectionChangedHandler::updateResultInfo(const RiuSelectionItem* itemAd
             textBuilder.setFace(eclipseSelectionItem->m_face);
             textBuilder.setNncIndex(eclipseSelectionItem->m_nncIndex);
             textBuilder.setIntersectionPoint(eclipseSelectionItem->m_localIntersectionPoint);
+            textBuilder.set2dIntersectionView(intersectionView);
 
             resultInfo = textBuilder.mainResultText();
 
@@ -340,6 +351,7 @@ void RiuSelectionChangedHandler::updateResultInfo(const RiuSelectionItem* itemAd
             RiuFemResultTextBuilder textBuilder(geomView, (int)geomSelectionItem->m_gridIndex, (int)geomSelectionItem->m_cellIndex, geomView->currentTimeStep());
             textBuilder.setIntersectionPoint(geomSelectionItem->m_localIntersectionPoint);
             textBuilder.setFace(geomSelectionItem->m_elementFace);
+            textBuilder.set2dIntersectionView(intersectionView);
             if (geomSelectionItem->m_hasIntersectionTriangle) textBuilder.setIntersectionTriangle(geomSelectionItem->m_intersectionTriangle);
 
             resultInfo = textBuilder.mainResultText();

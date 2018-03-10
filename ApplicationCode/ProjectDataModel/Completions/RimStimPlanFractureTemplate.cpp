@@ -71,7 +71,6 @@ RimStimPlanFractureTemplate::RimStimPlanFractureTemplate()
     m_borderPolygonResultName.uiCapability()->setUiHidden(true);
 
     CAF_PDM_InitField(&m_activeTimeStepIndex,           "ActiveTimeStepIndex", 0, "Active TimeStep Index", "", "", "");
-    CAF_PDM_InitField(&m_conductivityScalingFactor,     "ConductivityFactor", 1.0, "Conductivity Scaling Factor", "", "The conductivity values read from file will be scaled with this parameters", "");
     CAF_PDM_InitField(&m_conductivityResultNameOnFile,  "ConductivityResultName", QString(""), "Active Conductivity Result Name", "", "", "");
 
     CAF_PDM_InitField(&m_showStimPlanMesh_OBSOLETE, "ShowStimPlanMesh", true, "", "", "", "");
@@ -106,15 +105,12 @@ void RimStimPlanFractureTemplate::fieldChangedByUi(const caf::PdmFieldHandle* ch
     if (&m_stimPlanFileName == changedField)
     {
         m_readError = false;
-        updateUiTreeName();
         loadDataAndUpdate();
         setDefaultsBasedOnXMLfile();
     }
 
     if (&m_activeTimeStepIndex == changedField)
     {
-        updateFractureGrid();
-
         //Changes to this parameters should change all fractures with this fracture template attached. 
         RimProject* proj;
         this->firstAncestorOrThisOfType(proj);
@@ -133,18 +129,14 @@ void RimStimPlanFractureTemplate::fieldChangedByUi(const caf::PdmFieldHandle* ch
         }
     }
 
-    if (&m_conductivityScalingFactor == changedField)
-    {
-        loadDataAndUpdate();
-    }
-
     if (&m_wellPathDepthAtFracture == changedField 
         || &m_borderPolygonResultName == changedField 
         || &m_activeTimeStepIndex == changedField 
-        || &m_conductivityScalingFactor == changedField
         || &m_stimPlanFileName == changedField
         || &m_conductivityResultNameOnFile == changedField)
     {
+        updateFractureGrid();
+
         RimProject* proj;
         this->firstAncestorOrThisOfType(proj);
         if (proj)
@@ -152,15 +144,12 @@ void RimStimPlanFractureTemplate::fieldChangedByUi(const caf::PdmFieldHandle* ch
             proj->createDisplayModelAndRedrawAllViews();
         }
     }
-}
 
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RimStimPlanFractureTemplate::updateUiTreeName()
-{
-    this->uiCapability()->setUiName(fileNameWithOutPath());
+    if (changedField == &m_scaleApplyButton)
+    {
+        m_scaleApplyButton = false;
+        reload();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -169,8 +158,6 @@ void RimStimPlanFractureTemplate::updateUiTreeName()
 void RimStimPlanFractureTemplate::setFileName(const QString& fileName)
 {
     m_stimPlanFileName = fileName;
-
-    updateUiTreeName();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -179,15 +166,6 @@ void RimStimPlanFractureTemplate::setFileName(const QString& fileName)
 const QString& RimStimPlanFractureTemplate::fileName()
 {
     return m_stimPlanFileName();
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-QString RimStimPlanFractureTemplate::fileNameWithOutPath()
-{
-    QFileInfo stimplanfileFileInfo(m_stimPlanFileName());
-    return stimplanfileFileInfo.fileName();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -261,14 +239,24 @@ void RimStimPlanFractureTemplate::loadDataAndUpdate()
     if (m_readError) return;
 
     m_stimPlanFractureDefinitionData = RifStimPlanXmlReader::readStimPlanXMLFile( m_stimPlanFileName(),
-                                                                                 m_conductivityScalingFactor(),
+                                                                                 m_conductivityScaleFactor(),
+                                                                                 m_widthScaleFactor(),
+                                                                                 m_heightScaleFactor(),
+                                                                                 -m_wellPathDepthAtFracture(),
                                                                                  RifStimPlanXmlReader::MIRROR_AUTO,
+                                                                                 fractureTemplateUnit(),
                                                                                  &errorMessage);
     if (errorMessage.size() > 0) RiaLogging::error(errorMessage);
 
     if (m_stimPlanFractureDefinitionData.notNull())
     {
-        setFractureTemplateUnit(m_stimPlanFractureDefinitionData->unitSet());
+        setDefaultConductivityResultIfEmpty();
+
+        if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_UNKNOWN)
+        {
+            setFractureTemplateUnit(m_stimPlanFractureDefinitionData->unitSet());
+        }
+
         m_readError = false;
     }
     else
@@ -281,7 +269,7 @@ void RimStimPlanFractureTemplate::loadDataAndUpdate()
 
     // Todo: Must update all views using this fracture template
     RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
-    if (activeView) activeView->fractureColors->loadDataAndUpdate();
+    if (activeView) activeView->fractureColors()->loadDataAndUpdate();
 
     updateConnectedEditors();
 }
@@ -293,24 +281,24 @@ QList<caf::PdmOptionItemInfo> RimStimPlanFractureTemplate::calculateValueOptions
 {
     QList<caf::PdmOptionItemInfo> options;
 
+    options = RimFractureTemplate::calculateValueOptions(fieldNeedingOptions, useOptionsOnly);
+
     if (fieldNeedingOptions == &m_borderPolygonResultName)
     {
         for (std::pair<QString, QString> nameUnit : uiResultNamesWithUnit())
         {
-            //options.push_back(caf::PdmOptionItemInfo(nameUnit.first + " [" + nameUnit.second + "]", nameUnit.first + " " + nameUnit.second));
             options.push_back(caf::PdmOptionItemInfo(nameUnit.first, nameUnit.first));
         }
     }
     else if (fieldNeedingOptions == &m_activeTimeStepIndex)
     {
         std::vector<double> timeValues = timeSteps();
-        int index = 0;
+        int                 index      = 0;
         for (double value : timeValues)
         {
             options.push_back(caf::PdmOptionItemInfo(QString::number(value), index));
             index++;
         }
-
     }
     else if (fieldNeedingOptions == &m_conductivityResultNameOnFile)
     {
@@ -325,7 +313,6 @@ QList<caf::PdmOptionItemInfo> RimStimPlanFractureTemplate::calculateValueOptions
     }
 
     return options;
-
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -405,6 +392,89 @@ QString RimStimPlanFractureTemplate::getUnitForStimPlanParameter(QString paramet
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+FractureWidthAndConductivity RimStimPlanFractureTemplate::widthAndConductivityAtWellPathIntersection() const
+{
+    FractureWidthAndConductivity values;
+
+    if (m_fractureGrid.notNull())
+    {
+        std::pair<size_t, size_t> wellCellIJ = m_fractureGrid->fractureCellAtWellCenter();
+        size_t wellCellIndex = m_fractureGrid->getGlobalIndexFromIJ(wellCellIJ.first, wellCellIJ.second);
+        const RigFractureCell& wellCell = m_fractureGrid->cellFromIndex(wellCellIndex);
+
+        double conductivity = wellCell.getConductivtyValue();
+
+        std::vector<std::pair<QString, QString> > propertyNamesUnitsOnFile = m_stimPlanFractureDefinitionData->getStimPlanPropertyNamesUnits();
+
+        QString propertyNameForFractureWidth;
+        {
+            QString widthParameterName;
+            QString effWidthParameterName;
+            for (const auto& nameUnit : propertyNamesUnitsOnFile)
+            {
+                if (effWidthParameterName.isEmpty() && nameUnit.first.contains("effective width", Qt::CaseInsensitive))
+                {
+                    effWidthParameterName = nameUnit.first;
+                }
+
+                if (widthParameterName.isEmpty() && nameUnit.first.contains("width", Qt::CaseInsensitive))
+                {
+                    widthParameterName = nameUnit.first;
+                }
+            }
+
+            if (!effWidthParameterName.isEmpty())
+            {
+                propertyNameForFractureWidth = effWidthParameterName;
+            }
+            else
+            {
+                propertyNameForFractureWidth = widthParameterName;
+            }
+        }
+
+        if (!propertyNameForFractureWidth.isEmpty())
+        {
+            for (const auto& nameUnit : propertyNamesUnitsOnFile)
+            {
+                if (nameUnit.first == propertyNameForFractureWidth)
+                {
+                    double widthInRequiredUnit = HUGE_VAL;
+                    {
+                        auto resultValues = m_stimPlanFractureDefinitionData->fractureGridResults(nameUnit.first, nameUnit.second, m_activeTimeStepIndex);
+
+                        double widthInFileUnitSystem = resultValues[wellCellIndex];
+
+                        if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
+                        {
+                            QString unitText = nameUnit.second;
+
+                            widthInRequiredUnit = RiaEclipseUnitTools::convertToMeter(widthInFileUnitSystem, unitText);
+                        }
+                        else if (fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
+                        {
+                            QString unitText = nameUnit.second;
+
+                            widthInRequiredUnit = RiaEclipseUnitTools::convertToFeet(widthInFileUnitSystem, unitText);
+                        }
+                    }
+
+                    if (widthInRequiredUnit != HUGE_VAL && fabs(widthInRequiredUnit) > 1e-20)
+                    {
+                        values.m_width = widthInRequiredUnit;
+                        values.m_permeability = conductivity / widthInRequiredUnit;
+                    }
+                }
+            }
+        }
+    }
+
+    return values;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimStimPlanFractureTemplate::setDefaultConductivityResultIfEmpty()
 {
     if (m_conductivityResultNameOnFile().isEmpty())
@@ -441,6 +511,58 @@ QString RimStimPlanFractureTemplate::mapUiResultNameToFileResultName(const QStri
 bool RimStimPlanFractureTemplate::showStimPlanMesh() const
 {
     return m_showStimPlanMesh_OBSOLETE();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimStimPlanFractureTemplate::convertToUnitSystem(RiaEclipseUnitTools::UnitSystem neededUnit)
+{
+    if (m_fractureTemplateUnit() == neededUnit) return;
+
+    setFractureTemplateUnit(neededUnit);
+    RimFractureTemplate::convertToUnitSystem(neededUnit);
+
+    m_readError = false;
+    loadDataAndUpdate();
+
+    if (m_stimPlanFractureDefinitionData.isNull()) return;
+
+    if (neededUnit == RiaEclipseUnitTools::UNITS_FIELD)
+    {
+        m_wellPathDepthAtFracture = RiaEclipseUnitTools::meterToFeet(m_wellPathDepthAtFracture);
+    }
+    else if (neededUnit == RiaEclipseUnitTools::UNITS_METRIC)
+    {
+        m_wellPathDepthAtFracture = RiaEclipseUnitTools::feetToMeter(m_wellPathDepthAtFracture);
+    }
+
+    m_activeTimeStepIndex = static_cast<int>(m_stimPlanFractureDefinitionData->totalNumberTimeSteps() - 1);
+    bool polygonPropertySet = setBorderPolygonResultNameToDefault();
+
+    if (polygonPropertySet) RiaLogging::info(QString("Calculating polygon outline based on %1 at timestep %2").arg(m_borderPolygonResultName).arg(m_stimPlanFractureDefinitionData->timeSteps()[m_activeTimeStepIndex]));
+    else                    RiaLogging::info(QString("Property for polygon calculation not set."));
+
+    if (!m_stimPlanFractureDefinitionData->conductivityResultNames().isEmpty())
+    {
+        m_conductivityResultNameOnFile = m_stimPlanFractureDefinitionData->conductivityResultNames().front();
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimStimPlanFractureTemplate::reload()
+{
+    loadDataAndUpdate();
+
+    RimProject* proj;
+    this->firstAncestorOrThisOfType(proj);
+    if (proj)
+    {
+        proj->createDisplayModelAndRedrawAllViews();
+    }
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -538,6 +660,27 @@ bool RimStimPlanFractureTemplate::hasConductivity() const
 }
 
 //--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RimStimPlanFractureTemplate::resultValueAtIJ(const QString& uiResultName, const QString& unitName, size_t timeStepIndex, size_t i, size_t j)
+{
+    auto values = resultValues(uiResultName, unitName, timeStepIndex);
+
+    if (values.empty()) return HUGE_VAL;
+
+    size_t adjustedI = i + 1;
+    size_t adjustedJ = j + 1;
+
+    if (adjustedI >= fractureGrid()->iCellCount() || adjustedJ >= fractureGrid()->jCellCount())
+    {
+
+        return HUGE_VAL;
+    }
+
+    return values[adjustedJ][adjustedI];
+}
+
+//--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
 void RimStimPlanFractureTemplate::appendDataToResultStatistics(const QString& uiResultName, const QString& unit,
@@ -571,8 +714,8 @@ void RimStimPlanFractureTemplate::updateFractureGrid()
     {
         m_fractureGrid = m_stimPlanFractureDefinitionData->createFractureGrid(m_conductivityResultNameOnFile,
                                                                               m_activeTimeStepIndex,
-                                                                              fractureTemplateUnit(),
-                                                                              m_wellPathDepthAtFracture);
+                                                                              m_wellPathDepthAtFracture,
+                                                                              m_fractureTemplateUnit());
     }
 }
 
@@ -582,8 +725,7 @@ void RimStimPlanFractureTemplate::updateFractureGrid()
 /// 
 //--------------------------------------------------------------------------------------------------
 void RimStimPlanFractureTemplate::fractureTriangleGeometry(std::vector<cvf::Vec3f>* nodeCoords, 
-                                                           std::vector<cvf::uint>* triangleIndices, 
-                                                           RiaEclipseUnitTools::UnitSystem neededUnit)
+                                                           std::vector<cvf::uint>* triangleIndices)
 {
 
     if (m_stimPlanFractureDefinitionData.isNull())
@@ -593,7 +735,6 @@ void RimStimPlanFractureTemplate::fractureTriangleGeometry(std::vector<cvf::Vec3
     else	
     {
         m_stimPlanFractureDefinitionData->createFractureTriangleGeometry(m_wellPathDepthAtFracture,
-                                                                         neededUnit,
                                                                          name(),
                                                                          nodeCoords,
                                                                          triangleIndices);
@@ -603,23 +744,9 @@ void RimStimPlanFractureTemplate::fractureTriangleGeometry(std::vector<cvf::Vec3
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<cvf::Vec3f> RimStimPlanFractureTemplate::fractureBorderPolygon(RiaEclipseUnitTools::UnitSystem neededUnit)
+std::vector<cvf::Vec3f> RimStimPlanFractureTemplate::fractureBorderPolygon()
 {
-    if (m_stimPlanFractureDefinitionData.isNull()) return std::vector<cvf::Vec3f>();
-
-    QString parameterName = m_borderPolygonResultName;
-    QString parameterUnit = getUnitForStimPlanParameter(parameterName);
-  
-    if (m_stimPlanFractureDefinitionData.notNull())
-    {
-        return m_stimPlanFractureDefinitionData->createFractureBorderPolygon(parameterName,
-                                                                             parameterUnit,
-                                                                          m_activeTimeStepIndex,
-                                                                         m_wellPathDepthAtFracture,
-                                                                         neededUnit,
-                                                                         name());
-    }
-
+    // Not implemented
     return std::vector<cvf::Vec3f>();
 }
 
@@ -630,6 +757,7 @@ std::vector<cvf::Vec3f> RimStimPlanFractureTemplate::fractureBorderPolygon(RiaEc
 void RimStimPlanFractureTemplate::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
 {
     uiOrdering.add(&m_name);
+    uiOrdering.add(&m_id);
 
     caf::PdmUiGroup* fileGroup = uiOrdering.addNewGroup("Input");
     fileGroup->add(&m_stimPlanFileName);
@@ -645,7 +773,6 @@ void RimStimPlanFractureTemplate::defineUiOrdering(QString uiConfigName, caf::Pd
 
     caf::PdmUiGroup* propertyGroup = uiOrdering.addNewGroup("Properties");
     propertyGroup->add(&m_conductivityResultNameOnFile);
-    propertyGroup->add(&m_conductivityScalingFactor);
     propertyGroup->add(&m_conductivityType);
     propertyGroup->add(&m_skinFactor);
     propertyGroup->add(&m_perforationLength);
@@ -684,4 +811,3 @@ void RimStimPlanFractureTemplate::defineEditorAttribute(const caf::PdmFieldHandl
         }
     }
 }
-

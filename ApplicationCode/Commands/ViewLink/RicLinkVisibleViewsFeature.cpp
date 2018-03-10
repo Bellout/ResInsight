@@ -29,7 +29,7 @@
 #include "RimViewLinker.h"
 #include "RimViewLinkerCollection.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 #include "cafPdmUiPropertyViewDialog.h"
 
@@ -152,7 +152,7 @@ void RicLinkVisibleViewsFeature::linkViews(std::vector<RimGridView*>& views)
         RicLinkVisibleViewsFeatureUi featureUi;
         featureUi.setViews(views);
 
-        caf::PdmUiPropertyViewDialog propertyDialog(NULL, &featureUi, "Select Master View", "");
+        caf::PdmUiPropertyViewDialog propertyDialog(nullptr, &featureUi, "Select Master View", "");
         propertyDialog.setWindowIcon(QIcon(":/chain.png"));
         if (propertyDialog.exec() != QDialog::Accepted) return;
 
@@ -177,7 +177,7 @@ void RicLinkVisibleViewsFeature::linkViews(std::vector<RimGridView*>& views)
     proj->viewLinkerCollection.uiCapability()->updateConnectedEditors();
     proj->updateConnectedEditors();
 
-    RiuMainWindow::instance()->setExpanded(proj->viewLinkerCollection());
+    Riu3DMainWindowTools::setExpanded(proj->viewLinkerCollection());
 
 }
 

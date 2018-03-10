@@ -34,6 +34,7 @@
 #include "RigFemPartResults.h"
 #include "RigFemScalarResultFrames.h"
 #include "RigFormationNames.h"
+#include "RigHexIntersectionTools.h"
 #include "RigStatisticsDataCache.h"
 
 #include "RimMainPlotCollection.h"
@@ -54,6 +55,28 @@
 #include <stdlib.h>
 #include <cmath>
 
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+const std::string RigFemPartResultsCollection::FIELD_NAME_COMPACTION = "COMPACTION";
+
+//--------------------------------------------------------------------------------------------------
+/// Internal definitions
+//--------------------------------------------------------------------------------------------------
+class RefElement
+{
+public:
+    size_t              elementIdx;
+    float               intersectionPointToCurrentNodeDistance;
+    cvf::Vec3f          intersectionPoint;
+    std::vector<size_t> elementFaceNodeIdxs;
+};
+
+static std::vector<cvf::Vec3d> coordsFromNodeIndices(const RigFemPart& part, const std::vector<size_t>& nodeIdxs);
+static std::vector<size_t> nodesForElement(const RigFemPart& part, size_t elementIdx);
+static float horizontalDistance(const cvf::Vec3f& p1, const cvf::Vec3f& p2);
+static void findReferenceElementForNode(const RigFemPart& part, size_t nodeIdx, size_t kRefLayer, RefElement *refElement);
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -258,6 +281,8 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::findOrLoadScalarResult(in
                     case RIG_INTEGRATION_POINT:
                         m_readerInterface->readIntegrationPointField(resVarAddr.fieldName, partIndex, stepIndex, fIdx, &componentDataVectors);
                         break;
+                    default:
+                        break;
                 }
             }
 
@@ -295,6 +320,7 @@ std::map<std::string, std::vector<std::string> > RigFemPartResultsCollection::sc
         {
             fieldCompNames = m_readerInterface->scalarNodeFieldAndComponentNames();
             fieldCompNames["POR-Bar"];
+            fieldCompNames[FIELD_NAME_COMPACTION];
         }
         else if (resPos == RIG_ELEMENT_NODAL)
         {
@@ -559,7 +585,7 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculateTimeLapseResult(
         frameCountProgress.setProgressDescription("Calculating " + QString::fromStdString(resVarAddr.fieldName + ": " + resVarAddr.componentName));
         frameCountProgress.setNextProgressIncrement(this->frameCount());
 
-        RigFemResultAddress resVarNative(resVarAddr.resultPosType, resVarAddr.fieldName, resVarAddr.componentName);
+        RigFemResultAddress resVarNative(resVarAddr.resultPosType, resVarAddr.fieldName, resVarAddr.componentName, RigFemResultAddress::NO_TIME_LAPSE, resVarAddr.refKLayerIndex);
         RigFemScalarResultFrames * srcDataFrames = this->findOrLoadScalarResult(partIndex, resVarNative);
         RigFemScalarResultFrames * dstDataFrames = m_femPartResults[partIndex]->createScalarResult(resVarAddr);
 
@@ -750,14 +776,7 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculateDSM(int partInde
 
         for ( size_t vIdx = 0; vIdx < valCount; ++vIdx )
         {
-            float se1 = se1Data[vIdx];
-            float se3 = se3Data[vIdx];
-            float pi_4 = 0.785398163397448309616f;
-            float rho = 2.0f * ( atan( sqrt(( se1 + cohPrTanFricAngle)/(se3 + cohPrTanFricAngle)) ) - pi_4);
-            
-            {
-                dstFrameData[vIdx] =  tan(rho)/tanFricAng;
-            }
+            dstFrameData[vIdx] = dsm(se1Data[vIdx], se3Data[vIdx], tanFricAng, cohPrTanFricAngle);
         }
 
         frameCountProgress.incrementProgress();
@@ -1430,6 +1449,63 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculatePrincipalStrainV
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+RigFemScalarResultFrames* RigFemPartResultsCollection::calculateCompactionValues(int partIndex, const RigFemResultAddress &resVarAddr)
+{
+    CVF_ASSERT(resVarAddr.fieldName == FIELD_NAME_COMPACTION);
+
+    caf::ProgressInfo frameCountProgress(this->frameCount() + 1, "");
+    frameCountProgress.setProgressDescription("Calculating " + QString::fromStdString(resVarAddr.fieldName));
+
+    RigFemScalarResultFrames * u3Frames = this->findOrLoadScalarResult(partIndex, RigFemResultAddress(resVarAddr.resultPosType, "U", "U3"));
+    frameCountProgress.incrementProgress();
+
+    RigFemScalarResultFrames* compactionFrames = m_femPartResults[partIndex]->createScalarResult(resVarAddr);
+
+    const RigFemPart* part = m_femParts->part(partIndex);
+    for (int t = 0; t < u3Frames->frameCount(); t++)
+    {
+        std::vector<float>& compactionFrame = compactionFrames->frameData(t);
+        size_t nodeCount = part->nodes().nodeIds.size();
+
+        frameCountProgress.incrementProgress();
+
+        compactionFrame.resize(nodeCount);
+        for (size_t n = 0; n < nodeCount; n++)
+        {
+            RefElement refElement;
+            findReferenceElementForNode(*part, n, resVarAddr.refKLayerIndex, &refElement);
+
+            if (refElement.elementIdx != cvf::UNDEFINED_SIZE_T)
+            {
+                float shortestDist = HUGE_VALF;
+                size_t closestRefNodeIdx = cvf::UNDEFINED_SIZE_T;
+
+                for (size_t nodeIdx : refElement.elementFaceNodeIdxs)
+                {
+                    float dist = horizontalDistance(refElement.intersectionPoint, part->nodes().coordinates[nodeIdx]);
+                    if (dist < shortestDist)
+                    {
+                        shortestDist = dist;
+                        closestRefNodeIdx = nodeIdx;
+                    }
+                }
+
+                compactionFrame[n] = u3Frames->frameData(t)[closestRefNodeIdx] - u3Frames->frameData(t)[n];
+            }
+            else
+            {
+                compactionFrame[n] = HUGE_VAL;
+            }
+        }
+    }
+
+    RigFemScalarResultFrames* requestedPrincipal = this->findOrLoadScalarResult(partIndex, resVarAddr);
+    return  requestedPrincipal;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 RigFemScalarResultFrames* RigFemPartResultsCollection::calculateDerivedResult(int partIndex, const RigFemResultAddress& resVarAddr)
 {
     if (resVarAddr.isTimeLapse())
@@ -1451,6 +1527,11 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculateDerivedResult(in
         {
             return calculateSurfaceAlignedStress(partIndex, resVarAddr);
         }
+    }
+
+    if (resVarAddr.fieldName == FIELD_NAME_COMPACTION)
+    {
+        return calculateCompactionValues(partIndex, resVarAddr);
     }
 
     if (resVarAddr.fieldName == "SE" && resVarAddr.componentName == "SFI")
@@ -1833,7 +1914,7 @@ RigFemScalarResultFrames* RigFemPartResultsCollection::calculateDerivedResult(in
 
         return resFrames;
     }
-    return NULL;
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1912,6 +1993,8 @@ std::vector< RigFemResultAddress> RigFemPartResultsCollection::getResAddrToCompo
         case RIG_INTEGRATION_POINT:
             fieldAndComponentNames = m_readerInterface->scalarIntegrationPointFieldAndComponentNames();
             break;
+        default:
+            break;
     }
 
     std::vector< RigFemResultAddress> resAddressToComponents;
@@ -1957,6 +2040,24 @@ std::vector<std::string> RigFemPartResultsCollection::stepNames() const
 int RigFemPartResultsCollection::frameCount()
 {
     return static_cast<int>(stepNames().size());
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+float RigFemPartResultsCollection::dsm(float p1, float p3, float tanFricAng, float cohPrTanFricAngle)
+{
+    if (p1 == HUGE_VAL || p3 == HUGE_VAL)
+    {
+        return std::nan("");
+    }
+
+    CVF_ASSERT(p1 > p3);
+
+    float pi_4 = 0.785398163397448309616f;
+    float rho = 2.0f * (atan(sqrt((p1 + cohPrTanFricAngle) / (p3 + cohPrTanFricAngle))) - pi_4);
+
+    return tan(rho) / tanFricAng;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2056,7 +2157,7 @@ std::vector<caf::Ten3f> RigFemPartResultsCollection::tensors(const RigFemResultA
         address13.componentName = "S13";
         address23.componentName = "S23";
     }
-    else if (resVarAddr.fieldName == "E")
+    else if (resVarAddr.fieldName == "NE")
     {
         address11.componentName = "E11";
         address22.componentName = "E22";
@@ -2207,6 +2308,35 @@ const std::vector<size_t>& RigFemPartResultsCollection::scalarValuesHistogram(co
     return this->statistics(resVarAddr)->cellScalarValuesHistogram(frameIndex);
 }
 
+std::vector<RigFemResultAddress> RigFemPartResultsCollection::tensorPrincipalComponentAdresses(const RigFemResultAddress& resVarAddr)
+{
+    std::vector<RigFemResultAddress> addresses;
+
+    for (size_t i = 0; i < 3; ++i)
+    {
+        addresses.push_back(RigFemResultAddress(resVarAddr.resultPosType, resVarAddr.fieldName, ""));
+    }
+
+    if (resVarAddr.fieldName == "SE" || resVarAddr.fieldName == "ST")
+    {
+        addresses[0].componentName = "S1";
+        addresses[1].componentName = "S2";
+        addresses[2].componentName = "S3";
+    }
+    else if (resVarAddr.fieldName == "NE")
+    {
+        addresses[0].componentName = "E1";
+        addresses[1].componentName = "E2";
+        addresses[2].componentName = "E3";
+    }
+    else
+    {
+        addresses.clear();
+    }
+
+    return addresses;
+}
+
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
@@ -2215,37 +2345,9 @@ void RigFemPartResultsCollection::minMaxScalarValuesOverAllTensorComponents(cons
     double currentMin = HUGE_VAL;
     double currentMax = -HUGE_VAL;
 
-    double min;
-    double max;
+    double min, max;
 
-    std::vector<RigFemResultAddress> addresses;
-
-    for (size_t i = 0; i < 6; ++i)
-    {
-        addresses.push_back(RigFemResultAddress(resVarAddr.resultPosType, resVarAddr.fieldName, ""));
-    }
-
-    if (resVarAddr.fieldName == "SE" || resVarAddr.fieldName == "ST")
-    {
-        addresses[0].componentName = "S11";
-        addresses[1].componentName = "S22";
-        addresses[2].componentName = "S33";
-        addresses[3].componentName = "S12";
-        addresses[4].componentName = "S13";
-        addresses[5].componentName = "S23";
-    }
-    else if (resVarAddr.fieldName == "E")
-    {
-        addresses[0].componentName = "E11";
-        addresses[1].componentName = "E22";
-        addresses[2].componentName = "E33";
-        addresses[3].componentName = "E12";
-        addresses[4].componentName = "E13";
-        addresses[5].componentName = "E23";
-    }
-    else return;
-    
-    for (auto address : addresses)
+    for (auto address : tensorPrincipalComponentAdresses(resVarAddr))
     {
         this->statistics(address)->minMaxCellScalarValues(frameIndex, min, max);
         if (min < currentMin)
@@ -2260,6 +2362,87 @@ void RigFemPartResultsCollection::minMaxScalarValuesOverAllTensorComponents(cons
 
     *localMin = currentMin;
     *localMax = currentMax;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigFemPartResultsCollection::minMaxScalarValuesOverAllTensorComponents(const RigFemResultAddress& resVarAddr, double* globalMin, double* globalMax)
+{
+    double currentMin = HUGE_VAL;
+    double currentMax = -HUGE_VAL;
+
+    double min, max;
+
+    for (auto address : tensorPrincipalComponentAdresses(resVarAddr))
+    {
+        this->statistics(address)->minMaxCellScalarValues(min, max);
+        if (min < currentMin)
+        {
+            currentMin = min;
+        }
+        if (max > currentMax)
+        {
+            currentMax = max;
+        }
+    }
+
+    *globalMin = currentMin;
+    *globalMax = currentMax;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigFemPartResultsCollection::posNegClosestToZeroOverAllTensorComponents(const RigFemResultAddress& resVarAddr, int frameIndex, double* localPosClosestToZero, double* localNegClosestToZero)
+{
+    double currentPosClosestToZero = HUGE_VAL;
+    double currentNegClosestToZero = -HUGE_VAL;
+
+    double pos, neg;
+
+    for (auto address : tensorPrincipalComponentAdresses(resVarAddr))
+    {
+        this->statistics(address)->posNegClosestToZero(frameIndex, pos, neg);
+        if (pos < currentPosClosestToZero)
+        {
+            currentPosClosestToZero = pos;
+        }
+        if (neg > currentNegClosestToZero)
+        {
+            currentNegClosestToZero = neg;
+        }
+    }
+
+    *localPosClosestToZero = currentPosClosestToZero;
+    *localNegClosestToZero = currentNegClosestToZero;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigFemPartResultsCollection::posNegClosestToZeroOverAllTensorComponents(const RigFemResultAddress& resVarAddr, double* globalPosClosestToZero, double* globalNegClosestToZero)
+{
+    double currentPosClosestToZero = HUGE_VAL;
+    double currentNegClosestToZero = -HUGE_VAL;
+
+    double pos, neg;
+
+    for (auto address : tensorPrincipalComponentAdresses(resVarAddr))
+    {
+        this->statistics(address)->posNegClosestToZero(pos, neg);
+        if (pos < currentPosClosestToZero)
+        {
+            currentPosClosestToZero = pos;
+        }
+        if (neg > currentNegClosestToZero)
+        {
+            currentNegClosestToZero = neg;
+        }
+    }
+
+    *globalPosClosestToZero = currentPosClosestToZero;
+    *globalNegClosestToZero = currentNegClosestToZero;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -2371,5 +2554,96 @@ RigFemClosestResultIndexCalculator::RigFemClosestResultIndexCalculator(RigFemPar
 
         m_resultIndexToClosestResult = elmNodFaceResIdx;
         m_closestNodeId = femPart->nodes().nodeIds[closestNodeIdx];
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// Internal functions
+//--------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<cvf::Vec3d> coordsFromNodeIndices(const RigFemPart& part, const std::vector<size_t>& nodeIdxs)
+{
+    std::vector<cvf::Vec3d> out;
+    for (const auto& nodeIdx : nodeIdxs) out.push_back(cvf::Vec3d(part.nodes().coordinates[nodeIdx]));
+    return out;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<size_t> nodesForElement(const RigFemPart& part, size_t elementIdx)
+{
+    std::vector<size_t> nodeIdxs;
+    const int* nodeConn = part.connectivities(elementIdx);
+    for (int n = 0; n < 8; n++) nodeIdxs.push_back(nodeConn[n]);
+    return nodeIdxs;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+float horizontalDistance(const cvf::Vec3f& p1, const cvf::Vec3f& p2)
+{
+    cvf::Vec3f p1_ = p1;
+    cvf::Vec3f p2_ = p2;
+    p1_.z() = p2_.z() = 0;
+    return p1_.pointDistance(p2_);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void findReferenceElementForNode(const RigFemPart& part, size_t nodeIdx, size_t kRefLayer, RefElement *refElement)
+{
+    static const double zMin = -1e6, zMax = 1e6;
+
+    cvf::BoundingBox bb;
+    cvf::Vec3f currentNodeCoord = part.nodes().coordinates[nodeIdx];
+    cvf::Vec3f p1 = cvf::Vec3f(currentNodeCoord.x(), currentNodeCoord.y(), zMin);
+    cvf::Vec3f p2 = cvf::Vec3f(currentNodeCoord.x(), currentNodeCoord.y(), zMax);
+    bb.add(p1);
+    bb.add(p2);
+
+    std::vector<size_t> refElementCandidates;
+    part.findIntersectingCells(bb, &refElementCandidates);
+
+    const RigFemPartGrid* grid = part.structGrid();
+    const std::vector<cvf::Vec3f>& nodeCoords = part.nodes().coordinates;
+
+    refElement->elementIdx = cvf::UNDEFINED_SIZE_T;
+    refElement->intersectionPointToCurrentNodeDistance = HUGE_VALF;
+    size_t i, j, k;
+    for (const size_t elemIdx : refElementCandidates)
+    {
+        grid->ijkFromCellIndex(elemIdx, &i, &j, &k);
+        if (k == kRefLayer)
+        {
+            const std::vector<size_t> nodeIndices = nodesForElement(part, elemIdx);
+            CVF_ASSERT(nodeIndices.size() == 8);
+
+            std::vector<HexIntersectionInfo> intersections;
+            RigHexIntersectionTools::lineHexCellIntersection(cvf::Vec3d(p1), cvf::Vec3d(p2), coordsFromNodeIndices(part, nodeIndices).data(), elemIdx, &intersections);
+
+            for (const auto& intersection : intersections)
+            {
+                cvf::Vec3f intersectionPoint = cvf::Vec3f(intersection.m_intersectionPoint);
+
+                float nodeToIntersectionDistance = currentNodeCoord.pointDistance(intersectionPoint);
+                if (nodeToIntersectionDistance < refElement->intersectionPointToCurrentNodeDistance)
+                {
+                    cvf::ubyte faceNodes[4];
+                    grid->cellFaceVertexIndices(intersection.m_face, faceNodes);
+                    std::vector<size_t> topFaceCoords({ nodeIndices[faceNodes[0]], nodeIndices[faceNodes[1]], nodeIndices[faceNodes[2]], nodeIndices[faceNodes[3]] });
+
+                    refElement->elementIdx = elemIdx;
+                    refElement->intersectionPointToCurrentNodeDistance = nodeToIntersectionDistance;
+                    refElement->intersectionPoint = intersectionPoint;
+                    refElement->elementFaceNodeIdxs = topFaceCoords;
+                }
+            }
+        }
     }
 }

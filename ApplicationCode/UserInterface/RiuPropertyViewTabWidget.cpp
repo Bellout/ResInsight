@@ -80,7 +80,7 @@ RiuPropertyViewTabWidget::~RiuPropertyViewTabWidget()
 {
     for (auto w : m_pageWidgets)
     {
-        w->showProperties(NULL);
+        w->showProperties(nullptr);
     }
 }
 

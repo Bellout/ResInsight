@@ -25,7 +25,7 @@
 #include "RimCellRangeFilterCollection.h"
 #include "RimGridView.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 
 //--------------------------------------------------------------------------------------------------
@@ -71,11 +71,11 @@ void RicRangeFilterNewExec::redo()
         rangeFilter->setDefaultValues();
         applyCommandDataOnFilter(rangeFilter);
 
-        m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(NULL);
+        m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(nullptr);
 
         m_cellRangeFilterCollection->updateConnectedEditors();
 
-        RiuMainWindow::instance()->selectAsCurrentItem(rangeFilter);
+        Riu3DMainWindowTools::selectAsCurrentItem(rangeFilter);
         
         RimGridView* view = nullptr;
         m_cellRangeFilterCollection->firstAncestorOrThisOfTypeAsserted(view);
@@ -94,7 +94,7 @@ void RicRangeFilterNewExec::undo()
 
     m_cellRangeFilterCollection->rangeFilters.erase(m_cellRangeFilterCollection->rangeFilters.size() - 1);
 
-    m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(NULL);
+    m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(nullptr);
 
     m_cellRangeFilterCollection->updateConnectedEditors();
 }

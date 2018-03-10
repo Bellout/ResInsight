@@ -40,7 +40,7 @@
 #include "RimTensorResults.h"
 #include "RimViewLinker.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 #include "RiuSelectionManager.h"
 #include "RiuViewer.h"
 
@@ -55,9 +55,9 @@
 #include "cafFrameAnimationControl.h"
 #include "cafPdmUiTreeOrdering.h"
 #include "cafProgressInfo.h"
+#include "cafOverlayScalarMapperLegend.h"
 
 #include "cvfModelBasicList.h"
-#include "cvfOverlayScalarMapperLegend.h"
 #include "cvfPart.h"
 #include "cvfScene.h"
 #include "cvfTransform.h"
@@ -102,7 +102,7 @@ RimGeoMechView::RimGeoMechView(void)
 //--------------------------------------------------------------------------------------------------
 RimGeoMechView::~RimGeoMechView(void)
 {
-    m_geomechCase = NULL;
+    m_geomechCase = nullptr;
 
     delete m_tensorResults;
     delete cellResult;
@@ -125,10 +125,10 @@ void RimGeoMechView::onLoadDataAndUpdate()
         {
             QString displayMessage = errorMessage.empty() ? "Could not open the Odb file: \n" + m_geomechCase->caseFileName() : QString::fromStdString(errorMessage);
 
-            QMessageBox::warning(RiuMainWindow::instance(), 
+            QMessageBox::warning(Riu3DMainWindowTools::mainWindowWidget(), 
                             "File open error", 
                             displayMessage);
-            m_geomechCase = NULL;
+            m_geomechCase = nullptr;
             return;
         }
     }
@@ -136,7 +136,7 @@ void RimGeoMechView::onLoadDataAndUpdate()
 
     progress.setProgressDescription("Reading Current Result");
 
-    CVF_ASSERT(this->cellResult() != NULL);
+    CVF_ASSERT(this->cellResult() != nullptr);
     if (this->hasUserRequestedAnimation())
     {
         m_geomechCase->geoMechData()->femPartResults()->assertResultsLoaded(this->cellResult()->resultAddress());
@@ -301,7 +301,10 @@ void RimGeoMechView::updateCurrentTimeStep()
                     m_tensorPartMgr->appendDynamicGeometryPartsToModel(frameParts.p(), m_currentTimeStep);
                     frameParts->updateBoundingBoxesRecursive();
 
-                    frameScene->addModel(frameParts.p());
+                    if (frameParts->partCount() != 0)
+                    {
+                        frameScene->addModel(frameParts.p());
+                    }
                 }
             }
         }
@@ -375,8 +378,52 @@ void RimGeoMechView::updateLegends()
 
         this->updateLegendTextAndRanges(cellResult()->legendConfig(), m_currentTimeStep());
 
-        m_viewer->addColorLegendToBottomLeftCorner(cellResult()->legendConfig->legend());
+        if (cellResult()->hasResult())
+        {
+            m_viewer->addColorLegendToBottomLeftCorner(cellResult()->legendConfig->legend());
+        }
+
+        updateTensorLegendTextAndRanges(m_tensorResults->legendConfig(), m_currentTimeStep());
+
+        if (tensorResults()->vectorColors() == RimTensorResults::RESULT_COLORS)
+        {
+            m_viewer->addColorLegendToBottomLeftCorner(m_tensorResults->legendConfig->legend());
+        }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimGeoMechView::updateTensorLegendTextAndRanges(RimLegendConfig* legendConfig, int timeStepIndex)
+{
+    if (!m_geomechCase || !m_geomechCase->geoMechData()) return;
+
+    double localMin, localMax;
+    double localPosClosestToZero, localNegClosestToZero;
+    double globalMin, globalMax;
+    double globalPosClosestToZero, globalNegClosestToZero;
+
+    RigGeoMechCaseData* gmCase = m_geomechCase->geoMechData();
+    CVF_ASSERT(gmCase);
+
+    RigFemResultPosEnum resPos = tensorResults()->resultPositionType();
+    QString resFieldName = tensorResults()->resultFieldName();
+
+    RigFemResultAddress resVarAddress(resPos, resFieldName.toStdString(), "");
+
+    gmCase->femPartResults()->minMaxScalarValuesOverAllTensorComponents(resVarAddress, timeStepIndex, &localMin, &localMax);
+    gmCase->femPartResults()->posNegClosestToZeroOverAllTensorComponents(resVarAddress, timeStepIndex, &localPosClosestToZero, &localNegClosestToZero);
+    
+    gmCase->femPartResults()->minMaxScalarValuesOverAllTensorComponents(resVarAddress, &globalMin, &globalMax);
+    gmCase->femPartResults()->posNegClosestToZeroOverAllTensorComponents(resVarAddress, &globalPosClosestToZero, &globalNegClosestToZero);
+
+    legendConfig->setClosestToZeroValues(globalPosClosestToZero, globalNegClosestToZero, localPosClosestToZero, localNegClosestToZero);
+    legendConfig->setAutomaticRanges(globalMin, globalMax, localMin, localMax);
+
+    QString legendTitle = "Tensors:\n" + RimTensorResults::uiFieldName(resFieldName);
+
+    legendConfig->setTitle(legendTitle);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -421,9 +468,8 @@ void RimGeoMechView::updateLegendTextAndRanges(RimLegendConfig* legendConfig, in
         legendConfig->setNamedCategoriesInverse(fnVector);
     }
 
-    QString legendTitle = 
-        caf::AppEnum<RigFemResultPosEnum>(cellResult->resultPositionType()).uiText() + "\n"
-        + cellResult->resultFieldUiName();
+    QString legendTitle = "Cell Results:\n" + caf::AppEnum<RigFemResultPosEnum>(cellResult->resultPositionType()).uiText() + 
+        "\n" + cellResult->resultFieldUiName();
 
     if (!cellResult->resultComponentUiName().isEmpty())
     {
@@ -456,6 +502,14 @@ const cvf::ref<RivGeoMechVizLogic> RimGeoMechView::vizLogic() const
 /// 
 //--------------------------------------------------------------------------------------------------
 const RimTensorResults* RimGeoMechView::tensorResults() const
+{
+    return m_tensorResults;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+RimTensorResults* RimGeoMechView::tensorResults()
 {
     return m_tensorResults;
 }
@@ -541,7 +595,7 @@ void RimGeoMechView::scheduleGeometryRegen(RivCellSetEnum geometryType)
             viewLinker->scheduleGeometryRegenForDepViews(geometryType);
         }
     }
-    m_currentReservoirCellVisibility = NULL;
+    m_currentReservoirCellVisibility = nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------

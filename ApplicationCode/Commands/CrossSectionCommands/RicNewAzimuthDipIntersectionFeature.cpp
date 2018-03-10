@@ -25,7 +25,7 @@
 #include "RimIntersectionCollection.h"
 #include "RimGridView.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 #include "RiuSelectionManager.h"
 #include "RiuViewer.h"
 
@@ -81,7 +81,7 @@ void RicNewAzimuthDipIntersectionFeature::setupActionLook(QAction* actionToSetup
 /// 
 //--------------------------------------------------------------------------------------------------
 RicNewAzimuthDipIntersectionFeatureCmd::RicNewAzimuthDipIntersectionFeatureCmd(RimIntersectionCollection* intersectionCollection)
-    : CmdExecuteCommand(NULL),
+    : CmdExecuteCommand(nullptr),
     m_intersectionCollection(intersectionCollection)
 {
 }
@@ -125,7 +125,7 @@ void RicNewAzimuthDipIntersectionFeatureCmd::redo()
     m_intersectionCollection->appendIntersectionAndUpdate(intersection);
 
     RiuSelectionManager::instance()->deleteAllItems();
-    RiuMainWindow::instance()->selectAsCurrentItem(intersection);
+    Riu3DMainWindowTools::selectAsCurrentItem(intersection);
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -48,6 +48,8 @@ namespace caf
 class RigFemPartResultsCollection: public cvf::Object
 {
 public:
+    static const std::string FIELD_NAME_COMPACTION;
+
     RigFemPartResultsCollection(RifGeoMechReaderInterface* readerInterface, RifElementPropertyReader* elementPropertyReader, const RigFemPartCollection * femPartCollection);
     ~RigFemPartResultsCollection();
 
@@ -71,6 +73,7 @@ public:
     int                                              partCount() const;
     int                                              frameCount();
 
+    static float                                     dsm(float p1, float p3, float tanFricAng, float cohPrTanFricAngle);
 
     void                                             minMaxScalarValues (const RigFemResultAddress& resVarAddr, int frameIndex,  double* localMin, double* localMax);
     void                                             minMaxScalarValues (const RigFemResultAddress& resVarAddr, double* globalMin, double* globalMax);
@@ -86,7 +89,9 @@ public:
     const std::vector<size_t>&                       scalarValuesHistogram(const RigFemResultAddress& resVarAddr, int frameIndex);
 
     void                                             minMaxScalarValuesOverAllTensorComponents(const RigFemResultAddress& resVarAddr, int frameIndex, double* localMin, double* localMax);
-
+    void                                             minMaxScalarValuesOverAllTensorComponents(const RigFemResultAddress& resVarAddr, double* globalMin, double* globalMax);
+    void                                             posNegClosestToZeroOverAllTensorComponents(const RigFemResultAddress& resVarAddr, int frameIndex, double* localPosClosestToZero, double* localNegClosestToZero);
+    void                                             posNegClosestToZeroOverAllTensorComponents(const RigFemResultAddress& resVarAddr, double* globalPosClosestToZero, double* globalNegClosestToZero);
 private:
     RigFemScalarResultFrames*                        findOrLoadScalarResult(int partIndex,
                                                                             const RigFemResultAddress& resVarAddr);
@@ -115,7 +120,11 @@ private:
     RigFemScalarResultFrames*                        calculateSurfaceAngles(int partIndex, const RigFemResultAddress& resVarAddr);
     RigFemScalarResultFrames*                        calculatePrincipalStressValues(int partIndex, const RigFemResultAddress &resVarAddr);
     RigFemScalarResultFrames*                        calculatePrincipalStrainValues(int partIndex, const RigFemResultAddress &resVarAddr);
+    RigFemScalarResultFrames*                        calculateCompactionValues(int partIndex, const RigFemResultAddress &resVarAddr);
 
+    static std::vector<RigFemResultAddress>          tensorPrincipalComponentAdresses(const RigFemResultAddress& resVarAddr);
+
+private:
     cvf::Collection<RigFemPartResults>               m_femPartResults;
     cvf::ref<RifGeoMechReaderInterface>              m_readerInterface;
     cvf::ref<RifElementPropertyReader>               m_elementPropertyReader;

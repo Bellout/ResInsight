@@ -62,7 +62,7 @@
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-RiuMainPlotWindow::RiuMainPlotWindow() : m_activePlotViewWindow(nullptr), m_windowMenu(NULL), m_blockSlotSubWindowActivated(false)
+RiuMainPlotWindow::RiuMainPlotWindow() : m_activePlotViewWindow(nullptr), m_windowMenu(nullptr), m_blockSlotSubWindowActivated(false)
 {
     m_mdiArea = new QMdiArea;
     m_mdiArea->setOption(QMdiArea::DontMaximizeSubWindowOnActivation, true);
@@ -112,11 +112,11 @@ void RiuMainPlotWindow::initializeGuiNewProjectLoaded()
 //--------------------------------------------------------------------------------------------------
 void RiuMainPlotWindow::cleanupGuiBeforeProjectClose()
 {
-    setPdmRoot(NULL);
+    setPdmRoot(nullptr);
 
     if (m_pdmUiPropertyView)
     {
-        m_pdmUiPropertyView->showProperties(NULL);
+        m_pdmUiPropertyView->showProperties(nullptr);
     }
 
     cleanUpTemporaryWidgets();
@@ -400,7 +400,7 @@ QMdiSubWindow* RiuMainPlotWindow::findMdiSubWindow(QWidget* viewer)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -579,14 +579,6 @@ void RiuMainPlotWindow::setActiveViewer(QWidget* viewer)
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-caf::PdmUiTreeView* RiuMainPlotWindow::projectTreeView()
-{
-    return m_projectTreeView;
-}
-
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
 void RiuMainPlotWindow::slotBuildWindowActions()
 {
     m_windowMenu->clear();
@@ -625,28 +617,28 @@ void RiuMainPlotWindow::selectedObjectsChanged()
     std::vector<caf::PdmUiItem*> uiItems;
     m_projectTreeView->selectedUiItems(uiItems);
 
-    caf::PdmObjectHandle* firstSelectedObject = NULL;
+    caf::PdmObjectHandle* firstSelectedObject = nullptr;
 
     if (uiItems.size() == 1)
     {
         firstSelectedObject = dynamic_cast<caf::PdmObjectHandle*>(uiItems[0]);
     }
+
     m_pdmUiPropertyView->showProperties(firstSelectedObject);
 
-    if (uiItems.size() == 1)
+    if (uiItems.size() == 1 && m_allowActiveViewChangeFromSelection)
     {
         // Find the reservoir view or the Plot that the selected item is within
 
         if (!firstSelectedObject)
         {
             caf::PdmFieldHandle* selectedField = dynamic_cast<caf::PdmFieldHandle*>(uiItems[0]);
-            if (selectedField)
-                firstSelectedObject = selectedField->ownerObject();
+            if (selectedField) firstSelectedObject = selectedField->ownerObject();
         }
 
-        if (!firstSelectedObject)
-            return;
+        if (!firstSelectedObject) return;
 
+        
         RimViewWindow* selectedWindow = dynamic_cast<RimViewWindow*>(firstSelectedObject);
         if (!selectedWindow)
         {
@@ -714,13 +706,6 @@ void RiuMainPlotWindow::restoreTreeViewState()
     }
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RiuMainPlotWindow::selectAsCurrentItem(caf::PdmObject* object)
-{
-    m_projectTreeView->selectAsCurrentItem(object);
-}
 
 //--------------------------------------------------------------------------------------------------
 ///
@@ -728,14 +713,6 @@ void RiuMainPlotWindow::selectAsCurrentItem(caf::PdmObject* object)
 void RiuMainPlotWindow::setDefaultWindowSize()
 {
     resize(1000, 810);
-}
-
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RiuMainPlotWindow::setExpanded(const caf::PdmUiItem* uiItem, bool expanded)
-{
-    m_projectTreeView->setExpanded(uiItem, expanded);
 }
 
 //--------------------------------------------------------------------------------------------------

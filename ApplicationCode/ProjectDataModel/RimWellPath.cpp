@@ -29,6 +29,8 @@
 
 #include "RigWellPath.h"
 
+#include "Rim3dWellLogCurve.h"
+#include "Rim3dWellLogCurveCollection.h"
 #include "RimFishbonesMultipleSubs.h"
 #include "RimMainPlotCollection.h"
 #include "RimProject.h"
@@ -127,6 +129,10 @@ RimWellPath::RimWellPath()
 
     CAF_PDM_InitFieldNoDefault(&m_wellLogFiles, "WellLogFiles", "Well Log Files", "", "", "");
     m_wellLogFiles.uiCapability()->setUiTreeHidden(true);
+
+    CAF_PDM_InitFieldNoDefault(&m_3dWellLogCurves, "CollectionOf3dWellLogCurves", "3D Track", "", "", "");
+    m_3dWellLogCurves = new Rim3dWellLogCurveCollection;
+    m_3dWellLogCurves.uiCapability()->setUiTreeHidden(true);
 
     CAF_PDM_InitField(&m_formationKeyInFile, "WellPathFormationKeyInFile", QString(""), "Key in File", "", "", "");
     m_formationKeyInFile.uiCapability()->setUiReadOnly(true);
@@ -261,26 +267,22 @@ const RimWellPathCompletions* RimWellPath::completions() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 RimWellPathFractureCollection* RimWellPath::fractureCollection()
 {
     CVF_ASSERT(m_completions);
 
     return m_completions->fractureCollection();
 }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 const RimWellPathFractureCollection * RimWellPath::fractureCollection() const
 {
     CVF_ASSERT(m_completions);
 
     return m_completions->fractureCollection();
 }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -513,6 +515,11 @@ void RimWellPath::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, Q
     if (m_completions->hasCompletions())
     {
         uiTreeOrdering.add(&m_completions);
+    }
+
+    if (m_3dWellLogCurves->has3dWellLogCurves())
+    {
+        uiTreeOrdering.add(&m_3dWellLogCurves);
     }
 
     uiTreeOrdering.skipRemainingChildren(true);
@@ -792,6 +799,22 @@ bool RimWellPath::hasFormations() const
 const RigWellPathFormations* RimWellPath::formationsGeometry() const
 {
     return m_wellPathFormations.p();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimWellPath::add3dWellLogCurve(Rim3dWellLogCurve* rim3dWellLogCurve)
+{
+    m_3dWellLogCurves->add3dWellLogCurve(rim3dWellLogCurve);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<Rim3dWellLogCurve*> RimWellPath::vectorOf3dWellLogCurves() const
+{
+    return m_3dWellLogCurves->vectorOf3dWellLogCurves();
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -63,11 +63,13 @@ public: // Pdm Fields
     caf::PdmField<cvf::Color3f> defaultWellLabelColor;
     caf::PdmField<bool>     showLasCurveWithoutTvdWarning;
     caf::PdmField<QString>  fontSizeInScene;
+    caf::PdmField<bool>     showLegendBackground;
 
     caf::PdmField<bool>     useShaders;
     caf::PdmField<bool>     showHud;
     caf::PdmField<bool>     appendClassNameToUiText;
     caf::PdmField<bool>     appendFieldKeywordToToolTipText;
+    caf::PdmField<bool>     showTestToolbar;
     caf::PdmField<bool>     includeFractureDebugInfoFile;
 
     caf::PdmField<QString>  lastUsedProjectFileName;

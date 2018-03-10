@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.12)
 
 include (CheckCSourceCompiles)
 project (ResInsight)
@@ -287,30 +287,19 @@ list(APPEND THIRD_PARTY_LIBRARIES
 )
 
 ################################################################################
-# Prototype feature Fractures
+# Eigen
 ################################################################################
-option (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES 
-  "Enable prototype feature Fractures" ON)
-mark_as_advanced(FORCE RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+include_directories(SYSTEM ThirdParty/Eigen-Subset)
 
-if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
+################################################################################
+# clipper
+################################################################################
 
-    ################################################################################
-    # Eigen
-    ################################################################################
-    include_directories(SYSTEM ThirdParty/Eigen-Subset)
+add_subdirectory(ThirdParty/clipper)
 
-    ################################################################################
-    # clipper
-    ################################################################################
-
-    add_subdirectory(ThirdParty/clipper)
-
-    list(APPEND THIRD_PARTY_LIBRARIES
-        clipper
-    )
-
-endif() # RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES
+list(APPEND THIRD_PARTY_LIBRARIES
+    clipper
+)
 
 
 ################################################################################
@@ -352,14 +341,6 @@ add_subdirectory(${VIZ_MODULES_FOLDER_NAME}/LibGeometry)
 add_subdirectory(${VIZ_MODULES_FOLDER_NAME}/LibRender)
 add_subdirectory(${VIZ_MODULES_FOLDER_NAME}/LibViewing)
 add_subdirectory(${VIZ_MODULES_FOLDER_NAME}/LibGuiQt)
-
-include_directories(
-    ${LibCore_SOURCE_DIR}
-    ${LibGeometry_SOURCE_DIR}
-    ${LibRender_SOURCE_DIR}
-    ${LibViewing_SOURCE_DIR}
-    ${LibGuiQt_SOURCE_DIR}
-)
 
 list(APPEND VIZ_FWK_LIBRARIES
     LibGuiQt

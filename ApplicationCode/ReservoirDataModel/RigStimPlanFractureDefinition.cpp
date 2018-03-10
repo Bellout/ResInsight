@@ -20,6 +20,7 @@
 
 #include "RiaFractureDefines.h"
 #include "RiaLogging.h"
+
 #include "RigFractureCell.h"
 #include "RigFractureGrid.h"
 #include "RigStatisticsMath.h"
@@ -29,7 +30,6 @@
 #include "cvfMath.h"
 
 #include <cmath>
-
 
 //--------------------------------------------------------------------------------------------------
 /// Internal functions
@@ -60,59 +60,113 @@ RigStimPlanFractureDefinition::~RigStimPlanFractureDefinition()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RigStimPlanFractureDefinition::setTvdToTopPerf(double topPerfTvd, RiaDefines::DepthUnitType unit)
+RiaEclipseUnitTools::UnitSystem RigStimPlanFractureDefinition::unitSet() const
 {
-    if (unit == RiaDefines::UNIT_METER)
+    return m_unitSet;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+size_t RigStimPlanFractureDefinition::xCount() const
+{
+    return m_Xs.size();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+size_t RigStimPlanFractureDefinition::yCount() const
+{
+    return m_Ys.size();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::minDepth() const
+{
+    return -minY();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::maxDepth() const
+{
+    return -maxY();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::topPerfTvd() const
+{
+    return m_topPerfTvd;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::bottomPerfTvd() const
+{
+    return m_bottomPerfTvd;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::minY() const
+{
+    return m_Ys[0];
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RigStimPlanFractureDefinition::maxY() const
+{
+    return m_Ys.back();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigStimPlanFractureDefinition::scaleXs(double scaleFactor)
+{
+    // Scale using 0 as scaling anchor
+    for (double& x : m_Xs)
     {
-        if (m_unitSet == RiaEclipseUnitTools::UNITS_FIELD)
-        {
-            m_topPerfTvd = RiaEclipseUnitTools::meterToFeet(topPerfTvd);
-        }
-        else if (m_unitSet == RiaEclipseUnitTools::UNITS_METRIC)
-        {
-            m_topPerfTvd = topPerfTvd;
-        }
-    }
-    else if (unit == RiaDefines::UNIT_FEET)
-    {
-        if (m_unitSet == RiaEclipseUnitTools::UNITS_FIELD)
-        {
-            m_topPerfTvd = topPerfTvd;
-        }
-        else if (m_unitSet == RiaEclipseUnitTools::UNITS_METRIC)
-        {
-            m_topPerfTvd = RiaEclipseUnitTools::feetToMeter(topPerfTvd);
-        }
+        x *= scaleFactor;
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RigStimPlanFractureDefinition::setTvdToBottomPerf(double bottomPerfTvd, RiaDefines::DepthUnitType unit)
+void RigStimPlanFractureDefinition::scaleYs(double scaleFactor, double wellPathIntersectionY)
 {
-    if (unit == RiaDefines::UNIT_METER)
+    // Scale using wellPathIntersectionY as scaling anchor
+    for (double& y : m_Ys)
     {
-        if (m_unitSet == RiaEclipseUnitTools::UNITS_FIELD)
-        {
-            m_bottomPerfTvd = RiaEclipseUnitTools::meterToFeet(bottomPerfTvd);
-        }
-        else if (m_unitSet == RiaEclipseUnitTools::UNITS_METRIC)
-        {
-            m_bottomPerfTvd = bottomPerfTvd;
-        }
+        y = (y - wellPathIntersectionY) * scaleFactor + wellPathIntersectionY;
     }
-    else if (unit == RiaDefines::UNIT_FEET)
-    {
-        if (m_unitSet == RiaEclipseUnitTools::UNITS_FIELD)
-        {
-            m_bottomPerfTvd = bottomPerfTvd;
-        }
-        else if (m_unitSet == RiaEclipseUnitTools::UNITS_METRIC)
-        {
-            m_bottomPerfTvd = RiaEclipseUnitTools::feetToMeter(bottomPerfTvd);
-        }
-    }
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+void RigStimPlanFractureDefinition::setTvdToTopPerf(double topPerfTvd)
+{
+    m_topPerfTvd = topPerfTvd;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RigStimPlanFractureDefinition::setTvdToBottomPerf(double bottomPerfTvd)
+{
+    m_bottomPerfTvd = bottomPerfTvd;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -221,23 +275,85 @@ std::vector<std::pair<QString, QString> > RigStimPlanFractureDefinition::getStim
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
+//--------------------------------------------------------------------------------------------------
+std::vector<std::vector<double>>
+    RigStimPlanFractureDefinition::conductivityValuesAtTimeStep(const QString&                  resultName,
+                                                                int                             activeTimeStepIndex,
+                                                                RiaEclipseUnitTools::UnitSystem requiredUnitSet) const
+{
+    std::vector<std::vector<double>> conductivityValues;
+
+    QString conductivityUnitTextOnFile;
+
+    std::vector<std::pair<QString, QString>> propertyNamesUnitsOnFile = this->getStimPlanPropertyNamesUnits();
+    for (auto properyNameUnit : propertyNamesUnitsOnFile)
+    {
+        if (resultName == properyNameUnit.first)
+        {
+            conductivityUnitTextOnFile = properyNameUnit.second;
+        }
+    }
+
+    if (conductivityUnitTextOnFile.isEmpty())
+    {
+        RiaLogging::error("Did not find unit for conductivity on file");
+
+        return conductivityValues;
+    }
+
+    conductivityValues = this->getDataAtTimeIndex(resultName, conductivityUnitTextOnFile, activeTimeStepIndex);
+
+    // Convert to the conductivity unit system used by the fracture template
+    // The conductivity value is used in the computations of transmissibility when exporting COMPDAT, and has unit md-m or md-ft
+    // This unit must match the unit used to represent coordinates of the grid used for export
+
+    QString conversionUnitText;
+    if (conductivityUnitTextOnFile == "md-m")
+    {
+        conversionUnitText = "m";
+    }
+    else if (conductivityUnitTextOnFile == "md-ft")
+    {
+        conversionUnitText = "ft";
+    }
+
+    for (auto& yValues : conductivityValues)
+    {
+        for (auto& xVal : yValues)
+        {
+            if (requiredUnitSet == RiaEclipseUnitTools::UNITS_FIELD)
+            {
+                xVal = RiaEclipseUnitTools::convertToFeet(xVal, conversionUnitText);
+            }
+            else if (requiredUnitSet == RiaEclipseUnitTools::UNITS_METRIC)
+            {
+                xVal = RiaEclipseUnitTools::convertToMeter(xVal, conversionUnitText);
+            }
+        }
+    }
+
+    return conductivityValues;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
 //--------------------------------------------------------------------------------------------------
 cvf::ref<RigFractureGrid> RigStimPlanFractureDefinition::createFractureGrid(const QString& resultName,
-                                                                            int activeTimeStepIndex, 
-                                                                            RiaEclipseUnitTools::UnitSystemType fractureTemplateUnit, 
-                                                                            double wellPathIntersectionAtFractureDepth)
+                                                                            int            activeTimeStepIndex,
+                                                                            double         wellPathIntersectionAtFractureDepth,
+                                                                            RiaEclipseUnitTools::UnitSystem requiredUnitSet)
 {
+    std::vector<std::vector<double>> conductivityValues = conductivityValuesAtTimeStep(resultName, activeTimeStepIndex, requiredUnitSet);
+    if (conductivityValues.empty())
+    {
+        return nullptr;
+    }
+
     std::vector<RigFractureCell> stimPlanCells;
     std::pair<size_t, size_t> wellCenterStimPlanCellIJ = std::make_pair(0, 0);
 
     bool wellCenterStimPlanCellFound = false;
-
-    QString condUnit = RiaDefines::unitStringConductivity(fractureTemplateUnit);
-
-    std::vector<std::vector<double>> conductivityValuesAtTimeStep = this->getDataAtTimeIndex(resultName, 
-                                                                                             condUnit, 
-                                                                                             activeTimeStepIndex);
 
     std::vector<double> yCoordsAtNodes = this->adjustedYCoordsAroundWellPathPosition(wellPathIntersectionAtFractureDepth);
     std::vector<double> xCoordsAtNodes = this->m_Xs;
@@ -258,9 +374,9 @@ cvf::ref<RigFractureGrid> RigStimPlanFractureDefinition::createFractureGrid(cons
             cellPolygon.push_back(cvf::Vec3d(xCoords[i],     depthCoords[j + 1], 0.0));
 
             RigFractureCell stimPlanCell(cellPolygon, i, j);
-            if ( conductivityValuesAtTimeStep.size() > 0 ) //Assuming vector to be of correct length, or no values
+            if ( conductivityValues.size() > 0 ) //Assuming vector to be of correct length, or no values
             {
-                stimPlanCell.setConductivityValue(conductivityValuesAtTimeStep[j + 1][i + 1]);
+                stimPlanCell.setConductivityValue(conductivityValues[j + 1][i + 1]);
             }
             else
             {
@@ -291,13 +407,13 @@ cvf::ref<RigFractureGrid> RigStimPlanFractureDefinition::createFractureGrid(cons
         RiaLogging::error("Did not find stim plan cell at well crossing!");
     }
 
-    cvf::ref<RigFractureGrid> m_fractureGrid = new RigFractureGrid;
-    m_fractureGrid->setFractureCells(stimPlanCells);
-    m_fractureGrid->setWellCenterFractureCellIJ(wellCenterStimPlanCellIJ);
-    m_fractureGrid->setICellCount(this->m_Xs.size() - 2);
-    m_fractureGrid->setJCellCount(this->adjustedYCoordsAroundWellPathPosition(wellPathIntersectionAtFractureDepth).size() - 2);
+    cvf::ref<RigFractureGrid> fractureGrid = new RigFractureGrid;
+    fractureGrid->setFractureCells(stimPlanCells);
+    fractureGrid->setWellCenterFractureCellIJ(wellCenterStimPlanCellIJ);
+    fractureGrid->setICellCount(this->m_Xs.size() - 2);
+    fractureGrid->setJCellCount(this->adjustedYCoordsAroundWellPathPosition(wellPathIntersectionAtFractureDepth).size() - 2);
 
-    return m_fractureGrid;
+    return fractureGrid;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -334,7 +450,6 @@ std::vector<double> RigStimPlanFractureDefinition::fractureGridResults(const QSt
 /// 
 //--------------------------------------------------------------------------------------------------
 void RigStimPlanFractureDefinition::createFractureTriangleGeometry(double wellPathIntersectionAtFractureDepth,
-                                                                   RiaEclipseUnitTools::UnitSystem neededUnit, 
                                                                    const QString& fractureUserName, 
                                                                    std::vector<cvf::Vec3f>* vertices, 
                                                                    std::vector<cvf::uint>* triangleIndices)
@@ -343,30 +458,6 @@ void RigStimPlanFractureDefinition::createFractureTriangleGeometry(double wellPa
     cvf::uint lenXcoords = static_cast<cvf::uint>(xCoords.size());
 
     std::vector<double> adjustedYs = this->adjustedYCoordsAroundWellPathPosition(wellPathIntersectionAtFractureDepth);
-
-    if ( neededUnit == m_unitSet )
-    {
-        RiaLogging::debug(QString("No conversion necessary for %1").arg(fractureUserName));
-    }
-
-    else if ( m_unitSet == RiaEclipseUnitTools::UNITS_METRIC && neededUnit == RiaEclipseUnitTools::UNITS_FIELD )
-    {
-        RiaLogging::info(QString("Converting StimPlan geometry from metric to field for fracture template %1").arg(fractureUserName));
-        for ( double& value : adjustedYs ) value = RiaEclipseUnitTools::meterToFeet(value);
-        for ( double& value : xCoords )        value = RiaEclipseUnitTools::meterToFeet(value);
-    }
-    else if ( m_unitSet == RiaEclipseUnitTools::UNITS_FIELD && neededUnit == RiaEclipseUnitTools::UNITS_METRIC )
-    {
-        RiaLogging::info(QString("Converting StimPlan geometry from field to metric for fracture template %1").arg(fractureUserName));
-        for ( double& value : adjustedYs ) value = RiaEclipseUnitTools::feetToMeter(value);
-        for ( double& value : xCoords )        value = RiaEclipseUnitTools::feetToMeter(value);
-    }
-    else
-    {
-        //Should never get here...
-        RiaLogging::error(QString("Error: Could not convert units for fracture template %1").arg(fractureUserName));
-        return;
-    }
 
     for ( cvf::uint k = 0; k < adjustedYs.size(); k++ )
     {
@@ -400,7 +491,6 @@ void RigStimPlanFractureDefinition::createFractureTriangleGeometry(double wellPa
                     triangleIndices->push_back((i + 1) + (k + 1)*lenXcoords);
                     triangleIndices->push_back((i)+ (k + 1)*lenXcoords);
                 }
-
             }
         }
     }
@@ -435,102 +525,20 @@ void sortPolygon(std::vector<cvf::Vec3f> &polygon)
     }
 }
 
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+const std::vector<double>& RigStimPlanFractureDefinition::timeSteps() const
+{
+    return m_timeSteps;
+}
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector<cvf::Vec3f> RigStimPlanFractureDefinition::createFractureBorderPolygon(const QString& resultName, 
-                                                                                   const QString& resultUnit, 
-                                                                                   int activeTimeStepIndex, 
-                                                                                   double wellPathIntersectionAtFractureDepth,
-                                                                                   RiaEclipseUnitTools::UnitSystem neededUnit, 
-                                                                                   const QString& fractureUserName)
+void RigStimPlanFractureDefinition::addTimeStep(double time)
 {
-    std::vector<cvf::Vec3f> polygon;
-
-    std::vector<std::vector<double>> dataAtTimeStep = this->getDataAtTimeIndex(resultName, resultUnit, activeTimeStepIndex);
-
-    std::vector<double> adjustedYs = this->adjustedYCoordsAroundWellPathPosition(wellPathIntersectionAtFractureDepth);
-
-    for ( int k = 0; k < static_cast<int>(dataAtTimeStep.size()); k++ )
-    {
-        for ( int i = 0; i < static_cast<int>(dataAtTimeStep[k].size()); i++ )
-        {
-            if ( (dataAtTimeStep[k])[i] < 1e-7 )  //polygon should consist of nodes with value 0
-            {
-                if ( (i > 0) && ((dataAtTimeStep[k])[(i - 1)] > 1e-7) ) //side neighbour cell different from 0
-                {
-                    polygon.push_back(cvf::Vec3f(static_cast<float>(this->m_Xs[i]),
-                                                 static_cast<float>(adjustedYs[k]), 0.0f));
-                }
-                else if ( (k < static_cast<int>(dataAtTimeStep.size()) - 1) && ((dataAtTimeStep[k + 1])[(i)] > 1e-7) )//cell below different from 0
-                {
-                    polygon.push_back(cvf::Vec3f(static_cast<float>(this->m_Xs[i]),
-                                                 static_cast<float>(adjustedYs[k]), 0.0f));
-                }
-                else if ( (k > 0) && ((dataAtTimeStep[k - 1])[(i)] > 1e-7) )//cell above different from 0
-                {
-                    polygon.push_back(cvf::Vec3f(static_cast<float>(this->m_Xs[i]),
-                                                 static_cast<float>(adjustedYs[k]), 0.0f));
-                }
-            }
-        }
-    }
-
-    sortPolygon(polygon);
-
-    std::vector<cvf::Vec3f> negPolygon;
-    for ( const cvf::Vec3f& node : polygon )
-    {
-        cvf::Vec3f negNode = node;
-        negNode.x() = -negNode.x();
-        negPolygon.insert(negPolygon.begin(), negNode);
-    }
-
-    for ( const cvf::Vec3f& negNode : negPolygon )
-    {
-        polygon.push_back(negNode);
-    }
-
-    //Adding first point last - to close the polygon
-    if ( polygon.size()>0 ) polygon.push_back(polygon[0]);
-
-
-    if ( neededUnit == m_unitSet )
-    {
-        RiaLogging::debug(QString("No conversion necessary for %1").arg(fractureUserName));
-    }
-
-    else if ( m_unitSet == RiaEclipseUnitTools::UNITS_METRIC && neededUnit == RiaEclipseUnitTools::UNITS_FIELD )
-    {
-        RiaLogging::info(QString("Converting StimPlan geometry from metric to field for fracture template %1").arg(fractureUserName));
-        for ( cvf::Vec3f& node : polygon )
-        {
-            float x = RiaEclipseUnitTools::meterToFeet(node.x());
-            float y = RiaEclipseUnitTools::meterToFeet(node.y());
-            float z = RiaEclipseUnitTools::meterToFeet(node.z());
-            node = cvf::Vec3f(x, y, z);
-        }
-    }
-    else if ( m_unitSet == RiaEclipseUnitTools::UNITS_FIELD && neededUnit == RiaEclipseUnitTools::UNITS_METRIC )
-    {
-        RiaLogging::info(QString("Converting StimPlan geometry from field to metric for fracture template %1").arg(fractureUserName));
-        for ( cvf::Vec3f& node : polygon )
-        {
-            float x = RiaEclipseUnitTools::feetToMeter(node.x());
-            float y = RiaEclipseUnitTools::feetToMeter(node.y());
-            float z = RiaEclipseUnitTools::feetToMeter(node.z());
-            node = cvf::Vec3f(x, y, z);
-        }
-    }
-    else
-    {
-        //Should never get here...
-        RiaLogging::error(QString("Error: Could not convert units for fracture template %1").arg(fractureUserName));
-    }
-
-
-    return polygon;
+    if (!timeStepExists(time)) m_timeSteps.push_back(time);
 }
 
 //--------------------------------------------------------------------------------------------------

@@ -37,13 +37,18 @@ public:
 
     static cvf::ref<RigStimPlanFractureDefinition> readStimPlanXMLFile(const QString& stimPlanFileName,
                                                                        double conductivityScalingFactor,
+                                                                       double xScaleFactor,
+                                                                       double yScaleFactor,
+                                                                       double wellPathIntersectionY,
                                                                        MirrorMode mirrorMode,
+                                                                       RiaEclipseUnitTools::UnitSystem requiredUnit,
                                                                        QString * errorMessage);
 
 private:
     static void                             readStimplanGridAndTimesteps(QXmlStreamReader &xmlStream,
                                                                          RigStimPlanFractureDefinition* stimPlanFileData,
-                                                                         MirrorMode mirrorMode);
+                                                                         MirrorMode mirrorMode,
+                                                                         RiaEclipseUnitTools::UnitSystem requiredUnit);
 
     static double                           getAttributeValueDouble(QXmlStreamReader &xmlStream, QString parameterName);
     static QString                          getAttributeValueString(QXmlStreamReader &xmlStream, QString parameterName);
@@ -51,6 +56,11 @@ private:
 
     static std::vector<std::vector<double>> getAllDepthDataAtTimeStep(QXmlStreamReader &xmlStream);
 
+    static std::vector<double>              valuesInRequiredUnitSystem(RiaEclipseUnitTools::UnitSystem sourceUnit,
+                                                                       RiaEclipseUnitTools::UnitSystem requiredUnit,
+                                                                       const std::vector<double>&      values);
+
+    static double                           valueInRequiredUnitSystem(RiaEclipseUnitTools::UnitSystem sourceUnit,
+                                                                      RiaEclipseUnitTools::UnitSystem requiredUnit,
+                                                                      double                          value);
 };
-
-

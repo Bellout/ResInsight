@@ -155,9 +155,7 @@ void RimIntersection::fieldChangedByUi(const caf::PdmFieldHandle* changedField, 
         || changedField == &isActive 
         || changedField == &type)
     {
-        m_wellBranchCenterlines.clear();
-        updateWellCenterline();
-        m_branchIndex = -1;
+        recomputeSimulationWellBranchData();
     }
 
     if (changedField == &simulationWell 
@@ -231,8 +229,8 @@ void RimIntersection::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering&
     else if (type == CS_SIMULATION_WELL)
     {
         geometryGroup->add(&simulationWell);
-        updateWellCenterline();
-        if (simulationWell() && m_wellBranchCenterlines.size() > 1)
+        updateSimulationWellCenterline();
+        if (simulationWell() && m_simulationWellBranchCenterlines.size() > 1)
         {
             geometryGroup->add(&m_branchIndex);
         }
@@ -322,9 +320,9 @@ QList<caf::PdmOptionItemInfo> RimIntersection::calculateValueOptions(const caf::
     }
     else if (fieldNeedingOptions == &m_branchIndex)
     {
-        updateWellCenterline();
+        updateSimulationWellCenterline();
 
-        size_t branchCount = m_wellBranchCenterlines.size();
+        size_t branchCount = m_simulationWellBranchCenterlines.size();
         
         options.push_back(caf::PdmOptionItemInfo("All", -1));
 
@@ -355,14 +353,14 @@ caf::PdmFieldHandle* RimIntersection::objectToggleField()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimSimWellInViewCollection* RimIntersection::simulationWellCollection()
+RimSimWellInViewCollection* RimIntersection::simulationWellCollection() const
 {
     RimEclipseView* eclipseView = nullptr;
     firstAncestorOrThisOfType(eclipseView);
 
     if (eclipseView)
     {
-        return eclipseView->wellCollection;
+        return eclipseView->wellCollection();
     }
 
     return nullptr;
@@ -392,31 +390,38 @@ void RimIntersection::updateAzimuthLine()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-std::vector< std::vector <cvf::Vec3d> > RimIntersection::polyLines() const
+std::vector< std::vector <cvf::Vec3d> > RimIntersection::polyLines(double * horizontalLengthAlongWellToPolylineStart) const
 {
+    if (horizontalLengthAlongWellToPolylineStart)  *horizontalLengthAlongWellToPolylineStart = 0.0;
+
     std::vector< std::vector <cvf::Vec3d> > lines;
+
+    double horizontalProjectedLengthAlongWellPathToClipPoint = 0.0;
+
     if (type == CS_WELL_PATH)
     {
         if (wellPath() && wellPath->wellPathGeometry() )
         {
             lines.push_back(wellPath->wellPathGeometry()->m_wellPathPoints);
-            clipToReservoir(lines[0]);
+            clipToReservoir(lines[0], &horizontalProjectedLengthAlongWellPathToClipPoint);
         }
     }
     else if (type == CS_SIMULATION_WELL)
     {
         if (simulationWell())
         {
-            updateWellCenterline();
+            updateSimulationWellCenterline();
 
-            if (0 <= m_branchIndex && m_branchIndex < static_cast<int>(m_wellBranchCenterlines.size()))
+            int branchIndexToUse = branchIndex();
+
+            if (0 <= branchIndexToUse && branchIndexToUse < static_cast<int>(m_simulationWellBranchCenterlines.size()))
             {
-                lines.push_back(m_wellBranchCenterlines[m_branchIndex]);
+                lines.push_back(m_simulationWellBranchCenterlines[branchIndexToUse]);
             }
 
-            if (m_branchIndex == -1)
+            if (branchIndexToUse == -1)
             {
-                lines = m_wellBranchCenterlines;
+                lines = m_simulationWellBranchCenterlines;
             }
         }
     }
@@ -431,10 +436,28 @@ std::vector< std::vector <cvf::Vec3d> > RimIntersection::polyLines() const
 
     if (type == CS_WELL_PATH || type == CS_SIMULATION_WELL)
     {
+        if (type == CS_SIMULATION_WELL && simulationWell())
+        {
+            cvf::Vec3d top, bottom;
+
+            simulationWell->wellHeadTopBottomPosition(-1, &top, &bottom);
+
+            for ( size_t lIdx = 0; lIdx < lines.size(); ++lIdx )
+            {
+                std::vector<cvf::Vec3d>& polyLine = lines[lIdx];
+                polyLine.insert(polyLine.begin(), top);
+            }
+        }
+
         for (size_t lIdx = 0; lIdx < lines.size(); ++lIdx)
         {
             std::vector<cvf::Vec3d>& polyLine = lines[lIdx];
             addExtents(polyLine);
+        }
+
+        if (horizontalLengthAlongWellToPolylineStart) 
+        {
+            *horizontalLengthAlongWellToPolylineStart = horizontalProjectedLengthAlongWellPathToClipPoint - m_extentLength;
         }
     }
 
@@ -466,32 +489,22 @@ std::vector< std::vector <cvf::Vec3d> > RimIntersection::polyLinesForExtrusionDi
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimIntersection::updateWellCenterline() const
+void RimIntersection::updateSimulationWellCenterline() const
 {
     if (isActive() && type == CS_SIMULATION_WELL && simulationWell())
     {
-        if (m_wellBranchCenterlines.size() == 0)
+        if (m_simulationWellBranchCenterlines.empty())
         {
-            RimEclipseCase* rimEclCase = nullptr;
-            simulationWell->firstAncestorOrThisOfType(rimEclCase);
-            if (rimEclCase)
+            auto branches = simulationWell->wellPipeBranches();
+            for (const auto& branch : branches)
             {
-                bool includeCellCenters = false;
-                bool detectBrances = true;
-
-                RigEclipseCaseData* caseData = rimEclCase->eclipseCaseData();
-                auto branches = caseData->simulationWellBranches(simulationWell->name, includeCellCenters, detectBrances);
-
-                for (auto b : branches)
-                {
-                    m_wellBranchCenterlines.push_back(b->m_wellPathPoints);
-                }
+                m_simulationWellBranchCenterlines.push_back(branch->m_wellPathPoints);
             }
         }
     }
     else
     {
-        m_wellBranchCenterlines.clear();
+        m_simulationWellBranchCenterlines.clear();
     }
 }
 
@@ -577,9 +590,9 @@ void RimIntersection::updateName()
     if (type == CS_SIMULATION_WELL && simulationWell())
     {
         name = simulationWell()->name();
-        if (m_branchIndex() != -1)
+        if (branchIndex() != -1)
         { 
-            name = name() + " Branch " + QString::number(m_branchIndex() + 1);
+            name = name() + " Branch " + QString::number(branchIndex() + 1);
         }
     }
     else if (type() == CS_WELL_PATH && wellPath())
@@ -592,8 +605,11 @@ void RimIntersection::updateName()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimIntersection::clipToReservoir(std::vector<cvf::Vec3d> &polyLine) const
+void RimIntersection::clipToReservoir(std::vector<cvf::Vec3d> &polyLine, double * horizontalLengthAlongWellToClipPoint) const
 {
+    CVF_ASSERT(horizontalLengthAlongWellToClipPoint != nullptr);
+
+    *horizontalLengthAlongWellToClipPoint = 0.0;
     RimCase* ownerCase = nullptr;
     firstAncestorOrThisOfType(ownerCase);
     
@@ -607,6 +623,12 @@ void RimIntersection::clipToReservoir(std::vector<cvf::Vec3d> &polyLine) const
         {
             if (!caseBB.contains(polyLine[vxIdx]))
             { 
+                if (vxIdx > 0)
+                {
+                    cvf::Vec3d segment = polyLine[vxIdx] - polyLine[vxIdx-1];
+                    segment[2] = 0.0;
+                    *horizontalLengthAlongWellToClipPoint += segment.length();
+                }
                 continue;
             }
 
@@ -621,6 +643,10 @@ void RimIntersection::clipToReservoir(std::vector<cvf::Vec3d> &polyLine) const
                 
                     if (topPlane.intersect(polyLine[vxIdx-1], polyLine[vxIdx], &intersection))
                     {
+                        cvf::Vec3d segment = intersection - polyLine[vxIdx-1];
+                        segment[2] = 0.0;
+                        *horizontalLengthAlongWellToClipPoint += segment.length();
+
                         clippedPolyLine.push_back(intersection);
                     }
                 }
@@ -633,6 +659,26 @@ void RimIntersection::clipToReservoir(std::vector<cvf::Vec3d> &polyLine) const
     }
  
     polyLine.swap(clippedPolyLine);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+int RimIntersection::branchIndex() const
+{
+    RimSimWellInViewCollection* coll = simulationWellCollection();
+
+    if (coll && !coll->isAutoDetectingBranches())
+    {
+        return -1;
+    }
+
+    if (m_branchIndex >= static_cast<int>(m_simulationWellBranchCenterlines.size()))
+    {
+        return -1;
+    }
+
+    return m_branchIndex;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -847,6 +893,20 @@ double RimIntersection::lengthDown() const
 void RimIntersection::setLengthDown(double lengthDown)
 {
     m_lengthDown = lengthDown;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimIntersection::recomputeSimulationWellBranchData()
+{
+    if (type() == CS_SIMULATION_WELL)
+    {
+        m_simulationWellBranchCenterlines.clear();
+        updateSimulationWellCenterline();
+
+        m_crossSectionPartMgr = nullptr;
+    }
 }
 
 //--------------------------------------------------------------------------------------------------

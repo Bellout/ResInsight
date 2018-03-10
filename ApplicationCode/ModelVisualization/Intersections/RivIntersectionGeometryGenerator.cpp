@@ -25,6 +25,7 @@
 #include "RimIntersection.h"
 
 #include "RivHexGridIntersectionTools.h"
+#include "RivIntersectionPartMgr.h"
 
 #include "cafHexGridIntersectionTools/cafHexGridIntersectionTools.h"
 
@@ -35,6 +36,7 @@
 #include "cvfPrimitiveSetIndexedUInt.h"
 #include "cvfScalarMapper.h"
 #include "cvfRay.h"
+//#include "cvfTrace.h"
 
 
 //--------------------------------------------------------------------------------------------------
@@ -45,12 +47,14 @@ RivIntersectionGeometryGenerator::RivIntersectionGeometryGenerator( RimIntersect
                                                                     std::vector<std::vector<cvf::Vec3d> > &polylines, 
                                                                     const cvf::Vec3d& extrusionDirection, 
                                                                     const RivIntersectionHexGridInterface* grid,
-                                                                    bool isFlattened)
+                                                                    bool isFlattened,
+                                                                    double horizontalLengthAlongWellToPolylineStart)
                                                                    : m_crossSection(crossSection),
                                                                    m_polyLines(polylines), 
                                                                    m_extrusionDirection(extrusionDirection), 
                                                                    m_hexGrid(grid),
-                                                                   m_isFlattened(isFlattened)
+                                                                   m_isFlattened(isFlattened),
+                                                                   m_horizontalLengthAlongWellToPolylineStart(horizontalLengthAlongWellToPolylineStart)
 {
     m_triangleVxes = new cvf::Vec3fArray;
     m_cellBorderLineVxes = new cvf::Vec3fArray;
@@ -81,7 +85,9 @@ cvf::Mat4d calculateSectionLocalFlatteningCS(const cvf::Vec3d& p1, const cvf::Ve
     sectionLineDir.normalize();
 
     Vec3d Ey = Ez ^ sectionLineDir;
+    Ey.normalize();
     Vec3d Ex = Ey ^ Ez;
+    Ex.normalize();
 
     Ray extrusionRay; 
     extrusionRay.setOrigin(p1);
@@ -109,7 +115,7 @@ void RivIntersectionGeometryGenerator::calculateSegementTransformPrLinePoint()
 
     m_segementTransformPrLinePoint.clear();
 
-    double previousSectionFlattenedEndPosX = 0.0;
+    double previousSectionFlattenedEndPosX = m_horizontalLengthAlongWellToPolylineStart;
     cvf::Vec3d previousSectionOrigo(cvf::Vec3d::ZERO);
 
 
@@ -141,14 +147,16 @@ void RivIntersectionGeometryGenerator::calculateSegementTransformPrLinePoint()
                 cvf::Vec3d p2 = polyLine[idxToNextP];
 
                 cvf::Mat4d sectionLocalCS = calculateSectionLocalFlatteningCS(p1, p2, m_extrusionDirection);
+                
                 if ( pLineIdx == 0 && lIdx == 0 ) previousSectionOrigo = sectionLocalCS.translation();
+
                 previousSectionFlattenedEndPosX += (sectionLocalCS.translation() - previousSectionOrigo).length();
                 previousSectionOrigo = sectionLocalCS.translation();
 
                 invSectionCS = sectionLocalCS.getInverted();
                 cvf::Vec3d flattenedTranslation(previousSectionFlattenedEndPosX, 0.0, 0.0);
 
-                invSectionCS.setTranslation(invSectionCS.translation() + flattenedTranslation - displayOffset);
+                invSectionCS.setTranslation(invSectionCS.translation() + flattenedTranslation );
             }
 
             size_t inc = 0;
@@ -161,6 +169,27 @@ void RivIntersectionGeometryGenerator::calculateSegementTransformPrLinePoint()
             lIdx = idxToNextP;
         }
     }
+
+ //   for (auto mx: m_segementTransformPrLinePoint[0])
+ //   {
+ //       cvf::String text; 
+ //
+ //       for (int r = 0; r < 4; ++r)
+ //       {
+ //           for (int c = 0; c < 4; ++c)
+ //           {
+ //               text  += cvf::String::number(mx(r, c));
+ //
+ //               if (r * c < 9)
+ //               {
+ //                   text += " ";
+ //               }
+ //           }
+ //           text += "\n";
+ //       }
+ //
+ //       cvf::Trace::show( text ); 
+ //   }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -207,7 +236,8 @@ void RivIntersectionGeometryGenerator::calculateArrays()
         if (polyLine.size() < 2) continue;
 
         size_t lineCount = polyLine.size();
-        for (size_t lIdx = 0; lIdx < lineCount - 1; ++lIdx)
+        size_t lIdx = 0;
+        while ( lIdx < lineCount - 1)
         {
             size_t idxToNextP = indexToNextValidPoint(polyLine, m_extrusionDirection, lIdx);
             
@@ -399,6 +429,7 @@ void RivIntersectionGeometryGenerator::calculateArrays()
                     }
                 }
             }
+            lIdx = idxToNextP;
         }
     }
     m_triangleVxes->assign(triangleVertices);
@@ -599,6 +630,41 @@ const cvf::Vec3fArray* RivIntersectionGeometryGenerator::triangleVxes() const
 RimIntersection* RivIntersectionGeometryGenerator::crossSection() const
 {
     return m_crossSection;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+cvf::Mat4d RivIntersectionGeometryGenerator::unflattenTransformMatrix(const cvf::Vec3d& intersectionPointUtm)
+{
+    cvf::Vec3d startPt = cvf::Vec3d::ZERO;
+
+    int polyLineIdx = -1;
+    int segIdx = -1;
+    for (size_t i = 0; i < m_flattenedOrOffsettedPolyLines.size(); i++)
+    {
+        std::vector<cvf::Vec3d> pts = m_flattenedOrOffsettedPolyLines[i];
+        for(size_t j = 0; j < pts.size(); j++)
+        {
+            // Assumes ascending sorted list
+            if (j > 0 && intersectionPointUtm.x() < pts[j].x())
+            {
+                polyLineIdx = static_cast<int>(i);
+                segIdx = static_cast<int>(j) - 1;
+                startPt = pts[segIdx];
+                break;
+            }
+        }
+
+        if (!startPt.isZero()) break;
+    }
+
+    if (polyLineIdx > -1 && segIdx > -1)
+    {
+        cvf::Mat4d t = m_segementTransformPrLinePoint[polyLineIdx][segIdx];
+        return t.getInverted();                                                 // Check for invertible?
+    }
+    return cvf::Mat4d::ZERO;
 }
 
 //--------------------------------------------------------------------------------------------------

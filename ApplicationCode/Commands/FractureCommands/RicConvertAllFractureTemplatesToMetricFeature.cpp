@@ -16,8 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#include "RicConvertFractureTemplateUnitFeature.h"
-
+#include "RicConvertAllFractureTemplatesToMetricFeature.h"
 
 #include "RiaApplication.h"
 #include "RiaEclipseUnitTools.h"
@@ -27,6 +26,7 @@
 #include "RimEllipseFractureTemplate.h"
 #include "RimFracture.h"
 #include "RimFractureExportSettings.h"
+#include "RimFractureTemplateCollection.h"
 #include "Rim3dView.h"
 #include "RimWellPathCollection.h"
 
@@ -39,15 +39,15 @@
 #include "cvfAssert.h"
 
 #include <QAction>
-#include <QString>
 #include <QFileInfo>
+#include <QString>
 
-CAF_CMD_SOURCE_INIT(RicConvertFractureTemplateUnitFeature, "RicConvertFractureTemplateUnitFeature");
+CAF_CMD_SOURCE_INIT(RicConvertAllFractureTemplatesToMetricFeature, "RicConvertAllFractureTemplatesToMetricFeature");
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicConvertFractureTemplateUnitFeature::onActionTriggered(bool isChecked)
+void RicConvertAllFractureTemplatesToMetricFeature::onActionTriggered(bool isChecked)
 {
     caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
     if (!pdmUiItem) return;
@@ -55,48 +55,37 @@ void RicConvertFractureTemplateUnitFeature::onActionTriggered(bool isChecked)
     caf::PdmObjectHandle* objHandle = dynamic_cast<caf::PdmObjectHandle*>(pdmUiItem);
     if (!objHandle) return;
 
-    RimEllipseFractureTemplate* ellipseFractureTemplate = nullptr;
-    objHandle->firstAncestorOrThisOfType(ellipseFractureTemplate);
+    RimFractureTemplateCollection* fracTempColl = nullptr;
+    objHandle->firstAncestorOrThisOfType(fracTempColl);
 
-   ellipseFractureTemplate->changeUnits();
+    std::vector<RimEllipseFractureTemplate*> ellipseFracTemplates;
+    fracTempColl->descendantsIncludingThisOfType(ellipseFracTemplates);
+
+    for (auto ellipseFracTemplate : ellipseFracTemplates)
+    {
+        if (ellipseFracTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
+        {
+            ellipseFracTemplate->changeUnits();
+
+            ellipseFracTemplate->disconnectAllFracturesAndRedrawViews();
+        }
+
+    }
 
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicConvertFractureTemplateUnitFeature::setupActionLook(QAction* actionToSetup)
+void RicConvertAllFractureTemplatesToMetricFeature::setupActionLook(QAction* actionToSetup)
 {
-    caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
-    if (!pdmUiItem) return;
-
-    caf::PdmObjectHandle* objHandle = dynamic_cast<caf::PdmObjectHandle*>(pdmUiItem);
-    if (!objHandle) return;
-
-    RimEllipseFractureTemplate* ellipseFractureTemplate = nullptr;
-    objHandle->firstAncestorOrThisOfType(ellipseFractureTemplate);
-    if (!ellipseFractureTemplate) return;
-
-    QString text = "Convert Values to ";
-    if (ellipseFractureTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_METRIC)
-    {
-        text += "Field";
-    }
-    else if (ellipseFractureTemplate->fractureTemplateUnit() == RiaEclipseUnitTools::UNITS_FIELD)
-    {
-        text += "Metric";
-    }
-    
-    actionToSetup->setIcon(QIcon(":/FractureTemplate16x16.png"));
-    //TODO: Add unit to text
-
-    actionToSetup->setText(text);
+    actionToSetup->setText("Convert All Ellipse Fracture Templates to Metric");
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RicConvertFractureTemplateUnitFeature::isCommandEnabled()
+bool RicConvertAllFractureTemplatesToMetricFeature::isCommandEnabled()
 {
     return true;
 }

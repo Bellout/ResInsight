@@ -22,6 +22,8 @@
 
 #include "RiaEclipseUnitTools.h"
 
+#include "Rim3dWellLogCurve.h"
+
 #include "cafPdmField.h"
 #include "cafPdmObject.h"
 #include "cafPdmPointer.h"
@@ -41,6 +43,7 @@ class RifWellPathFormationsImporter;
 class RigWellPath;
 class RimProject;
 class RimWellLogFile;
+class RimFractureTemplateCollection;
 class RimFishboneWellPathCollection;
 
 class RimFishbonesCollection;
@@ -48,9 +51,8 @@ class RimPerforationCollection;
 class RimWellPathCompletions;
 class RigWellPathFormations;
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 class RimWellPathFractureCollection;
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+class Rim3dWellLogCurveCollection;
 
 //==================================================================================================
 ///  
@@ -76,6 +78,9 @@ public:
     bool                                reloadWellPathFormationsFile(QString* errorMessage, RifWellPathFormationsImporter* wellPathFormationsImporter);
     bool                                hasFormations() const;
     const RigWellPathFormations*        formationsGeometry() const;
+
+    void                                add3dWellLogCurve(Rim3dWellLogCurve* rim3dWellLogCurve);
+    std::vector<Rim3dWellLogCurve*>     vectorOf3dWellLogCurves() const;
 
     virtual caf::PdmFieldHandle*        userDescriptionField() override;
     virtual caf::PdmFieldHandle*        objectToggleField() override;
@@ -110,10 +115,8 @@ public:
     const RimPerforationCollection*      perforationIntervalCollection() const;
     const RimWellPathCompletions*        completions() const;
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
     RimWellPathFractureCollection*       fractureCollection();
     const RimWellPathFractureCollection* fractureCollection() const;
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     RigWellPath*                        wellPathGeometry();
     const RigWellPath*                  wellPathGeometry() const;
@@ -175,6 +178,8 @@ private:
     caf::PdmField<QString>              m_formationKeyInFile;
 
     caf::PdmChildArrayField<RimWellLogFile*> m_wellLogFiles;
+    
+    caf::PdmChildField<Rim3dWellLogCurveCollection*> m_3dWellLogCurves;
 
     caf::PdmChildField<RimWellLogFile*> m_wellLogFile_OBSOLETE;
 };

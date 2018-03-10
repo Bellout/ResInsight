@@ -77,7 +77,6 @@
 #include "RimWellPltPlot.h"
 #include "RimWellRftPlot.h"
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 #include "RimEllipseFractureTemplate.h"
 #include "RimStimPlanFractureTemplate.h"
 #include "RimFractureTemplateCollection.h"
@@ -85,7 +84,6 @@
 #include "RimSimWellFracture.h"
 #include "RimWellPathFracture.h"
 #include "RimWellPathFractureCollection.h"
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 #include "RiuMainWindow.h"
 
@@ -260,16 +258,18 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
             menuBuilder << "RicShowWellAllocationPlotFeature";
             menuBuilder << "RicNewWellLogFileCurveFeature";
             menuBuilder << "RicNewWellLogCurveExtractionFeature";
-            menuBuilder << "RicNewWellPathIntersectionFeature";
             menuBuilder.subMenuEnd();
 
             menuBuilder.addSeparator();
 
+            menuBuilder << "RicAdd3dWellLogCurveFeature";
+
+            menuBuilder << "RicNewWellPathIntersectionFeature";
+
+            menuBuilder.addSeparator();
+
             menuBuilder.subMenuStart("Completions", QIcon(":/FishBoneGroup16x16.png"));
-            // Fracture commands
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
             menuBuilder << "RicNewWellPathFractureFeature";
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
             menuBuilder << "RicNewFishbonesSubsFeature";
             menuBuilder << "RicNewPerforationIntervalFeature";
             menuBuilder << "RicEditPerforationCollectionFeature";
@@ -525,29 +525,41 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
         {
             menuBuilder << "RicShowGridStatisticsFeature";
         }
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
         else if (dynamic_cast<RimSimWellFracture*>(uiItem))
         {
             menuBuilder << "RicNewSimWellFractureFeature";
         }
-        else if (dynamic_cast<RimFractureTemplateCollection*>(uiItem) ||
-            dynamic_cast<RimStimPlanFractureTemplate*>(uiItem))
+        else if (dynamic_cast<RimFractureTemplateCollection*>(uiItem))
         {
+            menuBuilder << "RicPasteEllipseFractureFeature";
+            menuBuilder << "RicPasteStimPlanFractureFeature";
+            menuBuilder.addSeparator();
             menuBuilder << "RicNewEllipseFractureTemplateFeature";
             menuBuilder << "RicNewStimPlanFractureTemplateFeature";
             menuBuilder << "Separator";
             menuBuilder << "RicConvertAllFractureTemplatesToMetricFeature";
             menuBuilder << "RicConvertAllFractureTemplatesToFieldFeature";
         }
-        else if (dynamic_cast<RimEllipseFractureTemplate*>(uiItem))
+        else if (dynamic_cast<RimStimPlanFractureTemplate*>(uiItem))
         {
+            menuBuilder << "RicPasteStimPlanFractureFeature";
+            menuBuilder << "RicPasteEllipseFractureFeature";
+            menuBuilder.addSeparator();
             menuBuilder << "RicNewEllipseFractureTemplateFeature";
             menuBuilder << "RicNewStimPlanFractureTemplateFeature";
             menuBuilder << "Separator";
             menuBuilder << "RicConvertFractureTemplateUnitFeature";
         }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
-
+        else if (dynamic_cast<RimEllipseFractureTemplate*>(uiItem))
+        {
+            menuBuilder << "RicPasteEllipseFractureFeature";
+            menuBuilder << "RicPasteStimPlanFractureFeature";
+            menuBuilder.addSeparator();
+            menuBuilder << "RicNewEllipseFractureTemplateFeature";
+            menuBuilder << "RicNewStimPlanFractureTemplateFeature";
+            menuBuilder << "Separator";
+            menuBuilder << "RicConvertFractureTemplateUnitFeature";
+        }
 
         if (dynamic_cast<Rim3dView*>(uiItem))
         {
@@ -663,10 +675,8 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
             menuBuilder << "RicEclipseWellShowSpheresFeature";
             menuBuilder << "RicEclipseWellShowWellCellsFeature";
             menuBuilder << "RicEclipseWellShowWellCellFenceFeature";
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
             menuBuilder << "Separator";
             menuBuilder << "RicNewSimWellFractureFeature";
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
         }
         menuBuilder.addSeparator();
         menuBuilder << "RicCopyIntersectionsToAllViewsInCaseFeature";

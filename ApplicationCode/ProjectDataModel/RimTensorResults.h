@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include "cafPdmChildField.h"
 #include "cafPdmField.h"
 #include "cafPdmObject.h"
 
@@ -28,6 +29,7 @@
 #include <vector>
 
 class RigFemResultAddress;
+class RimLegendConfig;
 
 //==================================================================================================
 ///  
@@ -41,7 +43,8 @@ public:
     enum TensorColors
     {
         WHITE_GRAY_BLACK,
-        MAGENTA_BROWN_BLACK,
+        ORANGE_BLUE_WHITE,
+        MAGENTA_BROWN_GRAY,
         RESULT_COLORS
     };
 
@@ -56,6 +59,7 @@ public:
     virtual ~RimTensorResults();
 
     RigFemResultAddress selectedTensorResult() const;
+    void                setShowTensors(bool enableTensors);
     bool                showTensors() const;
     bool                showPrincipal1() const;
     bool                showPrincipal2() const;
@@ -64,6 +68,12 @@ public:
     float               sizeScale() const;
     TensorColors        vectorColors() const;
     ScaleMethod         scaleMethod() const;
+
+    static RigFemResultPosEnum resultPositionType();
+    QString                    resultFieldName() const;
+    static QString             uiFieldName(const QString& fieldName);
+
+    caf::PdmChildField<RimLegendConfig*> legendConfig;
 
 private:
     std::vector<std::string>                getResultMetaDataForUIFieldSetting();
@@ -74,13 +84,13 @@ private:
     virtual void                            initAfterRead() override;
     virtual void                            defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute) override;
 
+    static QString                          fieldNameFromUi(const QString& uiFieldName);
+
 private:
     caf::PdmField<bool>                              m_showTensors;
 
-    caf::PdmField<caf::AppEnum<RigFemResultPosEnum>> m_resultPositionType;
     caf::PdmField<QString>                           m_resultFieldName;
 
-    caf::PdmField<caf::AppEnum<RigFemResultPosEnum>> m_resultPositionTypeUiField;
     caf::PdmField<QString>                           m_resultFieldNameUiField;
 
     caf::PdmField<bool>                              m_principal1;

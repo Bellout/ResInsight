@@ -41,6 +41,7 @@
 #include "RimWellPath.h"
 
 #include <QDateTime>
+#include "cafDisplayCoordTransform.h"
 
 CAF_PDM_SOURCE_INIT(Rim2dIntersectionView, "Intersection2dView"); 
 
@@ -169,6 +170,137 @@ bool Rim2dIntersectionView::isTimeStepDependentDataVisible() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::update3dInfo()
+{
+    if (!m_viewer) return;
+
+    QString overlayInfoText;
+
+    RimEclipseView * eclView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(eclView);
+    if (eclView && !eclView->overlayInfoConfig()->isActive())
+    {
+        m_viewer->showInfoText(false);
+        m_viewer->showHistogram(false);
+        m_viewer->showAnimationProgress(false);
+
+        m_viewer->update();
+        return;
+    }
+    if (eclView && eclView->overlayInfoConfig()->showCaseInfo())
+    {
+        overlayInfoText += "<b>--" + ownerCase()->caseUserDescription() + "--</b>";
+    }
+
+    RimGeoMechView * geoView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(geoView);
+    if (geoView && geoView->overlayInfoConfig()->showCaseInfo())
+    {
+        overlayInfoText += "<b>--" + ownerCase()->caseUserDescription() + "--</b>";
+    }
+
+    overlayInfoText += "<p>";
+
+    overlayInfoText += "<b>Z-scale:</b> " + QString::number(scaleZ()) + "<br> ";
+
+    if (m_intersection->simulationWell())
+    {
+        overlayInfoText += "<b>Simulation Well:</b> " + m_intersection->simulationWell()->name() + "<br>";
+    }
+    else if (m_intersection->wellPath())
+    {
+        overlayInfoText += "<b>Well Path:</b> " + m_intersection->wellPath()->name() + "<br>";
+    }
+    else
+    {
+        overlayInfoText += "<b>Intersection:</b> " + m_intersection->name() + "<br>";
+    }
+
+    if (eclView)
+    {
+        if (eclView->overlayInfoConfig()->showAnimProgress())
+        {
+            m_viewer->showAnimationProgress(true);
+        }
+        else
+        {
+            m_viewer->showAnimationProgress(false);
+        }
+
+        if (eclView->overlayInfoConfig()->showResultInfo())
+        {
+            overlayInfoText += "<b>Cell Result:</b> " + eclView->cellResult()->resultVariableUiShortName() + "<br>";
+        }
+    }
+
+    if (geoView)
+    {
+        if (geoView->overlayInfoConfig()->showAnimProgress())
+        {
+            m_viewer->showAnimationProgress(true);
+        }
+        else
+        {
+            m_viewer->showAnimationProgress(false);
+        }
+
+        if (geoView->overlayInfoConfig()->showResultInfo())
+        {
+            QString resultPos;
+            QString fieldName = geoView->cellResultResultDefinition()->resultFieldUiName();
+            QString compName = geoView->cellResultResultDefinition()->resultComponentUiName();
+
+            switch (geoView->cellResultResultDefinition()->resultPositionType())
+            {
+            case RIG_NODAL:
+                resultPos = "Nodal";
+                break;
+
+            case RIG_ELEMENT_NODAL:
+                resultPos = "Element nodal";
+                break;
+
+            case RIG_INTEGRATION_POINT:
+                resultPos = "Integration point";
+                break;
+
+            case RIG_ELEMENT:
+                resultPos = "Element";
+                break;
+            default:
+                break;
+            }
+            if (compName == "")
+            {
+                overlayInfoText += QString("<b>Cell result:</b> %1, %2<br>").arg(resultPos).arg(fieldName);
+            }
+            else
+            {
+                overlayInfoText += QString("<b>Cell result:</b> %1, %2, %3<br>").arg(resultPos).arg(fieldName).arg(compName);
+            }
+        }
+    }
+
+
+    overlayInfoText += "</p>";
+    m_viewer->setInfoText(overlayInfoText);
+    m_viewer->showInfoText(true);
+    m_viewer->update();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+cvf::ref<caf::DisplayCoordTransform> Rim2dIntersectionView::displayCoordTransform() const
+{
+   cvf::ref<caf::DisplayCoordTransform> dispTx = new caf::DisplayCoordTransform();
+   dispTx->setScale(cvf::Vec3d(1.0, 1.0, scaleZ()));
+   return dispTx;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 QList<caf::PdmOptionItemInfo> Rim2dIntersectionView::calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions,
                                                                            bool* useOptionsOnly)
 {
@@ -258,11 +390,7 @@ void Rim2dIntersectionView::createDisplayModel()
         m_viewer->addFrame(new cvf::Scene());
     }
 
-
-    if ( m_flatIntersectionPartMgr.isNull() || m_intersection() != m_flatIntersectionPartMgr->intersection())
-    {
-        m_flatIntersectionPartMgr = new RivIntersectionPartMgr(m_intersection(), true);
-    }
+    m_flatIntersectionPartMgr = new RivIntersectionPartMgr(m_intersection(), true);
 
     m_intersectionVizModel->removeAllParts();
     
@@ -314,6 +442,7 @@ void Rim2dIntersectionView::clampCurrentTimestep()
 //--------------------------------------------------------------------------------------------------
 void Rim2dIntersectionView::updateCurrentTimeStep()
 {
+    update3dInfo();
     updateLegends();
 
     if ((this->hasUserRequestedAnimation() && this->hasResults()))
@@ -333,63 +462,42 @@ void Rim2dIntersectionView::updateCurrentTimeStep()
 //--------------------------------------------------------------------------------------------------
 void Rim2dIntersectionView::updateLegends()
 {
-    if (m_viewer)
-    {
-        m_viewer->removeAllColorLegends();
-    }
+    if (!m_viewer) return; 
+    
+    m_viewer->removeAllColorLegends();
 
     if (!hasResults()) return;
 
-    RimCase* rimCase = nullptr;
-    m_intersection->firstAncestorOrThisOfType(rimCase);
+    RimEclipseView * eclView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(eclView);
 
-    QString overlayInfoText;
-
-    overlayInfoText += "<b>Case:</b> " + ownerCase()->caseUserDescription() + "<br>";
-
-    overlayInfoText += "<b>Intersection:</b> " + m_intersection->name() + "<br>";
-
-    if (m_intersection->simulationWell())
-    {
-        overlayInfoText += "<b>Simulation Well:</b> " + m_intersection->simulationWell()->name() + "<br>";;
-    }
-    else if (m_intersection->wellPath())
-    {
-        overlayInfoText += "<b>Well Path:</b> " + m_intersection->wellPath()->name() + "<br>";;
-    }
+    RimGeoMechView * geoView = nullptr;
+    m_intersection->firstAncestorOrThisOfType(geoView);
 
     cvf::OverlayItem* legend = nullptr;
 
-    RimEclipseView * eclView = nullptr;
-    m_intersection->firstAncestorOrThisOfType(eclView);
     if (eclView)
     {
-        overlayInfoText += "<b>Cell Result:</b> " + eclView->cellResult()->resultVariableUiShortName() + "</br>";
-
         m_legendConfig()->setUiValuesFromLegendConfig(eclView->cellResult()->legendConfig());
         m_ternaryLegendConfig()->setUiValuesFromLegendConfig(eclView->cellResult()->ternaryLegendConfig());
         eclView->cellResult()->updateLegendData(m_currentTimeStep(), m_legendConfig(), m_ternaryLegendConfig());
 
         if ( eclView->cellResult()->isTernarySaturationSelected() )
         {
-            m_ternaryLegendConfig()->setTitle("Cell Result:");
+            m_ternaryLegendConfig()->setTitle("Cell Result:\n");
             legend = m_ternaryLegendConfig()->legend();
         }
         else
         {
-            m_legendConfig()->setTitle("Cell Result:" + eclView->cellResult()->resultVariableUiShortName());
+            m_legendConfig()->setTitle("Cell Result:\n" + eclView->cellResult()->resultVariableUiShortName());
             legend = m_legendConfig()->legend();
         }
     }
 
-    RimGeoMechView * geoView = nullptr;
-    m_intersection->firstAncestorOrThisOfType(geoView);
     if (geoView)
     {
-        overlayInfoText += "<b>Cell Result:</b> " + geoView->cellResult()->legendConfig()->resultVariableName() + "</br>";
-
         m_legendConfig()->setUiValuesFromLegendConfig(geoView->cellResult()->legendConfig());
-          
+
         geoView->updateLegendTextAndRanges(m_legendConfig(), m_currentTimeStep());
         legend = m_legendConfig()->legend();
     }
@@ -398,9 +506,6 @@ void Rim2dIntersectionView::updateLegends()
     {
         m_viewer->addColorLegendToBottomLeftCorner(legend);
     }
-
-    m_viewer->setInfoText(overlayInfoText);
-    m_viewer->showInfoText(true);
 }
 
 //--------------------------------------------------------------------------------------------------

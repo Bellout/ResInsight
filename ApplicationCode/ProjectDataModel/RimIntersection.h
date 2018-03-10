@@ -84,7 +84,7 @@ public:
     caf::PdmField< bool >                                inputExtrusionPointsFromViewerEnabled;
     caf::PdmField< bool >                                inputTwoAzimuthPointsFromViewerEnabled;
 
-    std::vector< std::vector <cvf::Vec3d> >              polyLines() const;
+    std::vector< std::vector <cvf::Vec3d> >              polyLines(double * horizontalLengthAlongWellToPolylineStart = nullptr) const;
     void                                                 appendPointToPolyLine(const cvf::Vec3d& point);
 
     Rim2dIntersectionView*                               correspondingIntersectionView();
@@ -101,6 +101,8 @@ public:
     void                                                 setLengthUp(double heightUp);
     void                                                 setLengthDown(double heightDown);
 
+    void                                                 recomputeSimulationWellBranchData();
+
 protected:
     virtual caf::PdmFieldHandle*            userDescriptionField();
     virtual caf::PdmFieldHandle*            objectToggleField();
@@ -112,7 +114,10 @@ protected:
     virtual void                            defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute);
                                             
     virtual QList<caf::PdmOptionItemInfo>   calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool * useOptionsOnly);
-                                            
+
+private:
+    int                                     branchIndex() const;
+
 private:                                    
     caf::PdmField<int>                      m_branchIndex;
     caf::PdmField<double>                   m_extentLength;
@@ -128,12 +133,12 @@ private:
     static void                             setPushButtonText(bool buttonEnable, caf::PdmUiPushButtonEditorAttribute* attribute);
     static void                             setBaseColor(bool enable, caf::PdmUiListEditorAttribute* attribute);
 
-    RimSimWellInViewCollection*             simulationWellCollection();
+    RimSimWellInViewCollection*             simulationWellCollection() const;
     void                                    updateAzimuthLine();
-    void                                    updateWellCenterline() const;
+    void                                    updateSimulationWellCenterline() const;
     void                                    updateWellExtentDefaultValue();
     void                                    addExtents(std::vector<cvf::Vec3d> &polyLine) const;
-    void                                    clipToReservoir(std::vector<cvf::Vec3d> &polyLine) const;
+    void                                    clipToReservoir(std::vector<cvf::Vec3d> &polyLinee, double * horizontalLengthAlongWellToClipPoint) const;
     void                                    updateName();
     void                                    rebuildGeometryAndScheduleCreateDisplayModel();
     static double                           azimuthInRadians(cvf::Vec3d vec);
@@ -141,5 +146,5 @@ private:
     cvf::ref<RivIntersectionPartMgr>        m_crossSectionPartMgr;
     
     mutable 
-    std::vector< std::vector <cvf::Vec3d> > m_wellBranchCenterlines;
+    std::vector< std::vector <cvf::Vec3d> > m_simulationWellBranchCenterlines;
 };

@@ -19,10 +19,10 @@
 #pragma once
 
 #include "Rim3dView.h"
+#include "RivIntersectionPartMgr.h"
 #include "cafPdmPtrField.h"
 
 class RimIntersection;
-class RivIntersectionPartMgr;
 class RimLegendConfig;
 class RimTernaryLegendConfig;
 
@@ -56,7 +56,15 @@ public:
 
     virtual bool               isTimeStepDependentDataVisible() const override;
 
+    void                       update3dInfo();
+
+    cvf::ref<RivIntersectionPartMgr>  flatIntersectionPartMgr() const { return m_flatIntersectionPartMgr; }
+
+
+    virtual cvf::ref<caf::DisplayCoordTransform> displayCoordTransform() const override;
+
 protected:
+    void                       updateLegends();
 
     virtual void               axisLabels(cvf::String* xLabel, cvf::String* yLabel, cvf::String* zLabel) override;
     virtual void               createDisplayModel() override;
@@ -78,7 +86,6 @@ protected:
     bool                       hasResults();
     int                        timeStepCount();
 
-    void                       updateLegends();
 
     caf::PdmChildField<RimLegendConfig*>        m_legendConfig;
     caf::PdmChildField<RimTernaryLegendConfig*> m_ternaryLegendConfig;

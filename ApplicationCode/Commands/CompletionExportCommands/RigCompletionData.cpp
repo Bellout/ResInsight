@@ -43,7 +43,6 @@ RigCompletionData::RigCompletionData(const QString wellName, const RigCompletion
     , m_count(1)
     , m_wpimult(HUGE_VAL)
     , m_isMainBore(false)
-    , m_readyForExport(false)
     , m_completionType(CT_UNDEFINED)
     , m_firstOrderingValue(orderingValue)
     , m_secondOrderingValue(HUGE_VAL)
@@ -106,19 +105,28 @@ RigCompletionData& RigCompletionData::operator=(const RigCompletionData& other)
 //==================================================================================================
 ///
 //==================================================================================================
-void RigCompletionData::setFromFracture(double transmissibility, double skinFactor)
+void RigCompletionData::setFromFracture(double transmissibility, double skinFactor, double diameter)
 {
     m_completionType   = FRACTURE;
     m_transmissibility = transmissibility;
     m_skinFactor       = skinFactor;
+    m_diameter         = diameter;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+void RigCompletionData::setSecondOrderingValue(double orderingValue)
+{
+    m_secondOrderingValue = orderingValue;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RigCompletionData::setSecondOrderingValue(double orderingValue)
+void RigCompletionData::setDiameter(double diameter)
 {
-    m_secondOrderingValue = orderingValue;
+    m_diameter = diameter;
 }
 
 //==================================================================================================
@@ -161,7 +169,6 @@ void RigCompletionData::setCombinedValuesExplicitTrans(double transmissibility, 
 {
     m_completionType   = completionType;
     m_transmissibility = transmissibility;
-    m_readyForExport   = true;
 }
 
 //==================================================================================================
@@ -178,7 +185,33 @@ void RigCompletionData::setCombinedValuesImplicitTransWPImult(double         wpi
     m_completionType = completionType;
     m_skinFactor     = skinFactor;
     m_diameter       = wellDiameter;
-    m_readyForExport = true;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+bool RigCompletionData::isNonDarcyFlow() const
+{
+    if (!isDefaultValue(m_kh)) return true;
+    if (!isDefaultValue(m_dFactor)) return true;
+
+    return false;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+void RigCompletionData::setDFactor(double dFactor)
+{
+    m_dFactor = dFactor;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+void RigCompletionData::setKh(double kh)
+{
+    m_kh = kh;
 }
 
 //==================================================================================================
@@ -320,21 +353,13 @@ bool RigCompletionData::isMainBore() const
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-bool RigCompletionData::readyForExport() const
-{
-    return m_readyForExport;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
 double RigCompletionData::firstOrderingValue() const
 {
     return m_firstOrderingValue;
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 double RigCompletionData::secondOrderingValue() const
 {
@@ -386,7 +411,6 @@ void RigCompletionData::copy(RigCompletionData& target, const RigCompletionData&
     target.m_dFactor             = from.m_dFactor;
     target.m_direction           = from.m_direction;
     target.m_isMainBore          = from.m_isMainBore;
-    target.m_readyForExport      = from.m_readyForExport;
     target.m_count               = from.m_count;
     target.m_wpimult             = from.m_wpimult;
     target.m_completionType      = from.m_completionType;

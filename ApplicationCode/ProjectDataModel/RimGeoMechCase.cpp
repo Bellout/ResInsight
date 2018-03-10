@@ -26,20 +26,21 @@
 
 #include "RigFemPartCollection.h"
 #include "RigFemPartResultsCollection.h"
-#include "RigGeoMechCaseData.h"
 #include "RigFormationNames.h"
+#include "RigGeoMechCaseData.h"
 
+#include "Rim2dIntersectionViewCollection.h"
+#include "RimFormationNames.h"
+#include "RimGeoMechCellColors.h"
+#include "RimGeoMechPropertyFilter.h"
+#include "RimGeoMechPropertyFilterCollection.h"
+#include "RimGeoMechResultDefinition.h"
 #include "RimGeoMechView.h"
 #include "RimIntersectionCollection.h"
 #include "RimMainPlotCollection.h"
 #include "RimProject.h"
 #include "RimTools.h"
 #include "RimWellLogPlotCollection.h"
-#include "RimFormationNames.h"
-#include "RimGeoMechPropertyFilterCollection.h"
-#include "RimGeoMechCellColors.h"
-#include "RimGeoMechResultDefinition.h"
-#include "RimGeoMechPropertyFilter.h"
 
 #include "cafPdmUiPushButtonEditor.h"
 #include "cafPdmUiTreeOrdering.h"
@@ -228,7 +229,12 @@ void RimGeoMechCase::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering
 
     for ( auto child : children ) uiTreeOrdering.add(child);
 
-    uiTreeOrdering.add(&m_2dIntersectionViewCollection);
+    if (!m_2dIntersectionViewCollection->views().empty())
+    {
+        uiTreeOrdering.add(&m_2dIntersectionViewCollection);
+    }
+
+    uiTreeOrdering.skipRemainingChildren(true);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -375,6 +381,22 @@ void RimGeoMechCase::addElementPropertyFiles(const std::vector<caf::FilePath>& f
     {
         geoMechData()->femPartResults()->addElementPropertyFiles(newFileNames);
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RimGeoMechCase::cohesion() const
+{
+    return m_cohesion;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+double RimGeoMechCase::frictionAngleDeg() const
+{
+    return m_frictionAngleDeg;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -654,6 +676,8 @@ void RimGeoMechCase::defineEditorAttribute(const caf::PdmFieldHandle* field, QSt
 QList<caf::PdmOptionItemInfo> RimGeoMechCase::calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool * useOptionsOnly)
 {
     QList<caf::PdmOptionItemInfo> options;
+
+    options = RimCase::calculateValueOptions(fieldNeedingOptions, useOptionsOnly);
 
     if (fieldNeedingOptions == &m_elementPropertyFileNameIndexUiSelection)
     {

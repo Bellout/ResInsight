@@ -54,12 +54,11 @@ public:
     
     int                                     activeTimeStepIndex();
 
-    void                                    loadDataAndUpdate(); 
+    void                                    loadDataAndUpdate() override;
     void                                    setDefaultsBasedOnXMLfile();
 
     void                                    setFileName(const QString& fileName);
     const QString&                          fileName();
-    QString                                 fileNameWithOutPath();
 
     void                                    updateFilePathsFromProjectPath(const QString& newProjectPath, const QString& oldProjectPath);
 
@@ -69,9 +68,8 @@ public:
     const RigFractureGrid*                  fractureGrid() const override;
     void                                    updateFractureGrid();
     void                                    fractureTriangleGeometry(std::vector<cvf::Vec3f>* nodeCoords,
-                                                                     std::vector<cvf::uint>* triangleIndices, 
-                                                                     RiaEclipseUnitTools::UnitSystem  neededUnit) override;
-    std::vector<cvf::Vec3f>                 fractureBorderPolygon(RiaEclipseUnitTools::UnitSystem neededUnit) override;
+                                                                     std::vector<cvf::uint>* triangleIndices) override;
+    std::vector<cvf::Vec3f>                 fractureBorderPolygon() override;
 
     // Result Access
 
@@ -80,15 +78,20 @@ public:
     std::vector<std::vector<double>>        resultValues(const QString& uiResultName, const QString& unitName, size_t timeStepIndex) const;
     std::vector<double>                     fractureGridResults(const QString& resultName, const QString& unitName, size_t timeStepIndex) const;
     bool                                    hasConductivity() const;
+    double                                  resultValueAtIJ(const QString& uiResultName, const QString& unitName, size_t timeStepIndex, size_t i, size_t j);
 
-    virtual void appendDataToResultStatistics(const QString& uiResultName, const QString& unit,
-                                               MinMaxAccumulator& minMaxAccumulator,
-                                               PosNegAccumulator& posNegAccumulator) const override;
+    void                                    appendDataToResultStatistics(const QString& uiResultName, 
+                                                                         const QString& unit,
+                                                                         MinMaxAccumulator& minMaxAccumulator,
+                                                                         PosNegAccumulator& posNegAccumulator) const override;
 
     QString                                 mapUiResultNameToFileResultName(const QString& uiResultName) const;
-    void                                    setDefaultConductivityResultIfEmpty();
 
     bool                                    showStimPlanMesh() const;
+
+
+    void                                    convertToUnitSystem(RiaEclipseUnitTools::UnitSystem neededUnit) override;
+    virtual void                            reload() override;
 
 protected:
     virtual void                            fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue) override;
@@ -96,13 +99,17 @@ protected:
     virtual void                            defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) override;
     virtual void                            defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute * attribute) override;
 
-private:
-    void                                    updateUiTreeName();
+    virtual bool                            supportsConductivityScaling() const override { return true; }
 
+private:
+    void                                    setDefaultConductivityResultIfEmpty();
     bool                                    setBorderPolygonResultNameToDefault();
     void                                    setDepthOfWellPathAtFracture();
     void                                    setPerforationLength();
     QString                                 getUnitForStimPlanParameter(QString parameterName);
+
+
+    virtual FractureWidthAndConductivity    widthAndConductivityAtWellPathIntersection() const override;
 
 private:
     caf::PdmField<int>                      m_activeTimeStepIndex;
@@ -113,7 +120,6 @@ private:
 
     caf::PdmField<QString>                  m_stimPlanFileName;
     cvf::ref<RigStimPlanFractureDefinition> m_stimPlanFractureDefinitionData;
-    caf::PdmField<double>                   m_conductivityScalingFactor;
     cvf::ref<RigFractureGrid>               m_fractureGrid;
     bool                                    m_readError;
 

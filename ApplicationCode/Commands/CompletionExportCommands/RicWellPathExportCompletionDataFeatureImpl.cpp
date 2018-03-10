@@ -121,29 +121,31 @@ void RicWellPathExportCompletionDataFeatureImpl::exportCompletions(const std::ve
 
     // FractureTransmissibilityExportInformation
     std::unique_ptr<QTextStream> fractureTransmissibilityExportInformationStream = nullptr;
-
-    QString fractureTransmisibillityExportInformationPath =
-        QDir(exportSettings.folder).filePath("FractureTransmissibilityExportInformation");
-    QFile fractureTransmissibilityExportInformationFile(fractureTransmisibillityExportInformationPath);
+    QFile                        fractureTransmissibilityExportInformationFile;
 
     RiaPreferences* prefs = RiaApplication::instance()->preferences();
     if (prefs->includeFractureDebugInfoFile())
     {
+        QDir outputDir = QDir(exportSettings.folder);
+        outputDir.mkpath(".");
+
+        QString fractureTransmisibillityExportInformationPath =
+            QDir(exportSettings.folder).absoluteFilePath("FractureTransmissibilityExportInformation");
+
+        fractureTransmissibilityExportInformationFile.setFileName(fractureTransmisibillityExportInformationPath);
         if (!fractureTransmissibilityExportInformationFile.open(QIODevice::WriteOnly))
         {
             RiaLogging::error(QString("Export Completions Data: Could not open the file: %1")
                                   .arg(fractureTransmisibillityExportInformationPath));
-            return;
         }
-
-        fractureTransmissibilityExportInformationStream =
-            std::unique_ptr<QTextStream>(new QTextStream(&fractureTransmissibilityExportInformationFile));
+        else
+        {
+            fractureTransmissibilityExportInformationStream =
+                std::unique_ptr<QTextStream>(new QTextStream(&fractureTransmissibilityExportInformationFile));
+        }
     }
 
-    size_t maxProgress = usedWellPaths.size() * 3 +
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-                         simWells.size() +
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
+    size_t maxProgress = usedWellPaths.size() * 3 + simWells.size() +
                          (exportSettings.fileSplit == RicExportCompletionDataSettingsUi::SPLIT_ON_WELL
                               ? usedWellPaths.size()
                               : exportSettings.fileSplit == RicExportCompletionDataSettingsUi::SPLIT_ON_WELL_AND_COMPLETION_TYPE
@@ -175,7 +177,6 @@ void RicWellPathExportCompletionDataFeatureImpl::exportCompletions(const std::ve
         }
         progress.incrementProgress();
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
         if (exportSettings.includeFractures())
         {
             std::vector<RigCompletionData> fractureCompletionData =
@@ -183,11 +184,9 @@ void RicWellPathExportCompletionDataFeatureImpl::exportCompletions(const std::ve
                     wellPath, exportSettings, fractureTransmissibilityExportInformationStream.get());
             appendCompletionData(&completionsPerEclipseCell, fractureCompletionData);
         }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
         progress.incrementProgress();
     }
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
     for (auto simWell : simWells)
     {
         std::vector<RigCompletionData> fractureCompletionData = RicExportFractureCompletionsImpl::generateCompdatValuesForSimWell(
@@ -195,7 +194,6 @@ void RicWellPathExportCompletionDataFeatureImpl::exportCompletions(const std::ve
         appendCompletionData(&completionsPerEclipseCell, fractureCompletionData);
         progress.incrementProgress();
     }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
     const QString eclipseCaseName = exportSettings.caseToApply->caseUserDescription();
 
@@ -325,15 +323,43 @@ RigCompletionData
                                                                               const RicExportCompletionDataSettingsUi& settings)
 {
     CVF_ASSERT(!completions.empty());
-    QString                           wellName       = completions[0].wellName();
-    RigCompletionDataGridCell         cellIndexIJK   = completions[0].completionDataGridCell();
-    RigCompletionData::CompletionType completionType = completions[0].completionType();
+
+    const RigCompletionData& firstCompletion = completions[0];
+
+    const QString&                    wellName       = firstCompletion.wellName();
+    const RigCompletionDataGridCell&  cellIndexIJK   = firstCompletion.completionDataGridCell();
+    RigCompletionData::CompletionType completionType = firstCompletion.completionType();
+
+    RigCompletionData resultCompletion(wellName, cellIndexIJK, firstCompletion.firstOrderingValue());
+    resultCompletion.setSecondOrderingValue(firstCompletion.secondOrderingValue());
+    resultCompletion.setDiameter(firstCompletion.diameter());
+
+    bool anyNonDarcyFlowPresent = false;
+    for (const auto& c : completions)
+    {
+        if (c.isNonDarcyFlow()) anyNonDarcyFlowPresent = true;
+    }
+
+    if (anyNonDarcyFlowPresent && completions.size() > 1)
+    {
+        QString errorMessage =
+            QString("Cannot combine multiple completions when Non-Darcy Flow contribution is present in same cell %1")
+                .arg(cellIndexIJK.oneBasedLocalCellIndexString());
+        RiaLogging::error(errorMessage);
+        resultCompletion.addMetadata("ERROR", errorMessage);
+        return resultCompletion; // Returning empty completion, should not be exported
+    }
+
+    if (firstCompletion.isNonDarcyFlow())
+    {
+        return firstCompletion;
+    }
 
     // completion type, skin factor, well bore diameter and cell direction are taken from (first) main bore,
     // if no main bore they are taken from first completion
-    double        skinfactor       = completions[0].skinFactor();
-    double        wellBoreDiameter = completions[0].diameter();
-    CellDirection cellDirection    = completions[0].direction();
+    double        skinfactor       = firstCompletion.skinFactor();
+    double        wellBoreDiameter = firstCompletion.diameter();
+    CellDirection cellDirection    = firstCompletion.direction();
 
     for (const RigCompletionData& completion : completions)
     {
@@ -346,9 +372,6 @@ RigCompletionData
         }
     }
 
-    RigCompletionData resultCompletion(wellName, cellIndexIJK, completions[0].firstOrderingValue());
-    resultCompletion.setSecondOrderingValue(completions[0].secondOrderingValue());
-
     double totalTrans = 0.0;
 
     for (const RigCompletionData& completion : completions)
@@ -357,7 +380,7 @@ RigCompletionData
         resultCompletion.m_metadata.insert(
             resultCompletion.m_metadata.end(), completion.m_metadata.begin(), completion.m_metadata.end());
 
-        if (completion.completionType() != completions[0].completionType())
+        if (completion.completionType() != firstCompletion.completionType())
         {
             QString errorMessage = QString("Cannot combine completions of different types in same cell %1")
                                        .arg(cellIndexIJK.oneBasedLocalCellIndexString());
@@ -366,7 +389,7 @@ RigCompletionData
             return resultCompletion; // Returning empty completion, should not be exported
         }
 
-        if (completion.wellName() != completions[0].wellName())
+        if (completion.wellName() != firstCompletion.wellName())
         {
             QString errorMessage = QString("Cannot combine completions of different types in same cell %1")
                                        .arg(cellIndexIJK.oneBasedLocalCellIndexString());
@@ -469,10 +492,9 @@ void RicWellPathExportCompletionDataFeatureImpl::printCompletionsToFile(
     if (completionsPerGrid.empty()) return;
 
     QDir exportFolder(folderName);
-
     if (!exportFolder.exists())
     {
-        bool createdPath = exportFolder.mkpath(folderName);
+        bool createdPath = exportFolder.mkpath(".");
         if (createdPath)
             RiaLogging::info("Created export folder " + folderName);
         else
@@ -574,9 +596,11 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
                   RifEclipseOutputTableColumn(
                       "TR", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("DIAM"),
-                  RifEclipseOutputTableColumn("KH"),
+                  RifEclipseOutputTableColumn(
+                      "KH", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("S"),
-                  RifEclipseOutputTableColumn("Df"),
+                  RifEclipseOutputTableColumn(
+                      "Df", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("DIR"),
                   RifEclipseOutputTableColumn("r0")};
 
@@ -595,9 +619,11 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
                   RifEclipseOutputTableColumn(
                       "TR", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("DIAM"),
-                  RifEclipseOutputTableColumn("KH"),
+                  RifEclipseOutputTableColumn(
+                      "KH", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("S"),
-                  RifEclipseOutputTableColumn("Df"),
+                  RifEclipseOutputTableColumn(
+                      "Df", RifEclipseOutputTableDoubleFormatting(RifEclipseOutputTableDoubleFormat::RIF_SCIENTIFIC)),
                   RifEclipseOutputTableColumn("DIR"),
                   RifEclipseOutputTableColumn("r0")};
 
@@ -634,13 +660,18 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
             case SHUT: formatter.add("SHUT"); break;
             case AUTO: formatter.add("AUTO"); break;
         }
+
         if (RigCompletionData::isDefaultValue(data.saturation()))
             formatter.add("1*");
         else
             formatter.add(data.saturation());
-        if (RigCompletionData::isDefaultValue(data.transmissibility()))
+
+        if (data.isNonDarcyFlow() || RigCompletionData::isDefaultValue(data.transmissibility()))
         {
-            formatter.add("1*"); // Transmissibility
+            if (RigCompletionData::isDefaultValue(data.transmissibility()))
+                formatter.add("1*");
+            else
+                formatter.add(data.transmissibility());
 
             if (RigCompletionData::isDefaultValue(data.diameter()))
                 formatter.add("1*");
@@ -657,7 +688,7 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
             if (RigCompletionData::isDefaultValue(data.dFactor()))
                 formatter.add("1*");
             else
-                formatter.add(data.dFactor());
+                formatter.add(-data.dFactor());
 
             switch (data.direction())
             {
@@ -670,6 +701,17 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
         else
         {
             formatter.add(data.transmissibility());
+
+            // Based on feedback from Shunping
+            // Include diameter when COMPDATL is exported
+            // See https://github.com/OPM/ResInsight/issues/2517
+            if (!gridName.isEmpty())
+            {
+                if (RigCompletionData::isDefaultValue(data.diameter()))
+                    formatter.add("1*");
+                else
+                    formatter.add(data.diameter());
+            }
         }
 
         formatter.rowCompleted();

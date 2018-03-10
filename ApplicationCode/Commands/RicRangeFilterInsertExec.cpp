@@ -22,7 +22,7 @@
 #include "RimCellRangeFilter.h"
 #include "RimCellRangeFilterCollection.h"
 #include "Rim3dView.h"
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
 
 
 //--------------------------------------------------------------------------------------------------
@@ -65,11 +65,11 @@ void RicRangeFilterInsertExec::redo()
         rangeFilter->setDefaultValues();
         applyCommandDataOnFilter(rangeFilter);
 
-        m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(NULL);
+        m_cellRangeFilterCollection->updateDisplayModeNotifyManagedViews(nullptr);
 
         m_cellRangeFilterCollection->updateConnectedEditors();
 
-        RiuMainWindow::instance()->selectAsCurrentItem(rangeFilter);
+        Riu3DMainWindowTools::selectAsCurrentItem(rangeFilter);
     }
 }
 

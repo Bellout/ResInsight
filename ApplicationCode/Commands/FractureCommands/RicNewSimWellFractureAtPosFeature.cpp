@@ -16,15 +16,13 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#include "RicNewSimWellFractureFeature.h"
-
-#include "RicFractureNameGenerator.h"
+#include "RicNewSimWellFractureAtPosFeature.h"
 
 #include "RiaApplication.h"
 #include "RigEclipseCaseData.h"
 
+#include "Rim3dView.h"
 #include "RimCase.h"
-#include "RimEclipseCase.h"
 #include "RimEclipseResultCase.h"
 #include "RimEclipseView.h"
 #include "RimEllipseFractureTemplate.h"
@@ -32,11 +30,13 @@
 #include "RimOilField.h"
 #include "RimProject.h"
 #include "RimSimWellFracture.h"
-#include "RimStimPlanColors.h"
 #include "RimSimWellFractureCollection.h"
 #include "RimSimWellInView.h"
+#include "RimStimPlanColors.h"
 
-#include "RiuMainWindow.h"
+#include "Riu3DMainWindowTools.h"
+#include "RiuSelectionManager.h"
+#include "RivSimWellPipeSourceInfo.h"
  
 #include "cafSelectionManager.h"
 
@@ -44,66 +44,81 @@
 
 #include <QAction>
 
-CAF_CMD_SOURCE_INIT(RicNewSimWellFractureFeature, "RicNewSimWellFractureFeature");
+CAF_CMD_SOURCE_INIT(RicNewSimWellFractureAtPosFeature, "RicNewSimWellFractureAtPosFeature");
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicNewSimWellFractureFeature::onActionTriggered(bool isChecked)
+void RicNewSimWellFractureAtPosFeature::onActionTriggered(bool isChecked)
 {
     RimProject* proj = RiaApplication::instance()->project();
     if (proj->allFractureTemplates().empty()) return;
 
-    caf::PdmUiItem* pdmUiItem = caf::SelectionManager::instance()->selectedItem();
-    if (!pdmUiItem) return;
+    Rim3dView* activeView = RiaApplication::instance()->activeReservoirView();
+    if (!activeView) return;
 
-    caf::PdmObjectHandle* objHandle = dynamic_cast<caf::PdmObjectHandle*>(pdmUiItem);
-    if (!objHandle) return;
+    RiuSelectionManager* riuSelManager = RiuSelectionManager::instance();
+    RiuSelectionItem* selItem = riuSelManager->selectedItem(RiuSelectionManager::RUI_TEMPORARY);
 
-    RimSimWellInView* eclipseWell = nullptr;
-    objHandle->firstAncestorOrThisOfType(eclipseWell);
+    RiuSimWellSelectionItem* simWellItem = static_cast<RiuSimWellSelectionItem*>(selItem);
+    if (!simWellItem) return;
+    
+    RimSimWellInView* simWell = simWellItem->m_simWell;
+    if (!simWell) return;
+
+    RimSimWellFractureCollection* fractureCollection = simWell->simwellFractureCollection();
+    if (!fractureCollection) return;
 
     RimSimWellFracture* fracture = new RimSimWellFracture();
-    if (eclipseWell->simwellFractureCollection()->simwellFractures.empty())
+    if (fractureCollection->simwellFractures.empty())
     {
         RimEclipseView* activeView = dynamic_cast<RimEclipseView*>(RiaApplication::instance()->activeReservoirView());
         if (activeView)
         {
-            activeView->fractureColors->setDefaultResultName();
+            activeView->fractureColors()->setDefaultResultName();
         }
     }
 
-    eclipseWell->simwellFractureCollection()->simwellFractures.push_back(fracture);
+    fractureCollection->simwellFractures.push_back(fracture);
+
+    fracture->setClosestWellCoord(simWellItem->m_domainCoord, simWellItem->m_branchIndex);
 
     RimOilField* oilfield = nullptr;
-    objHandle->firstAncestorOrThisOfType(oilfield);
+    simWell->firstAncestorOrThisOfType(oilfield);
     if (!oilfield) return;
 
-    fracture->setName(RicFractureNameGenerator::nameForNewFracture());
+    std::vector<RimFracture* > oldFractures;
+    oilfield->descendantsIncludingThisOfType(oldFractures);
+    QString fracNum = QString("%1").arg(oldFractures.size(), 2, 10, QChar('0'));
 
+    fracture->setName(QString("Fracture_") + fracNum);
+
+    auto unitSet = RiaEclipseUnitTools::UNITS_UNKNOWN;
     {
         RimEclipseResultCase* eclipseCase = nullptr;
-        objHandle->firstAncestorOrThisOfType(eclipseCase);
-        fracture->setFractureUnit(eclipseCase->eclipseCaseData()->unitsType());
+        simWell->firstAncestorOrThisOfType(eclipseCase);
+        if (eclipseCase)
+        {
+            unitSet = eclipseCase->eclipseCaseData()->unitsType();
+        }
+    
+        fracture->setFractureUnit(unitSet);
     }
+    
+    RimFractureTemplate* fracDef = oilfield->fractureDefinitionCollection->firstFractureOfUnit(unitSet);
+    fracture->setFractureTemplate(fracDef);
 
-    if (oilfield->fractureDefinitionCollection->fractureDefinitions.size() > 0)
-    {
-        RimFractureTemplate* fracDef = oilfield->fractureDefinitionCollection->fractureDefinitions[0];
-        fracture->setFractureTemplate(fracDef);
-    }
+    simWell->updateConnectedEditors();
+    Riu3DMainWindowTools::selectAsCurrentItem(fracture);
 
-    fracture->updateFracturePositionFromLocation();
-
-    eclipseWell->updateConnectedEditors();
-    RiuMainWindow::instance()->selectAsCurrentItem(fracture);
+    activeView->scheduleCreateDisplayModelAndRedraw();
 
     RimEclipseCase* eclipseCase = nullptr;
-    objHandle->firstAncestorOrThisOfType(eclipseCase);
+    simWell->firstAncestorOrThisOfType(eclipseCase);
     if (eclipseCase)
     {
         RimProject* project;
-        objHandle->firstAncestorOrThisOfTypeAsserted(project);
+        eclipseCase->firstAncestorOrThisOfTypeAsserted(project);
         project->reloadCompletionTypeResultsForEclipseCase(eclipseCase);
     }
 }
@@ -111,7 +126,7 @@ void RicNewSimWellFractureFeature::onActionTriggered(bool isChecked)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RicNewSimWellFractureFeature::setupActionLook(QAction* actionToSetup)
+void RicNewSimWellFractureAtPosFeature::setupActionLook(QAction* actionToSetup)
 {
     actionToSetup->setIcon(QIcon(":/FractureSymbol16x16.png"));
     actionToSetup->setText("New Fracture");
@@ -120,7 +135,7 @@ void RicNewSimWellFractureFeature::setupActionLook(QAction* actionToSetup)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RicNewSimWellFractureFeature::isCommandEnabled()
+bool RicNewSimWellFractureAtPosFeature::isCommandEnabled()
 {
     RimProject* proj = RiaApplication::instance()->project();
     if (proj->allFractureTemplates().empty()) return false;
@@ -131,10 +146,10 @@ bool RicNewSimWellFractureFeature::isCommandEnabled()
     caf::PdmObjectHandle* objHandle = dynamic_cast<caf::PdmObjectHandle*>(pdmUiItem);
     if (!objHandle) return false;
 
-    RimSimWellInView* simWell = nullptr;
-    objHandle->firstAncestorOrThisOfType(simWell);
+    RimSimWellInView* eclipseWell = nullptr;
+    objHandle->firstAncestorOrThisOfType(eclipseWell);
 
-    if (simWell)
+    if (eclipseWell)
     {
         return true;
     }

@@ -201,7 +201,7 @@ void RimEclipseStatisticsCase::populateResultSelectionAfterLoadingGrid()
 //--------------------------------------------------------------------------------------------------
 void RimEclipseStatisticsCase::computeStatistics()
 {
-    if (this->eclipseCaseData() == NULL)
+    if (this->eclipseCaseData() == nullptr)
     {
         openEclipseGridFile();
     }
@@ -336,7 +336,7 @@ RimIdenticalGridCaseGroup* RimEclipseStatisticsCase::caseGroup()
         return parentCollection->parentCaseGroup();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -686,7 +686,7 @@ void RimEclipseStatisticsCase::updateConnectedEditorsAndReservoirViews()
         if (reservoirViews[i])
         {
             // As new result might have been introduced, update all editors connected
-            reservoirViews[i]->cellResult->updateConnectedEditors();
+            reservoirViews[i]->cellResult()->updateConnectedEditors();
 
             // It is usually not needed to create new display model, but if any derived geometry based on generated data (from Octave) 
             // a full display model rebuild is required

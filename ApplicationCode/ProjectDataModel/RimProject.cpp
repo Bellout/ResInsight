@@ -37,13 +37,8 @@
 #include "RimEclipseCaseCollection.h"
 #include "RimFlowPlotCollection.h"
 #include "RimFormationNamesCollection.h"
-#include "RimSummaryCalculationCollection.h"
-
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-#include "RimFractureTemplateCollection.h"
 #include "RimFractureTemplate.h"
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
-
+#include "RimFractureTemplateCollection.h"
 #include "RimGeoMechCase.h"
 #include "RimGeoMechModels.h"
 #include "RimGridSummaryCase.h"
@@ -56,6 +51,7 @@
 #include "RimPltPlotCollection.h"
 #include "RimRftPlotCollection.h"
 #include "RimScriptCollection.h"
+#include "RimSummaryCalculationCollection.h"
 #include "RimSummaryCaseMainCollection.h"
 #include "RimSummaryCrossPlotCollection.h"
 #include "RimSummaryPlotCollection.h"
@@ -484,10 +480,8 @@ void RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName
             oilField->summaryCaseMainCollection()->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
         }
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
         CVF_ASSERT(oilField->fractureDefinitionCollection());
         oilField->fractureDefinitionCollection()->updateFilePathsFromProjectPath(newProjectPath, oldProjectPath);
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
     }
 
     {
@@ -939,7 +933,6 @@ std::vector<RimGeoMechCase*> RimProject::geoMechCases() const
     return cases;
 }
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -968,14 +961,13 @@ std::vector<RimFractureTemplate*> RimProject::allFractureTemplates() const
     allOilFields(oilFields);
     for (RimFractureTemplateCollection* templColl : allFractureTemplateCollections())
     {
-        for (RimFractureTemplate* templ : templColl->fractureDefinitions)
+        for (RimFractureTemplate* templ : templColl->fractureTemplates())
         {
             templates.push_back(templ);
         }
     }
     return templates;
 }
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -1060,10 +1052,7 @@ void RimProject::defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QS
             if (oilField->geoMechModels())                  uiTreeOrdering.add(oilField->geoMechModels());
             if (oilField->wellPathCollection())             uiTreeOrdering.add(oilField->wellPathCollection());
             if (oilField->formationNamesCollection())       uiTreeOrdering.add(oilField->formationNamesCollection());
-
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
             if (oilField->fractureDefinitionCollection())   uiTreeOrdering.add(oilField->fractureDefinitionCollection());
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
         }
 
         uiTreeOrdering.add(scriptCollection());

@@ -28,7 +28,7 @@
 #include "Rim3dView.h"
 #include "RimWellAllocationPlot.h"
 
-#include "RiuMainPlotWindow.h"
+#include "RiuPlotMainWindowTools.h"
 
 #include "cafSelectionManager.h"
 
@@ -62,7 +62,7 @@ bool RicShowWellAllocationPlotFeature::isCommandEnabled()
     RimEclipseView* eclView = dynamic_cast<RimEclipseView*>(view);
     if (!eclView) return false;
 
-    RimSimWellInView* simWellFromWellPath = eclView->wellCollection->findWell(wellPathCollection[0]->associatedSimulationWellName());
+    RimSimWellInView* simWellFromWellPath = eclView->wellCollection()->findWell(wellPathCollection[0]->associatedSimulationWellName());
 
     if (simWellFromWellPath)
     {
@@ -96,7 +96,7 @@ void RicShowWellAllocationPlotFeature::onActionTriggered(bool isChecked)
         RimEclipseView* eclView = dynamic_cast<RimEclipseView*>(view);
         if (!eclView) return;
 
-        simWell = eclView->wellCollection->findWell(wellPathCollection[0]->associatedSimulationWellName());
+        simWell = eclView->wellCollection()->findWell(wellPathCollection[0]->associatedSimulationWellName());
         if (!simWell) return;
     }
     else return;
@@ -110,8 +110,8 @@ void RicShowWellAllocationPlotFeature::onActionTriggered(bool isChecked)
             flowPlotColl->defaultWellAllocPlot()->updateConnectedEditors();
 
             // Make sure the summary plot window is created and visible
-            RiuMainPlotWindow* plotwindow = RiaApplication::instance()->getOrCreateAndShowMainPlotWindow();
-            plotwindow->selectAsCurrentItem(flowPlotColl->defaultWellAllocPlot());
+            RiuPlotMainWindowTools::showPlotMainWindow();
+            RiuPlotMainWindowTools::selectAsCurrentItem(flowPlotColl->defaultWellAllocPlot());
         }
     }
 }

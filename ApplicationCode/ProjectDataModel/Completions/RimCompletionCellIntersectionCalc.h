@@ -20,18 +20,14 @@
 
 #include <vector>
 
+class RigMainGrid;
+class RimEclipseCase;
+class RimFishbonesMultipleSubs;
+class RimFracture;
+class RimPerforationInterval;
 class RimProject;
 class RimWellPath;
-class RimFishbonesMultipleSubs;
-class RimPerforationInterval;
 
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-class RimFracture;
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
-
-class RimEclipseCase;
-
-class RigMainGrid;
 class QDateTime;
 
 //==================================================================================================
@@ -40,6 +36,7 @@ class QDateTime;
 //==================================================================================================
 class RimCompletionCellIntersectionCalc
 {
+<<<<<<< HEAD
  public:
   static void  calculateCompletionTypeResult(const RimProject*     project,
                                              const RimEclipseCase* eclipseCase,
@@ -61,10 +58,4 @@ class RimCompletionCellIntersectionCalc
                                                  const RimPerforationInterval* perforationInterval,
                                                  const RigMainGrid*            grid,
                                                  std::vector<double>&          values);
-
-#ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-  static void     calculateFractureIntersections(const RigMainGrid*   mainGrid,
-                                                 const RimFracture*   fracture,
-                                                 std::vector<double>& values);
-#endif // USE_PROTOTYPE_FEATURE_FRACTURES
 };
