@@ -25,27 +25,34 @@
 
 class RifReaderMockModel : public RifReaderInterface
 {
-public:
-    RifReaderMockModel();
-    virtual ~RifReaderMockModel();
+ public:
+  RifReaderMockModel();
+  virtual ~RifReaderMockModel();
 
-    void                    setWorldCoordinates(cvf::Vec3d minWorldCoordinate, cvf::Vec3d maxWorldCoordinate);
-    void                    setGridPointDimensions(const cvf::Vec3st& gridPointDimensions);
-    void                    setResultInfo(size_t resultCount, size_t timeStepCount);
-    void                    enableWellData(bool enableWellData);
+  void                    setWorldCoordinates(cvf::Vec3d minWorldCoordinate, cvf::Vec3d maxWorldCoordinate);
+  void                    setGridPointDimensions(const cvf::Vec3st& gridPointDimensions);
+  void                    setResultInfo(size_t resultCount, size_t timeStepCount);
+  void                    enableWellData(bool enableWellData);
 
-    void                    addLocalGridRefinement(const cvf::Vec3st& minCellPosition, const cvf::Vec3st& maxCellPosition, const cvf::Vec3st& singleCellRefinementFactors);
+  void                    addLocalGridRefinement(const cvf::Vec3st& minCellPosition,
+                                                 const cvf::Vec3st& maxCellPosition,
+                                                 const cvf::Vec3st& singleCellRefinementFactors);
 
-    virtual bool            open( const QString& fileName, RigEclipseCaseData* eclipseCase );
-                            
-    virtual bool            staticResult( const QString& result, RiaDefines::PorosityModelType matrixOrFracture, std::vector<double>* values );
-    virtual bool            dynamicResult( const QString& result, RiaDefines::PorosityModelType matrixOrFracture, size_t stepIndex, std::vector<double>* values );
+  virtual bool            open(const QString& fileName, RigEclipseCaseData* eclipseCase );
 
-private:
-    void                    populateReservoir(RigEclipseCaseData* eclipseCase);
-    bool                    inputProperty( const QString& propertyName, std::vector<double>* values );
+  virtual bool            staticResult(const QString& result,
+                                       RiaDefines::PorosityModelType matrixOrFracture,
+                                       std::vector<double>* values );
 
-    RigReservoirBuilderMock m_reservoirBuilder;
-    RigEclipseCaseData*         m_reservoir;
+  virtual bool            dynamicResult(const QString& result,
+                                        RiaDefines::PorosityModelType matrixOrFracture,
+                                        size_t stepIndex, std::vector<double>* values );
+
+ private:
+  void                    populateReservoir(RigEclipseCaseData* eclipseCase);
+  bool                    inputProperty( const QString& propertyName, std::vector<double>* values );
+
+  RigReservoirBuilderMock m_reservoirBuilder;
+  RigEclipseCaseData*         m_reservoir;
 };
 

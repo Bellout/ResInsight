@@ -77,7 +77,8 @@ endif()
 
 if (RESINSIGHT_ERT_EXTERNAL_LIB_ROOT OR RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT)
   if (NOT(RESINSIGHT_ERT_EXTERNAL_LIB_ROOT AND RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT))
-    message(FATAL_ERROR "Both RESINSIGHT_ERT_EXTERNAL_LIB_ROOT and RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT must be defined")
+    message(FATAL_ERROR "Both RESINSIGHT_ERT_EXTERNAL_LIB_ROOT 
+      and RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT must be defined")
   endif()
 
     message(FATAL_ERROR "TODO: Building using and external system installed ERT is broken.")
@@ -104,7 +105,8 @@ else()
       set(BUILD_SHARED_LIBS OFF)
       set(ERT_HAVE_UNISTD OFF) #If anyone has mingw installed
     else ()
-      set(RESINSIGHT_ERT_EXTERNAL_SOURCE_ROOT "" CACHE STRING "Path to ERT CMakeList.txt (source path)")
+      set(RESINSIGHT_ERT_EXTERNAL_SOURCE_ROOT "" CACHE 
+        STRING "Path to ERT CMakeList.txt (source path)")
        
       # Force dynamic linking on other platforms
       # Copy of libraries into install folder of ResInsight is done a bit further down in this file
@@ -119,7 +121,9 @@ else()
 
     if (MSVC)
          # libecl : Disable some warnings  
-         set_target_properties(ecl PROPERTIES COMPILE_FLAGS "/wd4244 /wd4267 /wd4013 /wd4190 /wd4018 /wd4477 /wd4098 /wd4293 /wd4305 /wd4020 /wd4028 /wd4715")
+         set_target_properties(ecl PROPERTIES 
+          COMPILE_FLAGS "/wd4244 /wd4267 /wd4013 /wd4190 /wd4018 
+          /wd4477 /wd4098 /wd4293 /wd4305 /wd4020 /wd4028 /wd4715")
     endif()
 
     list(APPEND THIRD_PARTY_LIBRARIES
@@ -143,10 +147,12 @@ endif(RESINSIGHT_ERT_EXTERNAL_LIB_ROOT OR RESINSIGHT_ERT_EXTERNAL_INCLUDE_ROOT)
 # HDF5
 ################################################################################
 if(MSVC)
-    set(RESINSIGHT_HDF5_DIR "" CACHE PATH "Windows Only: Optional path to HDF5 libraries on Windows")
+    set(RESINSIGHT_HDF5_DIR "" CACHE 
+      PATH "Windows Only: Optional path to HDF5 libraries on Windows")
 endif()
 
-option (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING "Enable prototype feature Souring (requires third party library HDF5)" ON)
+option (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING 
+  "Enable prototype feature Souring (requires third party library HDF5)" ON)
 mark_as_advanced(FORCE RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING) 
 
 if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING)
@@ -164,7 +170,8 @@ if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING)
 	        set(RESINSIGHT_FOUND_HDF5 1)
 	        message( STATUS "Using HDF5 from : ${RESINSIGHT_HDF5_DIR}" )
         else()
-	        message( WARNING "Use of HDF5 is enabled, but RESINSIGHT_HDF5_DIR is empty. Specify RESINSIGHT_HDF5_DIR to be able to use HDF5" )
+	        message( WARNING "Use of HDF5 is enabled, but RESINSIGHT_HDF5_DIR 
+            is empty. Specify RESINSIGHT_HDF5_DIR to be able to use HDF5" )
         endif()
     else()
         find_package(HDF5 COMPONENTS CXX)
@@ -234,11 +241,13 @@ list(APPEND THIRD_PARTY_LIBRARIES
 set (QT_COMPONENTS_REQUIRED QtCore QtGui QtMain QtOpenGl QtNetwork QtScript QtScriptTools)
 find_package (Qt4 COMPONENTS ${QT_COMPONENTS_REQUIRED})
 if ( NOT QT4_FOUND )
-    message(FATAL_ERROR "Package Qt4 is required, but not found. Please specify qmake for variable QT_QMAKE_EXECUTABLE")
+    message(FATAL_ERROR "Package Qt4 is required, but not found. 
+      Please specify qmake for variable QT_QMAKE_EXECUTABLE")
 endif ( NOT QT4_FOUND )
 
 if (QT_VERSION_MINOR LESS 6)
-    message(FATAL_ERROR "Qt 4.6 is required, please specify qmake for variable QT_QMAKE_EXECUTABLE")
+    message(FATAL_ERROR 
+      "Qt 4.6 is required, please specify qmake for variable QT_QMAKE_EXECUTABLE")
 endif()
 
 include (${QT_USE_FILE})
@@ -280,7 +289,8 @@ list(APPEND THIRD_PARTY_LIBRARIES
 ################################################################################
 # Prototype feature Fractures
 ################################################################################
-option (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES "Enable prototype feature Fractures" ON)
+option (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES 
+  "Enable prototype feature Fractures" ON)
 mark_as_advanced(FORCE RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
 
 if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_FRACTURES)
@@ -330,7 +340,8 @@ if (CMAKE_COMPILER_IS_GNUCC)
     if (HAVE_GCC_SYNC_FUNCTIONS)
         message("GCC synchronization functions detected")
     else()
-        message("GCC synchronization functions NOT detected, fallback to non threadsafe reference counting")
+        message("GCC synchronization functions NOT detected, 
+          fallback to non threadsafe reference counting")
         add_definitions(-DCVF_USE_NON_THREADSAFE_REFERENCE_COUNT)
     endif()
  
@@ -416,7 +427,8 @@ set_property(TARGET
 set (RESINSIGHT_INSTALL_FOLDER ".")
 
 # override system install prefix if private installation chosen
-option (RESINSIGHT_PRIVATE_INSTALL "Linux only: Install the libecl shared libraries along the executable" ON)
+option (RESINSIGHT_PRIVATE_INSTALL "Linux only: Install 
+  the libecl shared libraries along the executable" ON)
 mark_as_advanced(FORCE RESINSIGHT_PRIVATE_INSTALL)
 
 if (RESINSIGHT_PRIVATE_INSTALL)
@@ -449,7 +461,8 @@ add_subdirectory(OctavePlugin)
 ################################################################################
 # Code documentation using Doxygen
 ################################################################################
-option(RESINSIGHT_BUILD_DOCUMENTATION "Use Doxygen to create the HTML based API documentation" OFF)
+option(RESINSIGHT_BUILD_DOCUMENTATION 
+  "Use Doxygen to create the HTML based API documentation" OFF)
 if(RESINSIGHT_BUILD_DOCUMENTATION)
   FIND_PACKAGE(Doxygen)
   if (NOT DOXYGEN_FOUND)

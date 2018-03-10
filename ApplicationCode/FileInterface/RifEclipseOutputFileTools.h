@@ -45,36 +45,49 @@ class RifEclipseRestartDataAccess;
 //==================================================================================================
 class RifEclipseOutputFileTools
 {
-public:
-    RifEclipseOutputFileTools();
-    virtual ~RifEclipseOutputFileTools();
+ public:
+  RifEclipseOutputFileTools();
+  virtual ~RifEclipseOutputFileTools();
 
-    static void         findKeywordsAndItemCount(std::vector<ecl_file_type*> ecl_files, QStringList* resultNames, std::vector<size_t>* resultDataItemCounts);
+  static void         findKeywordsAndItemCount(std::vector<ecl_file_type*> ecl_files,
+                                               QStringList* resultNames,
+                                               std::vector<size_t>* resultDataItemCounts);
 
-    static bool         keywordData(ecl_file_type* ecl_file, const QString& keyword, size_t fileKeywordOccurrence, std::vector<double>* values);
-    static bool         keywordData(ecl_file_type* ecl_file, const QString& keyword, size_t fileKeywordOccurrence, std::vector<int>* values);
+  static bool         keywordData(ecl_file_type* ecl_file,
+                                  const QString& keyword,
+                                  size_t fileKeywordOccurrence,
+                                  std::vector<double>* values);
 
-    static void         timeSteps(ecl_file_type* ecl_file, std::vector<QDateTime>* timeSteps, std::vector<double>* daysSinceSimulationStart);
+  static bool         keywordData(ecl_file_type* ecl_file,
+                                  const QString& keyword,
+                                  size_t fileKeywordOccurrence,
+                                  std::vector<int>* values);
 
-    static bool         findSiblingFilesWithSameBaseName(const QString& fileName, QStringList* fileSet);
+  static void         timeSteps(ecl_file_type* ecl_file,
+                                std::vector<QDateTime>* timeSteps,
+                                std::vector<double>* daysSinceSimulationStart);
 
-    static QString      firstFileNameOfType(const QStringList& fileSet, ecl_file_enum fileType);
-    static QStringList  filterFileNamesOfType(const QStringList& fileSet, ecl_file_enum fileType);
+  static bool         findSiblingFilesWithSameBaseName(const QString& fileName,
+                                                       QStringList* fileSet);
 
-    static void         readGridDimensions(const QString& gridFileName, std::vector< std::vector<int> >& gridDimensions);
+  static QString      firstFileNameOfType(const QStringList& fileSet,
+                                          ecl_file_enum fileType);
+  static QStringList  filterFileNamesOfType(const QStringList& fileSet, ecl_file_enum fileType);
 
-    static int          readUnitsType(ecl_file_type* ecl_file);
+  static void         readGridDimensions(const QString& gridFileName, std::vector< std::vector<int> >& gridDimensions);
 
-    static cvf::ref<RifEclipseRestartDataAccess> createDynamicResultAccess(const QString& fileName);
+  static int          readUnitsType(ecl_file_type* ecl_file);
 
-    static QString      createIndexFileName(const QString& resultFileName);
+  static cvf::ref<RifEclipseRestartDataAccess> createDynamicResultAccess(const QString& fileName);
 
-    static std::set<RiaDefines::PhaseType> findAvailablePhases(ecl_file_type* ecl_file);
+  static QString      createIndexFileName(const QString& resultFileName);
 
-    static void         transferNncFluxData(const ecl_grid_type* grid, ecl_file_view_type* summaryView,
-                                            std::vector<double>* waterFlux, std::vector<double>* oilFlux, std::vector<double>* gasFlux);
+  static std::set<RiaDefines::PhaseType> findAvailablePhases(ecl_file_type* ecl_file);
+
+  static void         transferNncFluxData(const ecl_grid_type* grid, ecl_file_view_type* summaryView,
+                                          std::vector<double>* waterFlux, std::vector<double>* oilFlux, std::vector<double>* gasFlux);
 
 
-private:
-    static void         createReportStepsMetaData(std::vector<ecl_file_type*> ecl_files, std::vector<RifRestartReportStep>* reportSteps);
+ private:
+  static void         createReportStepsMetaData(std::vector<ecl_file_type*> ecl_files, std::vector<RifRestartReportStep>* reportSteps);
 };

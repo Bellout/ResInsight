@@ -40,18 +40,31 @@ class QDateTime;
 //==================================================================================================
 class RimCompletionCellIntersectionCalc
 {
-public:
-    static void                     calculateCompletionTypeResult(const RimProject* project,
-                                                                  const RimEclipseCase* eclipseCase,
-                                                                  const RigMainGrid* grid,
-                                                                  std::vector<double>& completionTypeCellResult,
-                                                                  const QDateTime& fromDate);
+ public:
+  static void  calculateCompletionTypeResult(const RimProject*     project,
+                                             const RimEclipseCase* eclipseCase,
+                                             const RigMainGrid*    grid,
+                                             std::vector<double>&  completionTypeCellResult,
+                                             const QDateTime&      fromDate);
 
-private:
-    static void                     calculateWellPathIntersections(const RimWellPath* wellPath, const RigMainGrid* grid, std::vector<double>& values, const QDateTime& fromDate);
-    static void                     calculateFishbonesIntersections(const RimFishbonesMultipleSubs* fishbonesSubs, const RigMainGrid* grid, std::vector<double>& values);
-    static void                     calculatePerforationIntersections(const RimWellPath* wellPath, const RimPerforationInterval* perforationInterval, const RigMainGrid* grid, std::vector<double>& values);
+ private:
+  static void  calculateWellPathIntersections(const RimWellPath*   wellPath,
+                                              const RigMainGrid*   grid,
+                                              std::vector<double>& values,
+                                              const QDateTime&     fromDate);
+
+  static void  calculateFishbonesIntersections(const RimFishbonesMultipleSubs* fishbonesSubs,
+                                               const RigMainGrid*              grid,
+                                               std::vector<double>&            values);
+
+  static void  calculatePerforationIntersections(const RimWellPath*            wellPath,
+                                                 const RimPerforationInterval* perforationInterval,
+                                                 const RigMainGrid*            grid,
+                                                 std::vector<double>&          values);
+
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    static void                     calculateFractureIntersections(const RigMainGrid* mainGrid, const RimFracture* fracture, std::vector<double>& values);
+  static void     calculateFractureIntersections(const RigMainGrid*   mainGrid,
+                                                 const RimFracture*   fracture,
+                                                 std::vector<double>& values);
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 };

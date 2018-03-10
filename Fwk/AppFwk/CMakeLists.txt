@@ -5,7 +5,8 @@ project (CeeApp)
 if (MSVC AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.11))
   # VS 2017 : Disable warnings from from gtest code, using deprecated code related to TR1 
   add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-  message("Add flag to disable warings from gtest -  _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
+  message("Add flag to disable warings from gtest - 
+   _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
 endif()
 
 
@@ -54,5 +55,6 @@ add_subdirectory (cafUserInterface/cafUserInterface_UnitTests)
 # Turn on using solution folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set_property(TARGET  cafPdmCore cafPdmCore_UnitTests cafPdmXml cafPdmXml_UnitTests  cafPdmUiCore  PROPERTY FOLDER "PdmCore")
+set_property(TARGET  cafPdmCore cafPdmCore_UnitTests cafPdmXml 
+	cafPdmXml_UnitTests  cafPdmUiCore  PROPERTY FOLDER "PdmCore")
 

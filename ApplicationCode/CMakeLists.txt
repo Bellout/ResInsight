@@ -11,7 +11,8 @@ CONFIGURE_FILE( ${CMAKE_SOURCE_DIR}/ApplicationCode/Adm/RiaVersionInfo.h.cmake
 if (MSVC AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 19.11))
   # VS 2017 : Disable warnings from from gtest code, using deprecated code related to TR1 
   add_definitions(-D_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
-  message("Add flag to disable warings from gtest -  _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
+  message("Add flag to disable warings from gtest - 
+   _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING")
 endif()
 
 include_directories(
@@ -138,7 +139,8 @@ list( APPEND REFERENCED_CMAKE_FILES
     CommandFileInterface/Core/CMakeLists_files.cmake
 )
 
-option (RESINSIGHT_INCLUDE_APPLICATION_UNIT_TESTS "Include ApplicationCode Unit Tests" OFF)
+option (RESINSIGHT_INCLUDE_APPLICATION_UNIT_TESTS 
+    "Include ApplicationCode Unit Tests" OFF)
 if (RESINSIGHT_INCLUDE_APPLICATION_UNIT_TESTS)
 	add_definitions(-DUSE_UNIT_TESTS)
 
@@ -172,7 +174,8 @@ add_subdirectory(ResultStatisticsCache)
 #
 # Odb api
 #
-set(RESINSIGHT_ODB_API_DIR "" CACHE PATH "Optional path to the ABAQUS ODB API from Simulia. Needed for support of geomechanical models")
+set(RESINSIGHT_ODB_API_DIR "" CACHE PATH "Optional path to the ABAQUS 
+    ODB API from Simulia. Needed for support of geomechanical models")
 if(NOT ${RESINSIGHT_ODB_API_DIR} EQUAL "") 
 	add_definitions(-DUSE_ODB_API)
 	add_subdirectory(GeoMech/OdbReader)
@@ -191,7 +194,8 @@ if (RESINSIGHT_FOUND_HDF5)
         FileInterface/RifHdf5Reader.cpp
     )
 
-    source_group( "FileInterface" FILES FileInterface/RifHdf5Reader.h FileInterface/RifHdf5Reader.cpp )
+    source_group( "FileInterface" FILES 
+        FileInterface/RifHdf5Reader.h FileInterface/RifHdf5Reader.cpp )
 
 	add_definitions(-DUSE_HDF5)
 endif()
@@ -294,7 +298,9 @@ endif()
 
 if (APPLE)
     add_custom_command (OUTPUT Resources/ResInsight.icns
-        COMMAND sips -s format icns ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppLogo48x48.png --out ${CMAKE_CURRENT_BINARY_DIR}/Resources/ResInsight.icns
+        COMMAND sips -s format icns 
+        ${CMAKE_CURRENT_SOURCE_DIR}/Resources/AppLogo48x48.png 
+        --out ${CMAKE_CURRENT_BINARY_DIR}/Resources/ResInsight.icns
         COMMENT Converting application icon
     )
     add_custom_target (ResInsight-icns
@@ -389,7 +395,8 @@ endif()
 if (MSVC)
 
     # Qt DLLs
-    set (QTLIBLIST QtCore QtCored QtGui QtGuid QtOpenGl QtOpenGld QtNetwork QtNetworkd QtScript QtScriptd QtScriptTools QtScriptToolsd)
+    set (QTLIBLIST QtCore QtCored QtGui QtGuid QtOpenGl QtOpenGld QtNetwork 
+        QtNetworkd QtScript QtScriptd QtScriptTools QtScriptToolsd)
     foreach (qtlib ${QTLIBLIST})
         list(APPEND RI_DLL_FILENAMES ${QT_BINARY_DIR}/${qtlib}4.dll)
     endforeach( qtlib )
@@ -471,7 +478,8 @@ if (RESINSIGHT_PRIVATE_INSTALL)
 
     if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         # put a .exe.local file in the target directory to pick up DLLs from there
-        install (CODE "exec_program (\"${CMAKE_COMMAND}\" ARGS -E touch \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}ResInsight${CMAKE_EXECUTABLE_SUFFIX}.local)")
+        install (CODE "exec_program (\"${CMAKE_COMMAND}\" 
+            ARGS -E touch \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}ResInsight${CMAKE_EXECUTABLE_SUFFIX}.local)")
 
         set (RESINSIGHT_FILES ${RI_DLL_FILENAMES})
 
@@ -479,7 +487,8 @@ if (RESINSIGHT_PRIVATE_INSTALL)
         set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP ON)
         set(CMAKE_INSTALL_OPENMP_LIBRARIES ON)
         include(InstallRequiredSystemLibraries)
-        install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} DESTINATION ${RESINSIGHT_INSTALL_FOLDER})
+        install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS} 
+            DESTINATION ${RESINSIGHT_INSTALL_FOLDER})
 
     endif()
 

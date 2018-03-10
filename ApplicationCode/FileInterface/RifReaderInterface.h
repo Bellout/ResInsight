@@ -46,36 +46,43 @@ class RifReaderSettings;
 //==================================================================================================
 class RifReaderInterface : public cvf::Object
 {
-public:
-    RifReaderInterface()            { }
-    virtual ~RifReaderInterface()   { }
+ public:
+  RifReaderInterface()            { }
+  virtual ~RifReaderInterface()   { }
 
-    bool                        isFaultImportEnabled();
-    bool                        isImportOfCompleteMswDataEnabled();
-    bool                        isNNCsEnabled();
-    const QString               faultIncludeFileAbsolutePathPrefix();
+  bool                        isFaultImportEnabled();
+  bool                        isImportOfCompleteMswDataEnabled();
+  bool                        isNNCsEnabled();
+  const QString               faultIncludeFileAbsolutePathPrefix();
 
-    virtual bool                open(const QString& fileName, RigEclipseCaseData* eclipseCase) = 0;
-   
-    virtual bool                staticResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, std::vector<double>* values) = 0;
-    virtual bool                dynamicResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, size_t stepIndex, std::vector<double>* values) = 0;
+  virtual bool                open(const QString& fileName,
+                                   RigEclipseCaseData* eclipseCase) = 0;
 
-    void                        setFilenamesWithFaults(const std::vector<QString>& filenames)   { m_filenamesWithFaults = filenames; }
-    std::vector<QString>        filenamesWithFaults()                                           { return m_filenamesWithFaults; }
+  virtual bool                staticResult(const QString& result,
+                                           RiaDefines::PorosityModelType matrixOrFracture,
+                                           std::vector<double>* values) = 0;
 
-    void                        setTimeStepFilter(const std::vector<size_t>& fileTimeStepIndices);
+  virtual bool                dynamicResult(const QString& result,
+                                            RiaDefines::PorosityModelType matrixOrFracture,
+                                            size_t stepIndex,
+                                            std::vector<double>* values) = 0;
 
-    virtual std::set<RiaDefines::PhaseType>  availablePhases() const;
+  void                        setFilenamesWithFaults(const std::vector<QString>& filenames)   { m_filenamesWithFaults = filenames; }
+  std::vector<QString>        filenamesWithFaults()                                           { return m_filenamesWithFaults; }
 
-protected:
-    bool                        isTimeStepIncludedByFilter(size_t timeStepIndex) const;
-    size_t                      timeStepIndexOnFile(size_t timeStepIndex) const;
+  void                        setTimeStepFilter(const std::vector<size_t>& fileTimeStepIndices);
 
-private:
-    const RifReaderSettings*    readerSettings() const;
+  virtual std::set<RiaDefines::PhaseType>  availablePhases() const;
 
-private:
-    std::vector<QString>        m_filenamesWithFaults;
-    
-    std::vector<size_t>         m_fileTimeStepIndices;
+ protected:
+  bool                        isTimeStepIncludedByFilter(size_t timeStepIndex) const;
+  size_t                      timeStepIndexOnFile(size_t timeStepIndex) const;
+
+ private:
+  const RifReaderSettings*    readerSettings() const;
+
+ private:
+  std::vector<QString>        m_filenamesWithFaults;
+
+  std::vector<size_t>         m_fileTimeStepIndices;
 };

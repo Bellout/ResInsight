@@ -56,46 +56,55 @@
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimCompletionCellIntersectionCalc::calculateCompletionTypeResult(const RimProject* project, 
-                                                                      const RimEclipseCase* eclipseCase, 
-                                                                      const RigMainGrid* grid, 
-                                                                      std::vector<double>& completionTypeCellResults, 
-                                                                      const QDateTime& fromDate)
+void RimCompletionCellIntersectionCalc::calculateCompletionTypeResult(
+    const RimProject*     project,
+    const RimEclipseCase* eclipseCase,
+    const RigMainGrid*    grid,
+    std::vector<double>&  completionTypeCellResults,
+    const QDateTime&     fromDate)
+
 {
-    for (const RimWellPath* wellPath : project->activeOilField()->wellPathCollection->wellPaths)
+  for (const RimWellPath* wellPath : project->activeOilField()->wellPathCollection->wellPaths)
+  {
+    if (wellPath->showWellPath())
     {
-        if (wellPath->showWellPath())
-        {
-            calculateWellPathIntersections(wellPath, grid, completionTypeCellResults, fromDate);
-        }
+      calculateWellPathIntersections(wellPath,
+                                     grid,
+                                     completionTypeCellResults,
+                                     fromDate);
     }
+  }
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    for (RimEclipseView* view : eclipseCase->reservoirViews())
+  for (RimEclipseView* view : eclipseCase->reservoirViews())
+  {
+    for (RimSimWellInView* simWell : view->wellCollection()->wells())
     {
-        for (RimSimWellInView* simWell : view->wellCollection()->wells())
-        {
-            for (RimSimWellFracture* fracture : simWell->simwellFractureCollection()->simwellFractures())
-            {
-                calculateFractureIntersections(grid, fracture, completionTypeCellResults);
-            }
-        }
+      for (RimSimWellFracture* fracture : simWell->simwellFractureCollection()->simwellFractures())
+      {
+        calculateFractureIntersections(grid, fracture, completionTypeCellResults);
+      }
     }
+  }
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimCompletionCellIntersectionCalc::calculateWellPathIntersections(const RimWellPath* wellPath, 
-                                                                       const RigMainGrid* grid, 
-                                                                       std::vector<double>& values, 
-                                                                       const QDateTime& fromDate)
+void RimCompletionCellIntersectionCalc::calculateWellPathIntersections(
+    const RimWellPath*   wellPath,
+    const RigMainGrid*   grid,
+    std::vector<double>& values,
+    const QDateTime&     fromDate)
 {
     std::vector<HexIntersectionInfo> intersections;
     if (wellPath->wellPathGeometry())
     {
-        intersections = RigWellPathIntersectionTools::findRawHexCellIntersections(grid,
+         intersections =
+      RigWellPathIntersectionTools::findRawHexCellIntersections(
+          grid,
+          wellPath->wellPathGeometry()->m_wellPathPoints);
                                                                                   wellPath->wellPathGeometry()->m_wellPathPoints);
     }
 
@@ -104,151 +113,172 @@ void RimCompletionCellIntersectionCalc::calculateWellPathIntersections(const Rim
         values[intersection.m_hexIndex] = RiaDefines::WELL_PATH;
     }
 
-    if (wellPath->fishbonesCollection()->isChecked())
+
+  for (auto& intersection : intersections)
+  {
+    values[intersection.m_hexIndex] = RiaDefines::WELL_PATH;
+  }
+
+  if (wellPath->fishbonesCollection()->isChecked())
+  {
+    for (const RimFishbonesMultipleSubs* fishbones : wellPath->fishbonesCollection()->fishbonesSubs)
     {
-        for (const RimFishbonesMultipleSubs* fishbones : wellPath->fishbonesCollection()->fishbonesSubs)
-        {
-            if (fishbones->isActive())
-            {
-                calculateFishbonesIntersections(fishbones, grid, values);
-            }
-        }
+      if (fishbones->isActive())
+      {
+        calculateFishbonesIntersections(fishbones, grid, values);
+      }
     }
+  }
 
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    if (wellPath->fractureCollection()->isChecked())
+  if (wellPath->fractureCollection()->isChecked())
+  {
+    for (const RimWellPathFracture* fracture : wellPath->fractureCollection()->fractures())
     {
-        for (const RimWellPathFracture* fracture : wellPath->fractureCollection()->fractures())
-        {
-            if (fracture->isChecked())
-            {
-                calculateFractureIntersections(grid, fracture, values);
-            }
-        }
+      if (fracture->isChecked())
+      {
+        calculateFractureIntersections(grid, fracture, values);
+      }
     }
+  }
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
-    if (wellPath->perforationIntervalCollection()->isChecked())
+  if (wellPath->perforationIntervalCollection()->isChecked())
+  {
+    for (const RimPerforationInterval* perforationInterval : wellPath->perforationIntervalCollection()->perforations())
     {
-        for (const RimPerforationInterval* perforationInterval : wellPath->perforationIntervalCollection()->perforations())
-        {
-            if (perforationInterval->isChecked() && perforationInterval->isActiveOnDate(fromDate))
-            {
-                calculatePerforationIntersections(wellPath, perforationInterval, grid, values);
-            }
-        }
+      if (perforationInterval->isChecked() && perforationInterval->isActiveOnDate(fromDate))
+      {
+        calculatePerforationIntersections(wellPath, perforationInterval, grid, values);
+      }
     }
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimCompletionCellIntersectionCalc::calculateFishbonesIntersections(const RimFishbonesMultipleSubs* fishbonesSubs, const RigMainGrid* grid, std::vector<double>& values)
+void RimCompletionCellIntersectionCalc::calculateFishbonesIntersections(
+    const RimFishbonesMultipleSubs* fishbonesSubs,
+    const RigMainGrid*              grid,
+    std::vector<double>&            values)
 {
-    for (auto& sub : fishbonesSubs->installedLateralIndices())
+  for (auto& sub : fishbonesSubs->installedLateralIndices())
+  {
+    for (size_t lateralIndex : sub.lateralIndices)
     {
-        for (size_t lateralIndex : sub.lateralIndices)
-        {
-            std::vector<HexIntersectionInfo> intersections = RigWellPathIntersectionTools::findRawHexCellIntersections(grid, 
-                                                                                                                       fishbonesSubs->coordsForLateral(sub.subIndex, lateralIndex));
-            for (auto& intersection : intersections)
-            {
-                values[intersection.m_hexIndex] = RiaDefines::FISHBONES;
-            }
-        }
+      std::vector<HexIntersectionInfo> intersections =
+          RigWellPathIntersectionTools::findRawHexCellIntersections(
+              grid,
+              fishbonesSubs->coordsForLateral(sub.subIndex, lateralIndex));
+      for (auto& intersection : intersections)
+      {
+        values[intersection.m_hexIndex] = RiaDefines::FISHBONES;
+      }
     }
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimCompletionCellIntersectionCalc::calculatePerforationIntersections(const RimWellPath* wellPath, 
-                                                                          const RimPerforationInterval* perforationInterval, 
-                                                                          const RigMainGrid* grid, 
-                                                                          std::vector<double>& values)
+void RimCompletionCellIntersectionCalc::calculatePerforationIntersections(
+    const RimWellPath*            wellPath,
+    const RimPerforationInterval* perforationInterval,
+    const RigMainGrid*            grid,
+    std::vector<double>&          values)
 {
-    using namespace std;
-    pair<vector<cvf::Vec3d>, vector<double> > clippedWellPathData =  wellPath->wellPathGeometry()->clippedPointSubset(perforationInterval->startMD(), 
-                                                                                                                      perforationInterval->endMD());
+  using namespace std;
+  pair<vector<cvf::Vec3d>, vector<double> > clippedWellPathData =
+      wellPath->wellPathGeometry()->clippedPointSubset(perforationInterval->startMD(),
+                                                       perforationInterval->endMD());
 
-    std::vector<HexIntersectionInfo> intersections = RigWellPathIntersectionTools::findRawHexCellIntersections(grid,
-                                                                                                               clippedWellPathData.first);
-    for (auto& intersection : intersections)
-    {
-        values[intersection.m_hexIndex] = RiaDefines::PERFORATION_INTERVAL;
-    }
+  std::vector<HexIntersectionInfo> intersections =
+      RigWellPathIntersectionTools::findRawHexCellIntersections(grid,
+                                                                clippedWellPathData.first);
+  for (auto& intersection : intersections)
+  {
+    values[intersection.m_hexIndex] = RiaDefines::PERFORATION_INTERVAL;
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-void RimCompletionCellIntersectionCalc::calculateFractureIntersections(const RigMainGrid* mainGrid, const RimFracture* fracture, std::vector<double>& values)
+void RimCompletionCellIntersectionCalc::calculateFractureIntersections(
+    const RigMainGrid*   mainGrid,
+    const RimFracture*   fracture,
+    std::vector<double>& values)
 {
-    if (!fracture->fractureTemplate()) return;
-    if (!fracture->fractureTemplate()->fractureGrid()) return;
+  if (!fracture->fractureTemplate()) return;
+  if (!fracture->fractureTemplate()->fractureGrid()) return;
 
-    for (const RigFractureCell& fractureCell : fracture->fractureTemplate()->fractureGrid()->fractureCells())
+  for (const RigFractureCell& fractureCell : fracture->fractureTemplate()->fractureGrid()->fractureCells())
+  {
+    if (!fractureCell.hasNonZeroConductivity()) continue;
+
+    std::vector<cvf::Vec3d> fractureCellTransformed;
+    for (const auto& v : fractureCell.getPolygon())
     {
-        if (!fractureCell.hasNonZeroConductivity()) continue;
-
-        std::vector<cvf::Vec3d> fractureCellTransformed;
-        for (const auto& v : fractureCell.getPolygon())
-        {
-            cvf::Vec3d polygonNode = v;
-            polygonNode.transformPoint(fracture->transformMatrix());
-            fractureCellTransformed.push_back(polygonNode);
-        }
-
-        std::vector<size_t> potentialCells;
-
-        {
-            cvf::BoundingBox boundingBox;
-
-            for (cvf::Vec3d nodeCoord : fractureCellTransformed)
-            {
-                boundingBox.add(nodeCoord);
-            }
-
-            mainGrid->findIntersectingCells(boundingBox, &potentialCells);
-        }
-
-        for (size_t cellIndex : potentialCells)
-        {
-            if (!fracture->isEclipseCellWithinContainment(mainGrid, cellIndex)) continue;
-
-            std::array<cvf::Vec3d, 8> hexCorners;
-            mainGrid->cellCornerVertices(cellIndex, hexCorners.data());
-
-            std::vector< std::vector<cvf::Vec3d> > planeCellPolygons;
-            bool isPlaneIntersected = RigHexIntersectionTools::planeHexIntersectionPolygons(hexCorners, fracture->transformMatrix(), planeCellPolygons);
-            if (!isPlaneIntersected || planeCellPolygons.empty()) continue;
-
-            {
-                cvf::Mat4d invertedTransformMatrix = cvf::Mat4d(fracture->transformMatrix().getInverted());
-                for (std::vector<cvf::Vec3d>& planeCellPolygon : planeCellPolygons)
-                {
-                    for (cvf::Vec3d& v : planeCellPolygon)
-                    {
-                        v.transformPoint(invertedTransformMatrix);
-                    }
-                }
-            }
-
-            for (const std::vector<cvf::Vec3d>& planeCellPolygon : planeCellPolygons)
-            {
-                std::vector< std::vector<cvf::Vec3d> > clippedPolygons = RigCellGeometryTools::intersectPolygons(planeCellPolygon, fractureCell.getPolygon());
-                for (const auto& clippedPolygon : clippedPolygons)
-                {
-                    if (!clippedPolygon.empty())
-                    {
-                        values[cellIndex] = RiaDefines::FRACTURE;
-                        break;
-                    }
-                }
-            }
-        }
-
+      cvf::Vec3d polygonNode = v;
+      polygonNode.transformPoint(fracture->transformMatrix());
+      fractureCellTransformed.push_back(polygonNode);
     }
+
+    std::vector<size_t> potentialCells;
+
+    {
+      cvf::BoundingBox boundingBox;
+
+      for (cvf::Vec3d nodeCoord : fractureCellTransformed)
+      {
+        boundingBox.add(nodeCoord);
+      }
+
+      mainGrid->findIntersectingCells(boundingBox, &potentialCells);
+    }
+
+    for (size_t cellIndex : potentialCells)
+    {
+      if (!fracture->isEclipseCellWithinContainment(mainGrid, cellIndex)) continue;
+
+      std::array<cvf::Vec3d, 8> hexCorners;
+      mainGrid->cellCornerVertices(cellIndex, hexCorners.data());
+
+      std::vector< std::vector<cvf::Vec3d> > planeCellPolygons;
+      bool isPlaneIntersected = RigHexIntersectionTools::planeHexIntersectionPolygons(
+          hexCorners, fracture->transformMatrix(), planeCellPolygons);
+
+      if (!isPlaneIntersected || planeCellPolygons.empty()) continue;
+
+      {
+        cvf::Mat4d invertedTransformMatrix = cvf::Mat4d(fracture->transformMatrix().getInverted());
+        for (std::vector<cvf::Vec3d>& planeCellPolygon : planeCellPolygons)
+        {
+          for (cvf::Vec3d& v : planeCellPolygon)
+          {
+            v.transformPoint(invertedTransformMatrix);
+          }
+        }
+      }
+
+      for (const std::vector<cvf::Vec3d>& planeCellPolygon : planeCellPolygons)
+      {
+        std::vector< std::vector<cvf::Vec3d> > clippedPolygons =
+            RigCellGeometryTools::intersectPolygons(planeCellPolygon,
+                                                    fractureCell.getPolygon());
+        for (const auto& clippedPolygon : clippedPolygons)
+        {
+          if (!clippedPolygon.empty())
+          {
+            values[cellIndex] = RiaDefines::FRACTURE;
+            break;
+          }
+        }
+      }
+    }
+
+  }
 }
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES

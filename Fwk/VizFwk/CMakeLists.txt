@@ -16,7 +16,9 @@ endif()
 if (CEE_STAND_ALONE)
     # Set a default build type (not relevant for WIN32)
     if (NOT CMAKE_BUILD_TYPE)
-	    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel." FORCE)
+	    set(CMAKE_BUILD_TYPE Release CACHE 
+            STRING "Choose the type of build, options are: 
+            None Debug Release RelWithDebInfo MinSizeRel." FORCE)
     endif()
 
     include(CMake/Utils/ceeDetermineCompilerFlags.cmake)
@@ -24,7 +26,9 @@ endif()
 
 
 # Allow use of non-threadsafe reference counter in cvf::Object on systems with no atomics support
-option(CEE_WORKAROUND_ON_SYSTEMS_WITHOUT_ATOMICS "Allow use of non-threadsafe reference counter on systems with no atomics support" OFF)
+option(CEE_WORKAROUND_ON_SYSTEMS_WITHOUT_ATOMICS 
+    "Allow use of non-threadsafe reference counter 
+    on systems with no atomics support" OFF)
 if (CEE_WORKAROUND_ON_SYSTEMS_WITHOUT_ATOMICS)
     add_definitions(-DCVF_WORKAROUND_TO_COMPILE_ON_SYSTEMS_WITHOUT_ATOMICS)
 endif()

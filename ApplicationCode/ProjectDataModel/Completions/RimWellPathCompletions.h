@@ -34,32 +34,33 @@ class RimWellPathFractureCollection;
 //==================================================================================================
 class RimWellPathCompletions : public caf::PdmObject
 {
-    CAF_PDM_HEADER_INIT;
+ CAF_PDM_HEADER_INIT;
 
-public:
-    RimWellPathCompletions();
+ public:
+  RimWellPathCompletions();
 
-    RimFishbonesCollection*        fishbonesCollection() const;
-    RimPerforationCollection*      perforationCollection() const;
+  RimFishbonesCollection*        fishbonesCollection() const;
+  RimPerforationCollection*      perforationCollection() const;
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    RimWellPathFractureCollection* fractureCollection() const;
+  RimWellPathFractureCollection* fractureCollection() const;
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
 
-    void                        setWellNameForExport(const QString& name);
-    QString                     wellNameForExport() const;
-    bool                        hasCompletions() const;
+  void                           setWellNameForExport(const QString& name);
+  QString                        wellNameForExport() const;
+  bool                           hasCompletions() const;
 
-    void                        setUnitSystemSpecificDefaults();
+  void                           setUnitSystemSpecificDefaults();
 
-protected:
-    virtual void                        defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName) override;
+ protected:
+  virtual void                   defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering,
+                                                      QString uiConfigName) override;
 
-private:
-    caf::PdmChildField<RimFishbonesCollection*>         m_fishbonesCollection;
-    caf::PdmChildField<RimPerforationCollection*>       m_perforationCollection;
+ private:
+  caf::PdmChildField<RimFishbonesCollection*>         m_fishbonesCollection;
+  caf::PdmChildField<RimPerforationCollection*>       m_perforationCollection;
 #ifdef USE_PROTOTYPE_FEATURE_FRACTURES
-    caf::PdmChildField<RimWellPathFractureCollection*>  m_fractureCollection;
+  caf::PdmChildField<RimWellPathFractureCollection*>  m_fractureCollection;
 #endif // USE_PROTOTYPE_FEATURE_FRACTURES
-    
-    caf::PdmField<QString>                              m_wellNameForExport;
+
+  caf::PdmField<QString>                              m_wellNameForExport;
 };

@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////////////////
+//##################################################################
 //
 //  Copyright (C) Statoil ASA
 //  Copyright (C) Ceetron Solutions AS
@@ -15,7 +15,7 @@
 //  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
 //  for more details.
 //
-/////////////////////////////////////////////////////////////////////////////////
+//##################################################################
 
 #include "RigAllGridCellsResultAccessor.h"
 
@@ -24,18 +24,18 @@
 #include <cmath>
 
 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 /// 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 RigAllGridCellsResultAccessor::RigAllGridCellsResultAccessor(const RigGridBase* grid, const std::vector<double>* reservoirResultValues)
     : m_grid(grid),
     m_reservoirResultValues(reservoirResultValues)
 {
 }
 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 /// 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 double RigAllGridCellsResultAccessor::cellScalar(size_t gridLocalCellIndex) const
 {
     if (m_reservoirResultValues->size() == 0 ) return HUGE_VAL;
@@ -46,17 +46,17 @@ double RigAllGridCellsResultAccessor::cellScalar(size_t gridLocalCellIndex) cons
     return m_reservoirResultValues->at(reservoirCellIndex);
 }
 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 /// 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 double RigAllGridCellsResultAccessor::cellFaceScalar(size_t gridLocalCellIndex, cvf::StructGridInterface::FaceType faceId) const
 {
     return cellScalar(gridLocalCellIndex);
 }
 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 /// 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 double RigAllGridCellsResultAccessor::cellScalarGlobIdx(size_t globCellIndex) const
 {
     if (m_reservoirResultValues->size() == 0) return HUGE_VAL;
@@ -67,9 +67,9 @@ double RigAllGridCellsResultAccessor::cellScalarGlobIdx(size_t globCellIndex) co
 
 }
 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 /// 
-//--------------------------------------------------------------------------------------------------
+// -----------------------------------------------------------------
 double RigAllGridCellsResultAccessor::cellFaceScalarGlobIdx(size_t globCellIndex, cvf::StructGridInterface::FaceType faceId) const
 {
     return cellScalarGlobIdx(globCellIndex);

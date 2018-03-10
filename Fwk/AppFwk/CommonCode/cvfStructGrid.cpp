@@ -165,8 +165,7 @@ StructGridInterface::FaceType StructGridInterface::oppositeFace(FaceType face)
 {
     FaceType opposite;
     
-    switch (face)
-    {
+    switch (face) {
         case NEG_I : opposite = POS_I; break;
         case POS_I : opposite = NEG_I; break;
         case NEG_J : opposite = POS_J; break;
