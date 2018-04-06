@@ -2,17 +2,17 @@
 //
 //  Copyright (C) 2015-     Statoil ASA
 //  Copyright (C) 2015-     Ceetron Solutions AS
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -25,7 +25,7 @@
 #include <limits.h>
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RigFemPartGrid::RigFemPartGrid(const RigFemPart* femPart)
 {
@@ -34,7 +34,7 @@ RigFemPartGrid::RigFemPartGrid(const RigFemPart* femPart)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RigFemPartGrid::~RigFemPartGrid()
 {
@@ -42,30 +42,30 @@ RigFemPartGrid::~RigFemPartGrid()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RigFemPartGrid::generateStructGridData()
 {
     //[X] 1. Calculate neighbors for each element
     //[X]    record the ones with 3 or fewer neighbors as possible grid corners
-    //[X] 2. Loop over the possible corner cells, 
-    //[X]    find the one that corresponds to IJK = 000 
+    //[X] 2. Loop over the possible corner cells,
+    //[X]    find the one that corresponds to IJK = 000
     //[X]    by finding the one closest to origo // Does not work
     //[X]    by Determining what surfs correspond to NEG IJK surfaces in that element,
     //       and that none of those faces have a neighbor
-    //[X] 4. Assign IJK = 000 to that element 
+    //[X] 4. Assign IJK = 000 to that element
     //[X]    Store IJK in elm idx array
     //[X] 5. Loop along POS I surfaces increment I for each element and assign IJK
     //[X]    when at end, go to POS J neighbor, increment J, repeat above.
     //[X]    etc for POS Z
-    //[X]    Find max IJK as you go, 
+    //[X]    Find max IJK as you go,
     //[ ]    also assert that there are no NEG I/NEG J/NEG Z neighbors when starting on a new row
     //[ ]    (Need to find min, and offset IJK values if there exists such)
     //[ ] 6. If IJK to elm idx is needed, allocate "grid" with maxI,maxJ,maxZ values
     //[ ]    Loop over elms, assign elmIdx to IJK address in grid
- 
-    int elmIdxForIJK_000 = findElmIdxForIJK000(); 
-   
+
+    int elmIdxForIJK_000 = findElmIdxForIJK000();
+
     CVF_ASSERT (elmIdxForIJK_000 != -1); // Debug. When we have run enough tests, remove
 
     if (elmIdxForIJK_000 == -1) return;
@@ -118,7 +118,7 @@ void RigFemPartGrid::generateStructGridData()
 
                     // Step to neighbor
                     elmIdxInI = neighborElmIdx;
-                   
+
                 }
 
                 // Scoped to show that nothing bleeds further to K-loop
@@ -142,7 +142,7 @@ void RigFemPartGrid::generateStructGridData()
 
                     // Step to neighbor
                     elmIdxInJ = neighborElmIdx;
-                   
+
                 }
             }
 
@@ -167,7 +167,7 @@ void RigFemPartGrid::generateStructGridData()
 
                 // Step to neighbor
                 elmIdxInK = neighborElmIdx;
-               
+
             }
         }
 
@@ -175,9 +175,9 @@ void RigFemPartGrid::generateStructGridData()
     }
 
 
-    
+
     m_elmIdxPrIJK.resize(m_elmentIJKCounts[0], m_elmentIJKCounts[1],m_elmentIJKCounts[2]);
-    
+
     for (int elmIdx = 0; elmIdx < m_femPart->elementCount(); ++elmIdx)
     {
         cvf::Vec3i ijk = m_ijkPrElement[elmIdx];
@@ -208,7 +208,7 @@ void RigFemPartGrid::generateStructGridData()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 int RigFemPartGrid::findElmIdxForIJK000()
 {
@@ -222,7 +222,7 @@ int RigFemPartGrid::findElmIdxForIJK000()
 
         if (   m_femPart->elementNeighbor(elmIdx, ijkMainFaceIndices[0]) != -1
             && m_femPart->elementNeighbor(elmIdx, ijkMainFaceIndices[1]) != -1
-            && m_femPart->elementNeighbor(elmIdx, ijkMainFaceIndices[2]) != -1 ) 
+            && m_femPart->elementNeighbor(elmIdx, ijkMainFaceIndices[2]) != -1 )
         {
             return elmIdx;
         }
@@ -232,7 +232,7 @@ int RigFemPartGrid::findElmIdxForIJK000()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Vec3i RigFemPartGrid::findMainIJKFaces(int elementIndex) const
 {
@@ -275,7 +275,7 @@ cvf::Vec3i RigFemPartGrid::findMainIJKFaces(int elementIndex) const
     // Match the element main directions with best XYZ match (IJK respectively)
     // Find the mainElmDirection with the largest component starting with Z
     // and use that for the corresponding IJK direction.
-    // Find the Z (for K) first. Then select among the other two the Y (for J), 
+    // Find the Z (for K) first. Then select among the other two the Y (for J),
     // and select the remaining for I
 
     int mainElmDirectionIdxForIJK[3] ={ -1, -1, -1 };
@@ -311,7 +311,7 @@ cvf::Vec3i RigFemPartGrid::findMainIJKFaces(int elementIndex) const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::pair<cvf::Vec3st, cvf::Vec3st> RigFemPartGrid::reservoirIJKBoundingBox() const
 {
@@ -351,16 +351,16 @@ int RigFemPartGrid::perpendicularFaceInDirection(cvf::Vec3f direction, int perpF
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 size_t RigFemPartGrid::gridPointCountI() const
 {
-   
+
     return m_elmentIJKCounts[0] + 1;
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 size_t RigFemPartGrid::gridPointCountJ() const
 {
@@ -368,7 +368,7 @@ size_t RigFemPartGrid::gridPointCountJ() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 size_t RigFemPartGrid::gridPointCountK() const
 {
@@ -376,7 +376,7 @@ size_t RigFemPartGrid::gridPointCountK() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RigFemPartGrid::isCellValid(size_t i, size_t j, size_t k) const
 {
@@ -385,7 +385,7 @@ bool RigFemPartGrid::isCellValid(size_t i, size_t j, size_t k) const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Vec3d RigFemPartGrid::minCoordinate() const
 {
@@ -394,7 +394,7 @@ cvf::Vec3d RigFemPartGrid::minCoordinate() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Vec3d RigFemPartGrid::maxCoordinate() const
 {
@@ -403,7 +403,7 @@ cvf::Vec3d RigFemPartGrid::maxCoordinate() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RigFemPartGrid::cellIJKNeighbor(size_t i, size_t j, size_t k, FaceType face, size_t* neighborCellIndex) const
 {
@@ -412,7 +412,7 @@ bool RigFemPartGrid::cellIJKNeighbor(size_t i, size_t j, size_t k, FaceType face
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 size_t RigFemPartGrid::cellIndexFromIJK(size_t i, size_t j, size_t k) const
 {
@@ -420,10 +420,10 @@ size_t RigFemPartGrid::cellIndexFromIJK(size_t i, size_t j, size_t k) const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-bool RigFemPartGrid::ijkFromCellIndex(size_t cellIndex, size_t* i, size_t* j, size_t* k) const
-{
+bool RigFemPartGrid::ijkFromCellIndex(size_t cellIndex,
+                                      size_t* i, size_t* j, size_t* k) const {
     *i = m_ijkPrElement[cellIndex][0];
     *j = m_ijkPrElement[cellIndex][1];
     *k = m_ijkPrElement[cellIndex][2];
@@ -432,7 +432,7 @@ bool RigFemPartGrid::ijkFromCellIndex(size_t cellIndex, size_t* i, size_t* j, si
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RigFemPartGrid::cellIJKFromCoordinate(const cvf::Vec3d& coord, size_t* i, size_t* j, size_t* k) const
 {
@@ -442,7 +442,7 @@ bool RigFemPartGrid::cellIJKFromCoordinate(const cvf::Vec3d& coord, size_t* i, s
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RigFemPartGrid::cellCornerVertices(size_t cellIndex, cvf::Vec3d vertices[8]) const
 {
@@ -450,7 +450,7 @@ void RigFemPartGrid::cellCornerVertices(size_t cellIndex, cvf::Vec3d vertices[8]
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Vec3d RigFemPartGrid::cellCentroid(size_t cellIndex) const
 {
@@ -459,26 +459,32 @@ cvf::Vec3d RigFemPartGrid::cellCentroid(size_t cellIndex) const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-void RigFemPartGrid::cellMinMaxCordinates(size_t cellIndex, cvf::Vec3d* minCoordinate, cvf::Vec3d* maxCoordinate) const
-{
+void RigFemPartGrid::cellMinMaxCordinates(size_t cellIndex,
+                                          cvf::Vec3d* minCoordinate,
+                                          cvf::Vec3d* maxCoordinate) const {
     CVF_ASSERT(false);
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-size_t RigFemPartGrid::gridPointIndexFromIJK(size_t i, size_t j, size_t k) const
-{
+size_t
+RigFemPartGrid::gridPointIndexFromIJK(size_t i,
+                                      size_t j,
+                                      size_t k) const {
     CVF_ASSERT(false);
     return cvf::UNDEFINED_SIZE_T;
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-cvf::Vec3d RigFemPartGrid::gridPointCoordinate(size_t i, size_t j, size_t k) const
+cvf::Vec3d
+RigFemPartGrid::gridPointCoordinate(size_t i,
+                                    size_t j,
+                                    size_t k) const
 {
     CVF_ASSERT(false);
     return cvf::Vec3d::ZERO;

@@ -49,13 +49,13 @@ class ScalarMapper;
 
 //==================================================================================================
 //
-// 
+//
 //
 //==================================================================================================
 class StructGridIsosurface : public Object
 {
 public:
-    StructGridIsosurface(const RectilinearGrid* grid); 
+    StructGridIsosurface(const RectilinearGrid* grid);
     ~StructGridIsosurface();
 
     void                setScalarSetIndex(uint scalarSetIndex);
@@ -77,14 +77,23 @@ private:
     struct Triangle
     {
         Vec3d   p[3];       // Triangle vertices
-        size_t  peid[3];    // Source edge ID for the vertices 
+        size_t  peid[3];    // Source edge ID for the vertices
         double  scalars[3]; // Interpolated scalar values for the vertices
     };
 
     bool            mapScalar() const;
 
-    static int      polygonise(double isoLevel, const GridCell& grid, Triangle triangles[5], bool useTextureMapping);
-    static Vec3d    vertexInterpolate(double isoLevel, const Vec3d& p1, const Vec3d& p2, const double valp1, const double valp2);
+    static int      polygonise(double isoLevel,
+                               const GridCell& grid,
+                               Triangle triangles[5],
+                               bool useTextureMapping);
+
+    static Vec3d    vertexInterpolate(double isoLevel,
+                                      const Vec3d& p1,
+                                      const Vec3d& p2,
+                                      const double valp1,
+                                      const double valp2);
+
     static Vec3d    vertexInterpolateWithMapping(double isoLevel, const Vec3d& p1, const Vec3d& p2, const double valp1, const double valp2, const double mapValp1, const double mapValp2, double* mapVal);
 
 private:
@@ -95,8 +104,8 @@ private:
     uint                    m_mapScalarSetIndex;    // Index of scalar set that is mapped onto the cut plane. -1 for no mapping
     cref<ScalarMapper>      m_scalarMapper;         // Scalar mapper to use when mapping. Both scalar set index and mapper must be set in order to get scalar mapping
 
-    static const uint       sm_edgeTable[256];   
-    static const int        sm_triTable[256][16];   
+    static const uint       sm_edgeTable[256];
+    static const int        sm_triTable[256][16];
 };
 
 }

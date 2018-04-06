@@ -49,7 +49,7 @@ class ScalarMapper;
 class StructGridScalarDataAccess;
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class CellRangeFilter
 {
@@ -64,7 +64,7 @@ public:
     bool isCellVisible(size_t i, size_t j, size_t k, bool isInSubGridArea) const;
     bool isCellExcluded(size_t i, size_t j, size_t k, bool isInSubGridArea) const;
 
-    bool hasIncludeRanges() const; 
+    bool hasIncludeRanges() const;
 
 private:
     class CellRange
@@ -114,7 +114,7 @@ private:
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 class CellFaceVisibilityFilter
 {
@@ -133,8 +133,8 @@ public:
 
     // Interface for building the mappings
     std::vector<size_t>& quadToCellIndexMap()   { return m_quadsToCells; }
-    std::vector<StructGridInterface::FaceType>& quadToCellFaceMap() { return m_quadsToFace; } 
- 
+    std::vector<StructGridInterface::FaceType>& quadToCellFaceMap() { return m_quadsToFace; }
+
 private:
     std::vector<size_t>                          m_quadsToCells;
     std::vector<StructGridInterface::FaceType>   m_quadsToFace;
@@ -157,7 +157,7 @@ private:
 
 //==================================================================================================
 //
-// 
+//
 //
 //==================================================================================================
 class StructGridGeometryGenerator : public Object
@@ -168,19 +168,23 @@ public:
 
     // Setup methods
 
-    void                setCellVisibility(const UByteArray* cellVisibility);
-    void                addFaceVisibilityFilter(const CellFaceVisibilityFilter* cellVisibilityFilter);
+    void setCellVisibility(const UByteArray* cellVisibility);
+    void addFaceVisibilityFilter(const CellFaceVisibilityFilter* cellVisibilityFilter);
 
     // Access, valid after generation is done
 
     const StructGridInterface* activeGrid() { return m_grid.p(); }
 
-    void                textureCoordinates(Vec2fArray* textureCoords, const StructGridScalarDataAccess* resultAccessor, const ScalarMapper* mapper) const;
+    void textureCoordinates(Vec2fArray* textureCoords,
+                            const StructGridScalarDataAccess* resultAccessor,
+                            const ScalarMapper* mapper) const;
 
     // Mapping between cells and geometry
+    const StructGridQuadToCellFaceMapper * quadToCellFaceMapper()
+    { return m_quadMapper.p(); }
 
-    const StructGridQuadToCellFaceMapper *    quadToCellFaceMapper()     { return m_quadMapper.p(); }
-    const StuctGridTriangleToCellFaceMapper * triangleToCellFaceMapper() { return m_triangleMapper.p(); }
+    const StuctGridTriangleToCellFaceMapper * triangleToCellFaceMapper()
+    { return m_triangleMapper.p(); }
 
     // Generated geometry
     ref<DrawableGeo>    generateSurface();
@@ -190,11 +194,12 @@ public:
     static ref<DrawableGeo> createMeshDrawableFromSingleCell(const StructGridInterface* grid, size_t cellIndex);
 
 private:
-    static ref<UIntArray> 
-                        lineIndicesFromQuadVertexArray(const Vec3fArray* vertexArray);
-    bool                isCellFaceVisible(size_t i, size_t j, size_t k, StructGridInterface::FaceType face) const;
-    
-    void                computeArrays();
+    static ref<UIntArray>
+    lineIndicesFromQuadVertexArray(const Vec3fArray* vertexArray);
+
+    bool isCellFaceVisible(size_t i, size_t j, size_t k, StructGridInterface::FaceType face) const;
+
+    void computeArrays();
 
 private:
     // Input
