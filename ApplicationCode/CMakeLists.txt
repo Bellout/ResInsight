@@ -21,6 +21,7 @@ include_directories(
     ${ResInsight_SOURCE_DIR}/ThirdParty
     
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hack
     ${CMAKE_CURRENT_SOURCE_DIR}/Adm
     ${CMAKE_CURRENT_SOURCE_DIR}/Application
     ${CMAKE_CURRENT_SOURCE_DIR}/Application/Tools
@@ -276,7 +277,7 @@ set( EXE_FILES
 	${REFERENCED_CMAKE_FILES}
     ../ResInsightVersion.cmake
     ../.clang-format
-)
+    Hack/print_functions.hpp)
 
 add_executable( ResInsight ${EXE_FILES} )
 

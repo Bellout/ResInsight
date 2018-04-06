@@ -16,6 +16,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #include "RicAppendIntersectionBoxFeature.h"
 
 #include "RimCase.h"
@@ -31,11 +32,11 @@
 
 #include <QAction>
 
-CAF_CMD_SOURCE_INIT(RicAppendIntersectionBoxFeature, "RicAppendIntersectionBoxFeature");
+// ---------------------------------------------------------------
+CAF_CMD_SOURCE_INIT(
+    RicAppendIntersectionBoxFeature, "RicAppendIntersectionBoxFeature");
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
 bool RicAppendIntersectionBoxFeature::isCommandEnabled() {
 
   RimIntersectionCollection*
@@ -45,51 +46,51 @@ bool RicAppendIntersectionBoxFeature::isCommandEnabled() {
   return false;
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
 void RicAppendIntersectionBoxFeature::onActionTriggered(bool isChecked)
 {
-  RimIntersectionCollection* coll = RicAppendIntersectionBoxFeature::intersectionCollection();
+  RimIntersectionCollection* coll =
+      RicAppendIntersectionBoxFeature::intersectionCollection();
 
-  if (coll)
-  {
+  if (coll) {
+
+    // -----------------------------------------------------------
     RimIntersectionBox* intersectionBox = new RimIntersectionBox();
     intersectionBox->name = QString("Intersection Box");
 
     coll->appendIntersectionBoxAndUpdate(intersectionBox);
 
+    // -----------------------------------------------------------
     intersectionBox->setToDefaultSizeBox();
 
     coll->updateConnectedEditors();
     Riu3DMainWindowTools::selectAsCurrentItem(intersectionBox);
 
+    // -----------------------------------------------------------
     RimGridView* rimView = nullptr;
     coll->firstAncestorOrThisOfTypeAsserted(rimView);
     rimView->showGridCells(false);
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RicAppendIntersectionBoxFeature::setupActionLook(QAction* actionToSetup)
-{
+// ---------------------------------------------------------------
+void
+RicAppendIntersectionBoxFeature::setupActionLook(QAction* actionToSetup) {
   actionToSetup->setIcon(QIcon(":/IntersectionBox16x16.png"));
   actionToSetup->setText("New Intersection Box");
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-RimIntersectionCollection* RicAppendIntersectionBoxFeature::intersectionCollection()
-{
+// ---------------------------------------------------------------
+RimIntersectionCollection*
+RicAppendIntersectionBoxFeature::intersectionCollection() {
+
   RimIntersectionCollection* intersectionBoxColl = nullptr;
 
+  // -------------------------------------------------------------
   std::vector<caf::PdmObjectHandle*> selectedObjects;
   caf::SelectionManager::instance()->objectsByType(&selectedObjects);
-  if (selectedObjects.size() == 1)
-  {
+
+  if (selectedObjects.size() == 1) {
     selectedObjects[0]->firstAncestorOrThisOfType(intersectionBoxColl);
   }
 

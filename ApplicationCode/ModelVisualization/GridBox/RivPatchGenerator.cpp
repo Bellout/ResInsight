@@ -17,107 +17,90 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-
+// ---------------------------------------------------------------
 #include "RivPatchGenerator.h"
 
 #include "cvfGeometryUtils.h"
 #include "cvfArray.h"
 
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
 RivPatchGenerator::RivPatchGenerator()
-:   m_origin(0, 0, 0),
-    m_axisU(cvf::Vec3d::X_AXIS),
-    m_axisV(cvf::Vec3d::Y_AXIS),
-    m_useQuads(true),
-    m_windingCCW(true)
-{
-
+    :   m_origin(0, 0, 0),
+        m_axisU(cvf::Vec3d::X_AXIS),
+        m_axisV(cvf::Vec3d::Y_AXIS),
+        m_useQuads(true),
+        m_windingCCW(true) {
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::setOrigin(const cvf::Vec3d& origin)
-{
-    m_origin = origin;
+// ---------------------------------------------------------------
+void RivPatchGenerator::setOrigin(const cvf::Vec3d& origin) {
+  m_origin = origin;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// Set the axes
-/// 
-/// The specified axes will be normalized
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::setAxes(const cvf::Vec3d& axisU, const cvf::Vec3d& axisV)
-{
-    m_axisU = axisU.getNormalized();
-    m_axisV = axisV.getNormalized();
+// ---------------------------------------------------------------
+// Set the axes
+// The specified axes will be normalized
+void RivPatchGenerator::setAxes(const cvf::Vec3d& axisU,
+                                const cvf::Vec3d& axisV) {
+  m_axisU = axisU.getNormalized();
+  m_axisV = axisV.getNormalized();
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::setSubdivisions(const std::vector<double>& uValues, const std::vector<double>& vValues)
-{
-    m_uValues = uValues;
-    m_vValues = vValues;
+// ---------------------------------------------------------------
+void
+RivPatchGenerator::setSubdivisions(const std::vector<double>& uValues,
+                                   const std::vector<double>& vValues) {
+  m_uValues = uValues;
+  m_vValues = vValues;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::setQuads(bool useQuads)
-{
-    m_useQuads = useQuads;
+// ---------------------------------------------------------------
+void RivPatchGenerator::setQuads(bool useQuads) {
+  m_useQuads = useQuads;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::setWindingCCW(bool windingCCW)
-{
-    m_windingCCW = windingCCW;
+// ---------------------------------------------------------------
+void RivPatchGenerator::setWindingCCW(bool windingCCW) {
+  m_windingCCW = windingCCW;
 }
 
+// ---------------------------------------------------------------
+void RivPatchGenerator::generate(cvf::GeometryBuilder* builder) {
+  CVF_ASSERT(m_uValues.size() > 0);
+  CVF_ASSERT(m_vValues.size() > 0);
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivPatchGenerator::generate(cvf::GeometryBuilder* builder)
-{
-    CVF_ASSERT(m_uValues.size() > 0);
-    CVF_ASSERT(m_vValues.size() > 0);
+  // -------------------------------------------------------------
+  size_t numVertices = m_uValues.size() * m_vValues.size();
 
-    size_t numVertices = m_uValues.size() * m_vValues.size();
+  cvf::Vec3fArray vertices;
+  vertices.reserve(numVertices);
 
-    cvf::Vec3fArray vertices;
-    vertices.reserve(numVertices);
-    
-    for (size_t v = 0; v < m_vValues.size(); v++)
-    {
-        cvf::Vec3d rowOrigo(m_origin + m_axisV * m_vValues[v]);
+  // -------------------------------------------------------------
+  for (size_t v = 0; v < m_vValues.size(); v++) {
 
-        for (size_t u = 0; u < m_uValues.size(); u++)
-        {
-            vertices.add(cvf::Vec3f(rowOrigo + m_axisU * m_uValues[u]));
-        }
+    cvf::Vec3d rowOrigo(m_origin + m_axisV * m_vValues[v]);
+
+    for (size_t u = 0; u < m_uValues.size(); u++) {
+
+      vertices.add(cvf::Vec3f(rowOrigo + m_axisU * m_uValues[u]));
     }
+  }
 
-    cvf::uint baseNodeIdx = builder->addVertices(vertices);
+  // -------------------------------------------------------------
+  cvf::uint baseNodeIdx = builder->addVertices(vertices);
 
-    if (m_useQuads)
-    {
-        cvf::UIntArray conn;
-        cvf::GeometryUtils::tesselatePatchAsQuads(static_cast<int>(m_uValues.size()), static_cast<int>(m_vValues.size()), baseNodeIdx, m_windingCCW, &conn);
-        builder->addQuads(conn);
-    }
-    else
-    {
-        cvf::UIntArray conn;
-        cvf::GeometryUtils::tesselatePatchAsTriangles(static_cast<int>(m_uValues.size()), static_cast<int>(m_vValues.size()), baseNodeIdx, m_windingCCW, &conn);
-        builder->addTriangles(conn);
-    }
+  if (m_useQuads) {
+    cvf::UIntArray conn;
+    cvf::GeometryUtils::tesselatePatchAsQuads(static_cast<int>(m_uValues.size()),
+                                              static_cast<int>(m_vValues.size()),
+                                              baseNodeIdx, m_windingCCW, &conn);
+    builder->addQuads(conn);
+  } else {
+    cvf::UIntArray conn;
+    cvf::GeometryUtils::tesselatePatchAsTriangles(static_cast<int>(m_uValues.size()),
+                                                  static_cast<int>(m_vValues.size()),
+                                                  baseNodeIdx, m_windingCCW, &conn);
+    builder->addTriangles(conn);
+  }
 }
 

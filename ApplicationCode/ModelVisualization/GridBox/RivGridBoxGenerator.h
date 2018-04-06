@@ -17,9 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "cvfBase.h"
 
 #include "cvfCollection.h"
@@ -28,103 +29,112 @@
 #include "cvfTransform.h"
 #include "cvfScalarMapperDiscreteLinear.h"
 
-
-namespace cvf
-{
-    class Camera;
-    class ShaderProgram;
+// ---------------------------------------------------------------
+namespace cvf {
+class Camera;
+class ShaderProgram;
 }
 
-
-//==================================================================================================
-//
-//
-//==================================================================================================
+//================================================================
 class RivGridBoxGenerator
 {
-public:
-    RivGridBoxGenerator();
+ public:
 
-    void setScaleZ(double scaleZ);
-    void setDisplayModelOffset(cvf::Vec3d offset);
-    void setGridBoxDomainCoordBoundingBox(const cvf::BoundingBox& boundingBox);
-    void updateFromBackgroundColor(const cvf::Color3f& backgroundColor);
+  // -------------------------------------------------------------
+  RivGridBoxGenerator();
 
-    void createGridBoxParts();
+  // -------------------------------------------------------------
+  void setScaleZ(double scaleZ);
+  void setDisplayModelOffset(cvf::Vec3d offset);
+  void setGridBoxDomainCoordBoundingBox(const cvf::BoundingBox& boundingBox);
+  void updateFromBackgroundColor(const cvf::Color3f& backgroundColor);
 
-    void updateFromCamera(const cvf::Camera* camera);
+  // -------------------------------------------------------------
+  void createGridBoxParts();
 
-    cvf::Model* model();
+  void updateFromCamera(const cvf::Camera* camera);
 
-private:
-    enum AxisType
-    {
-        X_AXIS,
-        Y_AXIS,
-        Z_AXIS
-    };
+  cvf::Model* model();
 
-    enum FaceType
-    {
-        POS_X,
-        NEG_X,
-        POS_Y,
-        NEG_Y,
-        POS_Z,
-        NEG_Z
-    };
+ private:
+  // -------------------------------------------------------------
+  enum AxisType {
+    X_AXIS,
+    Y_AXIS,
+    Z_AXIS
+  };
 
-    enum EdgeType
-    {
-        POS_Z_POS_X,
-        POS_Z_NEG_X,
-        POS_Z_POS_Y,
-        POS_Z_NEG_Y,
+  enum FaceType {
+    POS_X,
+    NEG_X,
+    POS_Y,
+    NEG_Y,
+    POS_Z,
+    NEG_Z
+  };
 
-        NEG_Z_POS_X,
-        NEG_Z_NEG_X,
-        NEG_Z_POS_Y,
-        NEG_Z_NEG_Y,
+  enum EdgeType {
+    POS_Z_POS_X,
+    POS_Z_NEG_X,
+    POS_Z_POS_Y,
+    POS_Z_NEG_Y,
 
-        POS_X_POS_Y,
-        POS_X_NEG_Y,
-        NEG_X_POS_Y,
-        NEG_X_NEG_Y
-    };
+    NEG_Z_POS_X,
+    NEG_Z_NEG_X,
+    NEG_Z_POS_Y,
+    NEG_Z_NEG_Y,
 
-private:
-    void        createGridBoxFaceParts();
-    void        createGridBoxLegendParts();
-    void        createLegend(EdgeType edge, cvf::Collection<cvf::Part>* parts);
+    POS_X_POS_Y,
+    POS_X_NEG_Y,
+    NEG_X_POS_Y,
+    NEG_X_NEG_Y
+  };
 
-    void        computeEdgeVisibility(const std::vector<bool>& faceVisibility, std::vector<bool>& edgeVisibility);
+ private:
+  // -------------------------------------------------------------
+  void        createGridBoxFaceParts();
+  void        createGridBoxLegendParts();
+  void        createLegend(EdgeType edge, cvf::Collection<cvf::Part>* parts);
 
-    void        computeDisplayCoords();
-    cvf::Vec3d  displayModelCoordFromDomainCoord(const cvf::Vec3d& domainCoord) const;
+  // -------------------------------------------------------------
+  void        computeEdgeVisibility(const std::vector<bool>& faceVisibility,
+                                    std::vector<bool>& edgeVisibility);
 
-    cvf::Vec3f  sideNormalOutwards(FaceType face);
-    cvf::Vec3d  pointOnSide(FaceType face);
-    cvf::Vec3f  cornerDirection(FaceType face1, FaceType face2);
-private:
-    cvf::BoundingBox    m_domainCoordsBoundingBox;
-    std::vector<double> m_domainCoordsXValues;
-    std::vector<double> m_domainCoordsYValues;
-    std::vector<double> m_domainCoordsZValues;
+  // -------------------------------------------------------------
+  void        computeDisplayCoords();
+  cvf::Vec3d  displayModelCoordFromDomainCoord(const cvf::Vec3d& domainCoord) const;
 
-    cvf::BoundingBox    m_displayCoordsBoundingBox;
-    std::vector<double> m_displayCoordsXValues;
-    std::vector<double> m_displayCoordsYValues;
-    std::vector<double> m_displayCoordsZValues;
+  // -------------------------------------------------------------
+  cvf::Vec3f  sideNormalOutwards(FaceType face);
+  cvf::Vec3d  pointOnSide(FaceType face);
+  cvf::Vec3f  cornerDirection(FaceType face1, FaceType face2);
 
-    double              m_scaleZ;
-    cvf::Vec3d          m_displayModelOffset;
+ private:
+  // -------------------------------------------------------------
+  cvf::BoundingBox    m_domainCoordsBoundingBox;
+  std::vector<double> m_domainCoordsXValues;
+  std::vector<double> m_domainCoordsYValues;
+  std::vector<double> m_domainCoordsZValues;
 
-    cvf::Collection<cvf::Part>      m_gridBoxFaceParts;
-    cvf::Collection<cvf::Part>      m_gridBoxLegendParts;
+  // -------------------------------------------------------------
+  cvf::BoundingBox    m_displayCoordsBoundingBox;
+  std::vector<double> m_displayCoordsXValues;
+  std::vector<double> m_displayCoordsYValues;
+  std::vector<double> m_displayCoordsZValues;
 
-    cvf::ref<cvf::ModelBasicList>   m_gridBoxModel;
+  // -------------------------------------------------------------
+  double              m_scaleZ;
+  cvf::Vec3d          m_displayModelOffset;
 
-    cvf::Color3f        m_gridColor;
-    cvf::Color3f        m_gridLegendColor;
+  // -------------------------------------------------------------
+  cvf::Collection<cvf::Part>      m_gridBoxFaceParts;
+  cvf::Collection<cvf::Part>      m_gridBoxLegendParts;
+
+  // -------------------------------------------------------------
+  cvf::ref<cvf::ModelBasicList>   m_gridBoxModel;
+
+  // -------------------------------------------------------------
+  cvf::Color3f        m_gridColor;
+  cvf::Color3f        m_gridLegendColor;
 };
 

@@ -16,26 +16,36 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "cvfBase.h"
 #include "cvfObject.h"
 #include "cvfArray.h"
 #include <array>
 
+// ---------------------------------------------------------------
 class RivIntersectionBoxGeometryGenerator;
 class RimIntersectionBox;
 
+// ---------------------------------------------------------------
 class RivIntersectionBoxSourceInfo : public cvf::Object
 {
-public:
-    explicit RivIntersectionBoxSourceInfo(RivIntersectionBoxGeometryGenerator* geometryGenerator);
+ public:
+  // -------------------------------------------------------------
+  explicit RivIntersectionBoxSourceInfo(
+      RivIntersectionBoxGeometryGenerator* geometryGenerator);
 
-    const std::vector<size_t>& triangleToCellIndex() const;
+  // -------------------------------------------------------------
+  const std::vector<size_t>& triangleToCellIndex() const;
 
-    std::array<cvf::Vec3f, 3> triangle(int triangleIdx) const;
-    RimIntersectionBox* intersectionBox() const;
+  // -------------------------------------------------------------
+  std::array<cvf::Vec3f, 3> triangle(int triangleIdx) const;
+  RimIntersectionBox* intersectionBox() const;
 
-private:
-    cvf::cref<RivIntersectionBoxGeometryGenerator> m_intersectionBoxGeometryGenerator;
+ private:
+  // -------------------------------------------------------------
+  cvf::cref<RivIntersectionBoxGeometryGenerator>
+      m_intersectionBoxGeometryGenerator;
 };

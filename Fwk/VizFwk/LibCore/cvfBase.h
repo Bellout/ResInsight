@@ -34,13 +34,19 @@
 //
 //##################################################################################################
 
-
+// ---------------------------------------------------------------
 #pragma once
 
-#if !defined(WIN32) && !defined(CVF_LINUX) && !defined(CVF_IOS) && !defined(CVF_OSX) && !defined(CVF_ANDROID)
+// ---------------------------------------------------------------
+#if !defined(WIN32) \
+&& !defined(CVF_LINUX) \
+&& !defined(CVF_IOS) \
+&& !defined(CVF_OSX) \
+&& !defined(CVF_ANDROID)
 #error No platform defined
 #endif
 
+// ---------------------------------------------------------------
 //  Global include file with definitions useful for all library files
 
 // Disable some annoying warnings so we can compile with warning level Wall
@@ -64,51 +70,59 @@
 
 #endif
 
-
+// ---------------------------------------------------------------
 // Makes it easier to check on the current GCC version
 #ifdef __GNUC__
 // 40302 means version 4.3.2.
 # define CVF_GCC_VER  (__GNUC__*10000 + __GNUC_MINOR__*100 + __GNUC_PATCHLEVEL__)
-#endif  
+#endif
 
+// ---------------------------------------------------------------
 // Helper macro to disable (ignore) compiler warnings on GCC
 // The needed pragma is only available in GCC for versions 4.2.x and above
 #if defined(__GNUC__) && (CVF_GCC_VER >= 40200)
 #define CVF_DO_PRAGMA(x) _Pragma(#x)
-#define CVF_GCC_DIAGNOSTIC_IGNORE(OPTION_STRING) CVF_DO_PRAGMA(GCC diagnostic ignored OPTION_STRING)
+#define CVF_GCC_DIAGNOSTIC_IGNORE(OPTION_STRING) \
+CVF_DO_PRAGMA(GCC diagnostic ignored OPTION_STRING)
 #else
 #define CVF_GCC_DIAGNOSTIC_IGNORE(OPTION_STRING) 
 #endif
 
-
-#if defined(CVF_LINUX) || defined(CVF_IOS) || defined(CVF_OSX) || defined(CVF_ANDROID)
+// ---------------------------------------------------------------
+#if defined(CVF_LINUX) \
+|| defined(CVF_IOS) \
+|| defined(CVF_OSX) \
+|| defined(CVF_ANDROID)
 // Used by int64_t on *nix below
-#include <stdint.h>     
+#include <stdint.h>
 #endif
 
+// ---------------------------------------------------------------
 // Brings in size_t and definition of NULL
 #include <cstddef>
 
+// ---------------------------------------------------------------
 // Added due to conflict between std::min/max and define in Windows.h
 #define CVF_MIN(X, Y) ((X) < (Y) ? (X) : (Y))
 #define CVF_MAX(X, Y) ((X) > (Y) ? (X) : (Y))
 
+// ---------------------------------------------------------------
 // Macro for avoiding "unused parameter" warnings
 // The bottom one is the best alternative, but unfortunately doesn't work on VS2010
 #ifdef WIN32
 #define CVF_UNUSED(EXPR) (void)(EXPR);
 #else
-#define CVF_UNUSED(EXPR) (void)sizeof(EXPR); 
+#define CVF_UNUSED(EXPR) (void)sizeof(EXPR);
 #endif
 
-
+// ---------------------------------------------------------------
 // Macro to disable the copy constructor and assignment operator
 // Should be used in the private section of a class
 #define CVF_DISABLE_COPY_AND_ASSIGN(CLASS_NAME) \
     CLASS_NAME(const CLASS_NAME&);              \
     void operator=(const CLASS_NAME&)
 
-
+// ---------------------------------------------------------------
 /// Ceetron Visualization Framework namespace
 namespace cvf {
 
@@ -116,15 +130,23 @@ typedef unsigned char    ubyte;
 typedef unsigned short   ushort;
 typedef unsigned int     uint;
 
+// ---------------------------------------------------------------
 // 64bit integer support via the int64 type
 #ifdef WIN32
-typedef __int64 int64;  
-#elif defined(CVF_LINUX) || defined(CVF_IOS) || defined(CVF_OSX) || defined(CVF_ANDROID)
-typedef int64_t int64;  
-#endif 
+typedef __int64 int64;
+#elif defined(CVF_LINUX) \
+|| defined(CVF_IOS) \
+|| defined(CVF_OSX) \
+|| defined(CVF_ANDROID)
+typedef int64_t int64;
+#endif
 
 }
 
+// ---------------------------------------------------------------
 #include "cvfConfigCore.h"
 #include "cvfVersion.h"
 #include "cvfAssert.h"
+
+// ---------------------------------------------------------------
+#include "../../../ApplicationCode/Hack/print_functions.hpp"
