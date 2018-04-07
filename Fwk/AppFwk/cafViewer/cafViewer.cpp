@@ -96,7 +96,7 @@ public:
 
 
     virtual cvf::UniformSet* uniformSet() { return m_uniformSet.p(); }
-    virtual void        update(cvf::Rendering* rendering){};      
+    virtual void        update(cvf::Rendering* rendering){};
 
 private:
     cvf::ref<cvf::UniformSet>   m_uniformSet;
@@ -109,7 +109,7 @@ std::list<caf::Viewer*> caf::Viewer::sm_viewers;
 cvf::ref<cvf::OpenGLContextGroup> caf::Viewer::sm_openGLContextGroup;
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 caf::Viewer::Viewer(const QGLFormat& format, QWidget* parent)
     :   caf::OpenGLWidget(contextGroup(), format, new QWidget(parent), sharedWidget()),
@@ -166,7 +166,7 @@ caf::Viewer::Viewer(const QGLFormat& format, QWidget* parent)
     sm_viewers.push_back(this);
 }
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 caf::Viewer::~Viewer()
 {
@@ -178,7 +178,7 @@ caf::Viewer::~Viewer()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::setupMainRendering()
 {
@@ -210,7 +210,7 @@ void caf::Viewer::setupMainRendering()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::setupRenderingSequence()
 {
@@ -238,7 +238,7 @@ void caf::Viewer::setupRenderingSequence()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 caf::Viewer* caf::Viewer::sharedWidget()
 {
@@ -251,7 +251,7 @@ caf::Viewer* caf::Viewer::sharedWidget()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::OpenGLContextGroup* caf::Viewer::contextGroup()
 {
@@ -283,7 +283,7 @@ void  caf::Viewer::setMainScene(cvf::Scene* scene)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Scene* caf::Viewer::mainScene()
 {
@@ -299,7 +299,7 @@ cvf::Scene* caf::Viewer::currentScene()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::updateCamera(int width, int height)
 {
@@ -318,7 +318,7 @@ void caf::Viewer::updateCamera(int width, int height)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::canRender() const
 {
@@ -333,7 +333,7 @@ bool caf::Viewer::canRender() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::optimizeClippingPlanes()
 {
@@ -392,9 +392,9 @@ void caf::Viewer::optimizeClippingPlanes()
     }
     else // Orthographic projection. Set to encapsulate the complete boundingbox, possibly setting a negative nearplane
     {
-        if(minDistEyeToCornerAlongViewDir >= 0) 
+        if(minDistEyeToCornerAlongViewDir >= 0)
         {
-            nearPlaneDist = CVF_MIN(0.8 * minDistEyeToCornerAlongViewDir,  m_maxClipPlaneDistance); 
+            nearPlaneDist = CVF_MIN(0.8 * minDistEyeToCornerAlongViewDir,  m_maxClipPlaneDistance);
         }
         else
         {
@@ -431,25 +431,26 @@ bool caf::Viewer::event(QEvent* e)
         case QEvent::MouseButtonRelease:
         case QEvent::MouseButtonDblClick:
         case QEvent::MouseMove:
-        case QEvent::TabletMove:     
-        case QEvent::TabletPress:     
+        case QEvent::TabletMove:
+        case QEvent::TabletPress:
         case QEvent::TabletRelease:
         case QEvent::TabletEnterProximity:
         case QEvent::TabletLeaveProximity:
         case QEvent::Wheel:
         case QEvent::TouchBegin:
-        case QEvent::TouchUpdate:    
+        case QEvent::TouchUpdate:
         case QEvent::TouchEnd:
-            if (m_navigationPolicy->handleInputEvent(static_cast<QInputEvent*>(e)))
+            // if (m_navigationPolicy->handleInputEvent(static_cast<QInputEvent*>(e)))
+            if (m_navigationPolicy->handleInputEvent(dynamic_cast<QInputEvent*>(e)))
                 return true;
             else return QGLWidget::event(e);
             break;
         default:
-            return QGLWidget::event(e); 
+            return QGLWidget::event(e);
             break;
         }
     }
-    else return QGLWidget::event(e); 
+    else return QGLWidget::event(e);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -463,7 +464,7 @@ void caf::Viewer::setNavigationPolicy(caf::NavigationPolicy* navigationPolicy)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 const caf::NavigationPolicy* caf::Viewer::getNavigationPolicy() const
 {
@@ -472,7 +473,7 @@ const caf::NavigationPolicy* caf::Viewer::getNavigationPolicy() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::rayPick(int winPosX, int winPosY, cvf::HitItemCollection* pickedPoints)
 {
@@ -497,7 +498,7 @@ bool caf::Viewer::rayPick(int winPosX, int winPosY, cvf::HitItemCollection* pick
 }
 
 //--------------------------------------------------------------------------------------------------
-///  
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::resizeGL(int width, int height)
 {
@@ -506,7 +507,7 @@ void caf::Viewer::resizeGL(int width, int height)
     if (m_offscreenFbo.notNull())
     {
         m_offscreenFbo->resizeAttachedBuffers(width, height);
-    
+
 
         m_offscreenViewportWidth = width;
         m_offscreenViewportHeight = height;
@@ -521,7 +522,7 @@ void caf::Viewer::resizeGL(int width, int height)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::enablePerfInfoHud(bool enable)
 {
@@ -530,7 +531,7 @@ void caf::Viewer::enablePerfInfoHud(bool enable)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::isPerfInfoHudEnabled()
 {
@@ -538,7 +539,7 @@ bool caf::Viewer::isPerfInfoHudEnabled()
 }
 
 //--------------------------------------------------------------------------------------------------
-///  
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::paintEvent(QPaintEvent* event)
 {
@@ -561,7 +562,7 @@ void caf::Viewer::paintEvent(QPaintEvent* event)
 
     if (m_isOverlayPaintingEnabled || m_showPerfInfoHud)
     {
-        // Set up image to draw to, and painter 
+        // Set up image to draw to, and painter
         if (m_overlayPaintingQImage.size() != this->size())
         {
             m_overlayPaintingQImage = QImage(this->size(), QImage::Format_ARGB32);
@@ -574,7 +575,7 @@ void caf::Viewer::paintEvent(QPaintEvent* event)
 
         if (m_isOverlayPaintingEnabled)
         {
-            this->paintOverlayItems(&overlyPainter); 
+            this->paintOverlayItems(&overlyPainter);
         }
 
         // Draw performance overlay
@@ -588,7 +589,7 @@ void caf::Viewer::paintEvent(QPaintEvent* event)
             hud.draw(&overlyPainter, width(), height());
         }
 
-        // Convert the QImage into the cvf::TextureImage, 
+        // Convert the QImage into the cvf::TextureImage,
         // handling vertical mirroring and (possible) byteswapping
 
         if (((int)m_overlayTextureImage->height()) != this->height() || ((int)m_overlayTextureImage->width() != this->width()))
@@ -597,11 +598,11 @@ void caf::Viewer::paintEvent(QPaintEvent* event)
         }
 
         cvfqt::Utils::toTextureImage(m_overlayPaintingQImage, m_overlayTextureImage.p());
-        
+
         m_overlayImage->setImage(m_overlayTextureImage.p());
         m_overlayImage->setPixelSize(cvf::Vec2ui(this->width(), this->height()));
     }
-   
+
 #if QT_VERSION >= 0x040600
     // Qt 4.6
     painter.beginNativePainting();
@@ -628,11 +629,11 @@ void caf::Viewer::paintEvent(QPaintEvent* event)
     painter.endNativePainting();
 #endif
 
- 
+
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::setDefaultPerspectiveNearPlaneDistance(double dist)
 {
@@ -640,7 +641,7 @@ void caf::Viewer::setDefaultPerspectiveNearPlaneDistance(double dist)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::setMaxClipPlaneDistance(double dist)
 {
@@ -648,20 +649,20 @@ void caf::Viewer::setMaxClipPlaneDistance(double dist)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::setView(const cvf::Vec3d& alongDirection, const cvf::Vec3d& upDirection)
 {
     if (m_navigationPolicy.notNull() && m_navigationPolicyEnabled)
     {
-        m_navigationPolicy->setView(alongDirection, upDirection); 
+        m_navigationPolicy->setView(alongDirection, upDirection);
 
         navigationPolicyUpdate();
     }
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::zoomAll()
 {
@@ -676,7 +677,7 @@ void caf::Viewer::zoomAll()
 
     cvf::Vec3d newEye = m_mainCamera->computeFitViewEyePosition(bb, vrp-eye, up, 0.9, m_cameraFieldOfViewYDeg, m_mainCamera->viewport()->aspectRatio());
     m_mainCamera->setFromLookAt(newEye, bb.center(), up);
-    
+
     updateParallelProjectionHeightFromMoveZoom(bb.center());
 
     if (m_navigationPolicy.notNull()) m_navigationPolicy->setPointOfInterest(bb.center());
@@ -685,7 +686,7 @@ void caf::Viewer::zoomAll()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::addFrame(cvf::Scene* scene)
 {
@@ -696,7 +697,7 @@ void caf::Viewer::addFrame(cvf::Scene* scene)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::removeAllFrames()
 {
@@ -707,7 +708,7 @@ void caf::Viewer::removeAllFrames()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::isAnimationActive()
 {
@@ -727,7 +728,7 @@ bool caf::Viewer::isAnimationActive()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::slotSetCurrentFrame(int frameIndex)
 {
@@ -756,7 +757,7 @@ void caf::Viewer::releaseOGlResourcesForCurrentFrame()
         cvf::uint modelCount = currentScene->modelCount();
         for (cvf::uint i = 0; i < modelCount; ++i)
         {
-            cvf::Collection<cvf::Part> partCollection; 
+            cvf::Collection<cvf::Part> partCollection;
             currentScene->model(i)->allParts(&partCollection);
             for (size_t pIdx = 0; pIdx < partCollection.size(); ++pIdx)
             {
@@ -770,7 +771,7 @@ void caf::Viewer::releaseOGlResourcesForCurrentFrame()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::slotEndAnimation()
 {
@@ -809,7 +810,7 @@ void caf::Viewer::updateCachedValuesInScene()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::isShadersSupported()
 {
@@ -825,7 +826,7 @@ bool caf::Viewer::isShadersSupported()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QImage caf::Viewer::snapshotImage()
 {
@@ -839,7 +840,7 @@ QImage caf::Viewer::snapshotImage()
 
         // TODO: Consider refactor this code
         // Creating a QImage from the bits in current frame buffer can be done by
-        // this->grabFrameBuffer() 
+        // this->grabFrameBuffer()
 
         GLint iOldPackAlignment = 0;
         glGetIntegerv(GL_PACK_ALIGNMENT, &iOldPackAlignment);
@@ -878,7 +879,7 @@ QImage caf::Viewer::snapshotImage()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Scene* caf::Viewer::frame(size_t frameIndex)
 {
@@ -925,16 +926,16 @@ void caf::Viewer::debugShowRenderingSequencePartNames()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::enableNavigationPolicy(bool enable)
 {
     m_navigationPolicyEnabled = enable;
-    if (enable && m_navigationPolicy.notNull()) m_navigationPolicy->init(); 
+    if (enable && m_navigationPolicy.notNull()) m_navigationPolicy->init();
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QSize caf::Viewer::sizeHint() const
 {
@@ -942,7 +943,7 @@ QSize caf::Viewer::sizeHint() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::enableForcedImmediateMode(bool enable)
 {
@@ -958,7 +959,7 @@ void caf::Viewer::enableForcedImmediateMode(bool enable)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 int caf::Viewer::currentFrameIndex() const
 {
@@ -971,7 +972,7 @@ int caf::Viewer::currentFrameIndex() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool caf::Viewer::isOverlyPaintingEnabled() const
 {
@@ -979,7 +980,7 @@ bool caf::Viewer::isOverlyPaintingEnabled() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::enableOverlyPainting(bool val)
 {
@@ -988,7 +989,7 @@ void caf::Viewer::enableOverlyPainting(bool val)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::updateOverlayImagePresence()
 {
@@ -1011,7 +1012,7 @@ void caf::Viewer::navigationPolicyUpdate()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::addStaticModelOnce(cvf::Model* model)
 {
@@ -1025,19 +1026,19 @@ void caf::Viewer::addStaticModelOnce(cvf::Model* model)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::removeStaticModel(cvf::Model* model)
 {
     removeModelFromAllFrames(model);
-    
+
     m_staticModels.erase(model);
 
     updateCachedValuesInScene();
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::removeAllStaticModels()
 {
@@ -1052,7 +1053,7 @@ void caf::Viewer::removeAllStaticModels()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::removeModelFromAllFrames(cvf::Model* model)
 {
@@ -1070,7 +1071,7 @@ void caf::Viewer::removeModelFromAllFrames(cvf::Model* model)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::appendModelToAllFrames(cvf::Model* model)
 {
@@ -1085,10 +1086,10 @@ void caf::Viewer::appendModelToAllFrames(cvf::Model* model)
     {
         m_mainScene->addModel(model);
     }
-}   
+}
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::appendAllStaticModelsToFrame(cvf::Scene* scene)
 {
@@ -1099,7 +1100,7 @@ void caf::Viewer::appendAllStaticModelsToFrame(cvf::Scene* scene)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::OverlayItem* caf::Viewer::overlayItem(int winPosX, int winPosY)
 {
@@ -1113,7 +1114,7 @@ cvf::OverlayItem* caf::Viewer::overlayItem(int winPosX, int winPosY)
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::enableParallelProjection(bool enableOrtho)
 {
@@ -1152,7 +1153,7 @@ void caf::Viewer::enableParallelProjection(bool enableOrtho)
     else if (!enableOrtho && m_mainCamera->projection() == cvf::Camera::ORTHO)
     {
         // We currently expect all the navigation policies to do walk-based navigation and not fiddle with the field of view
-        // so we do not need to update the camera position based on orthoHeight and fieldOfView. 
+        // so we do not need to update the camera position based on orthoHeight and fieldOfView.
         // We assume the camera is in a sensible position.
 
         // Set dummy near and far plane. These wll be updated by the optimize clipping planes
@@ -1166,7 +1167,7 @@ void caf::Viewer::enableParallelProjection(bool enableOrtho)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 
 double calculateOrthoHeight(double perspectiveViewAngleYDeg, double focusPlaneDist)
@@ -1174,7 +1175,7 @@ double calculateOrthoHeight(double perspectiveViewAngleYDeg, double focusPlaneDi
    return 2 * (cvf::Math::tan( cvf::Math::toRadians(0.5 * perspectiveViewAngleYDeg) ) * focusPlaneDist);
 }
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 
 double calculateDistToPlaneOfOrthoHeight(double perspectiveViewAngleYDeg, double orthoHeight)
@@ -1184,7 +1185,7 @@ double calculateDistToPlaneOfOrthoHeight(double perspectiveViewAngleYDeg, double
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 
 double distToPlaneOfInterest(const cvf::Camera* camera, const cvf::Vec3d& pointOfInterest)
@@ -1217,7 +1218,7 @@ void caf::Viewer::updateParallelProjectionHeightFromMoveZoom(const cvf::Vec3d& p
 
     // Negative distance can occur. If so, do not set a negative ortho.
 
-    double distToFocusPlane = cvf::Math::abs( distToPlaneOfInterest(camera, pointOfInterest));    
+    double distToFocusPlane = cvf::Math::abs( distToPlaneOfInterest(camera, pointOfInterest));
 
     double orthoHeight = calculateOrthoHeight(m_cameraFieldOfViewYDeg, distToFocusPlane);
 
@@ -1225,7 +1226,7 @@ void caf::Viewer::updateParallelProjectionHeightFromMoveZoom(const cvf::Vec3d& p
 }
 
 //--------------------------------------------------------------------------------------------------
-/// Update the camera eye position from point of interest, keeping the ortho height fixed and in sync 
+/// Update the camera eye position from point of interest, keeping the ortho height fixed and in sync
 /// with distToPlaneOfInterest  from a walk based camera manipulation in ortho projection.
 //--------------------------------------------------------------------------------------------------
 void caf::Viewer::updateParallelProjectionCameraPosFromPointOfInterestMove(const cvf::Vec3d& pointOfInterest)
@@ -1235,7 +1236,7 @@ void caf::Viewer::updateParallelProjectionCameraPosFromPointOfInterestMove(const
 
     if (!camera || camera->projection() != Camera::ORTHO) return;
 
-    
+
     double orthoHeight = camera->frontPlaneFrustumHeight();
     //Trace::show(String::number(orthoHeight));
 
@@ -1256,7 +1257,7 @@ void caf::Viewer::updateParallelProjectionCameraPosFromPointOfInterestMove(const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 int caf::Viewer::clampFrameIndex(int frameIndex) const
 {

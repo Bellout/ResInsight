@@ -67,7 +67,6 @@ public:
 
 private:
     struct GridCell
-    struct GridCell
     {
         Vec3d   p[8];       // Cell's corner coordinates
         double  val[8];     // Scalar value in cell corners used to find isosurface

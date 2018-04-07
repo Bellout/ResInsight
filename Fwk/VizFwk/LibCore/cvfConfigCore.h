@@ -60,7 +60,7 @@
 //  1 - track active instances in debug builds
 //  2 - track active instances in BOTH debug and release builds
 #ifndef CVF_TRACK_ACTIVE_OBJECT_INSTANCES
-#define CVF_TRACK_ACTIVE_OBJECT_INSTANCES  2
+#define CVF_TRACK_ACTIVE_OBJECT_INSTANCES  0
 #endif
 
 // ---------------------------------------------------------------
