@@ -17,48 +17,54 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "cvfBase.h"
 #include "cvfVector3.h"
 
+// ---------------------------------------------------------------
 #include <vector>
 
 namespace cvf
 {
-    class GeometryBuilder;
+class GeometryBuilder;
 }
 
-//==================================================================================================
-//
-// Generates 2D patches based on predefined coordinates along u and v axis
+// ---------------------------------------------------------------
+//================================================================
+// Generates 2D patches based on predefined coordinates along u
+// and v axis
 // Inspired by cvf::PatchGenerator
-//
-//==================================================================================================
 class RivPatchGenerator
 {
-public:
-    RivPatchGenerator();
+ public:
+  RivPatchGenerator();
 
-    void    setOrigin(const cvf::Vec3d& origin);
-    void    setAxes(const cvf::Vec3d& axisU, const cvf::Vec3d& axisV);
-    void    setSubdivisions(const std::vector<double>& uValues, const std::vector<double>& vValues);
+  // -------------------------------------------------------------
+  void    setOrigin(const cvf::Vec3d& origin);
+  void    setAxes(const cvf::Vec3d& axisU, const cvf::Vec3d& axisV);
+  void    setSubdivisions(const std::vector<double>& uValues, const std::vector<double>& vValues);
 
-    void    setQuads(bool useQuads);
-    void    setWindingCCW(bool windingCCW);
+  // -------------------------------------------------------------
+  void    setQuads(bool useQuads);
+  void    setWindingCCW(bool windingCCW);
 
-    void    generate(cvf::GeometryBuilder* builder);
+  // -------------------------------------------------------------
+  void    generate(cvf::GeometryBuilder* builder);
 
-private:
-    cvf::Vec3d   m_origin;       // Origin. Default (0, 0, 0)
-    cvf::Vec3d   m_axisU;        // First axis of patch. Default is global X-axis
-    cvf::Vec3d   m_axisV;        // Second axis of patch. Default is global Y-axis
+ private:
+  // -------------------------------------------------------------
+  cvf::Vec3d   m_origin;       // Origin. Default (0, 0, 0)
+  cvf::Vec3d   m_axisU;        // First axis of patch. Default is global X-axis
+  cvf::Vec3d   m_axisV;        // Second axis of patch. Default is global Y-axis
 
-    std::vector<double> m_uValues;
-    std::vector<double> m_vValues;
+  std::vector<double> m_uValues;
+  std::vector<double> m_vValues;
 
-    bool    m_useQuads;     // If true, quads will be generated, otherwise triangles. Default is quads
-    bool    m_windingCCW;   // Winding of the generated quads. Controls which side of the patch will be front facing. 
+  // -------------------------------------------------------------
+  bool    m_useQuads;     // If true, quads will be generated, otherwise triangles. Default is quads
+  bool    m_windingCCW;   // Winding of the generated quads. Controls which side of the patch will be front facing.
 };
 

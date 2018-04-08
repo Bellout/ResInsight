@@ -16,57 +16,62 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "RivIntersectionBoxGeometryGenerator.h"
 
 #include "cvfBase.h"
 #include "cvfObject.h"
 
-
-namespace cvf
-{
-    class ModelBasicList;
-    class Transform;
-    class Part;
+// ---------------------------------------------------------------
+namespace cvf {
+class ModelBasicList;
+class Transform;
+class Part;
 }
 
+// ---------------------------------------------------------------
 class RigMainGrid;
 class RigResultAccessor;
 class RimCellEdgeColors;
 class RimEclipseCellColors;
 class RimIntersectionBox;
 
-//==================================================================================================
-///
-///
-//==================================================================================================
-
+//================================================================
 class RivIntersectionBoxPartMgr : public cvf::Object
 {
-public:
-    explicit RivIntersectionBoxPartMgr(RimIntersectionBox* intersectionBox);
+ public:
+  // -------------------------------------------------------------
+  explicit RivIntersectionBoxPartMgr(RimIntersectionBox* intersectionBox);
 
-    void applySingleColorEffect();
-    void updateCellResultColor(size_t timeStepIndex);
+  // -------------------------------------------------------------
+  void applySingleColorEffect();
+  void updateCellResultColor(size_t timeStepIndex);
 
-    void appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
-    void appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+  // -------------------------------------------------------------
+  void appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+  void appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
 
-private:
-    void updatePartEffect();
-    void generatePartGeometry();
+ private:
+  // -------------------------------------------------------------
+  void updatePartEffect();
+  void generatePartGeometry();
 
-    cvf::ref<RivIntersectionHexGridInterface> createHexGridInterface();
+  // -------------------------------------------------------------
+  cvf::ref<RivIntersectionHexGridInterface> createHexGridInterface();
 
-private:
-    RimIntersectionBox*         m_rimIntersectionBox;
+ private:
+  // -------------------------------------------------------------
+  RimIntersectionBox*         m_rimIntersectionBox;
 
-    cvf::Color3f                m_defaultColor;
+  cvf::Color3f                m_defaultColor;
 
-    cvf::ref<cvf::Part>         m_intersectionBoxFaces;
-    cvf::ref<cvf::Part>         m_intersectionBoxGridLines;
-    cvf::ref<cvf::Vec2fArray>   m_intersectionBoxFacesTextureCoords;
+  // -------------------------------------------------------------
+  cvf::ref<cvf::Part>         m_intersectionBoxFaces;
+  cvf::ref<cvf::Part>         m_intersectionBoxGridLines;
+  cvf::ref<cvf::Vec2fArray>   m_intersectionBoxFacesTextureCoords;
 
-    cvf::ref<RivIntersectionBoxGeometryGenerator> m_intersectionBoxGenerator;
+  cvf::ref<RivIntersectionBoxGeometryGenerator> m_intersectionBoxGenerator;
 };
