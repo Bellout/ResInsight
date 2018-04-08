@@ -359,10 +359,7 @@ void RimProject::initAfterRead()
   }
 }
 
-
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
 void RimProject::setupBeforeSave()
 {
   m_show3DWindow = RiuMainWindow::instance()->isVisible();
@@ -380,11 +377,10 @@ void RimProject::setupBeforeSave()
   m_projectFileVersionString = STRPRODUCTVER;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// Support list of multiple script paths divided by ';'
-//--------------------------------------------------------------------------------------------------
-void RimProject::setScriptDirectories(const QString& scriptDirectories)
-{
+// ---------------------------------------------------------------
+// Support list of multiple script paths divided by ';'
+void
+RimProject::setScriptDirectories(const QString& scriptDirectories) {
   scriptCollection->calcScripts().deleteAllChildObjects();
   scriptCollection->subDirectories().deleteAllChildObjects();
 
@@ -405,29 +401,27 @@ void RimProject::setScriptDirectories(const QString& scriptDirectories)
     }
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-QString RimProject::projectFileVersionString() const
-{
+// ---------------------------------------------------------------
+QString RimProject::projectFileVersionString() const {
   return m_projectFileVersionString;
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-bool RimProject::isProjectFileVersionEqualOrOlderThan(const QString& otherProjectFileVersion) const
-{
+// ---------------------------------------------------------------
+bool RimProject::isProjectFileVersionEqualOrOlderThan(
+    const QString& otherProjectFileVersion) const {
+
   QString candidateProjectFileVersion = projectFileVersionString();
 
-  return !RiaProjectFileVersionTools::isCandidateVersionNewerThanOther(candidateProjectFileVersion, otherProjectFileVersion);
+  return !RiaProjectFileVersionTools::
+  isCandidateVersionNewerThanOther(
+      candidateProjectFileVersion,
+      otherProjectFileVersion);
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName)
-{
+// ---------------------------------------------------------------
+void
+RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName) {
+
   // Extract the filename of the project file when it was saved
   QString oldProjectFileName =  this->fileName;
   // Replace with the new actual filename
@@ -447,7 +441,11 @@ void RimProject::setProjectFileNameAndUpdateDependencies(const QString& fileName
     bool foundFile = false;
     std::vector<QString> searchedPaths;
 
-    QString newFilePath = RimTools::relocateFile(filePath->path(), newProjectPath, oldProjectPath, &foundFile, &searchedPaths);
+    QString newFilePath = RimTools::relocateFile(filePath->path(),
+                                                 newProjectPath,
+                                                 oldProjectPath,
+                                                 &foundFile,
+                                                 &searchedPaths);
     filePath->setPath(newFilePath);
   }
 
