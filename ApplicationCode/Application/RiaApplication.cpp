@@ -300,7 +300,7 @@ const char* RiaApplication::getVersionStringApp(bool includeCrtInfo) {
                          "%s%s%s",
                          STRPRODUCTVER,
                          crtInfo.toAscii().ptr(),
-                         "CHACO-HACKED-VERSION-0.1");
+                         " -- CHACO-HACKED-VERSION-0.1");
 
     return szBuf;
 }

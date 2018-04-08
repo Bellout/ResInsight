@@ -698,7 +698,6 @@ void RiuMainWindow::createDockPanels() {
 
     addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
     resultPlotDock = dockPanel;
-    resultPlotDock->hide();
   }
 
 #ifdef USE_ODB_API
@@ -724,9 +723,9 @@ void RiuMainWindow::createDockPanels() {
     m_relPermPlotPanel = new RiuRelativePermeabilityPlotPanel(dockPanel);
     dockPanel->setWidget(m_relPermPlotPanel);
 
-    //addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
+    addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
     relPermPlotDock = dockPanel;
-    relPermPlotDock->hide();
+    relPermPlotDock->close();
   }
 
   // -------------------------------------------------------------
@@ -739,7 +738,7 @@ void RiuMainWindow::createDockPanels() {
     m_pvtPlotPanel = new RiuPvtPlotPanel(dockPanel);
     dockPanel->setWidget(m_pvtPlotPanel);
 
-    //addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
+    addDockWidget(Qt::BottomDockWidgetArea, dockPanel);
     pvtPlotDock = dockPanel;
   }
 
@@ -748,7 +747,7 @@ void RiuMainWindow::createDockPanels() {
     dockWidget->setObjectName("dockMessages");
     m_messagePanel = new RiuMessagePanel(dockWidget);
     dockWidget->setWidget(m_messagePanel);
-    //addDockWidget(Qt::BottomDockWidgetArea, dockWidget);
+    addDockWidget(Qt::BottomDockWidgetArea, dockWidget);
     dockWidget->hide();
   }
 
@@ -820,14 +819,17 @@ void RiuMainWindow::slotRefreshViewActions()
 
   updateScaleValue();
 
-  caf::CmdFeatureManager::instance()->refreshEnabledState(QStringList() << "RicLinkVisibleViewsFeature" << "RicTileWindowsFeature" << "RicTogglePerspectiveViewFeature");
+  caf::CmdFeatureManager::instance()
+      ->refreshEnabledState(QStringList() << "RicLinkVisibleViewsFeature"
+                                          << "RicTileWindowsFeature"
+                                          << "RicTogglePerspectiveViewFeature");
 }
 
 //--------------------------------------------------------------------------------------------------
 ///
 //--------------------------------------------------------------------------------------------------
-void RiuMainWindow::refreshAnimationActions()
-{
+void RiuMainWindow::refreshAnimationActions() {
+
   caf::FrameAnimationControl* animationControl = nullptr;
   Rim3dView * activeView = RiaApplication::instance()->activeReservoirView();
 

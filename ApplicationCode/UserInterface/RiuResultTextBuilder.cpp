@@ -242,18 +242,19 @@ RiuResultTextBuilder::geometrySelectionText(QString itemSeparator) {
 
           // ---------------------------------------------------------
           text += "\n---------------------------------------------\n";
-          centerData.sprintf("Center :       [ %.3f, %.3f, %.3f ]\n",
+          centerData.sprintf("Center :      [ %.3f, %.3f, %.3f ]\n",
                              grid->cell(m_cellIndex).center().x(),
                              grid->cell(m_cellIndex).center().y(),
                              grid->cell(m_cellIndex).center().z());
           text += centerData;
 
           // ---------------------------------------------------------
-          centroidData.sprintf("Centroid :    [ %.3f, %.3f, %.3f ]\n",
+          centroidData.sprintf("Centroid :   [ %.3f, %.3f, %.3f ]\n",
                                grid->cellCentroid(m_cellIndex).x(),
                                grid->cellCentroid(m_cellIndex).y(),
                                grid->cellCentroid(m_cellIndex).z());
           text += centroidData;
+          text +=   "---------------------------------------------\n";
 
           // ---------------------------------------------------------
           std::array<cvf::Vec3d, 8> hc;
