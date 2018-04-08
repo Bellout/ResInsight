@@ -32,23 +32,24 @@ class RimWellPathFractureCollection;
 //==================================================================================================
 class RimWellPathCompletions : public caf::PdmObject
 {
-    CAF_PDM_HEADER_INIT;
+ CAF_PDM_HEADER_INIT;
 
-public:
-    RimWellPathCompletions();
+ public:
+  RimWellPathCompletions();
 
     RimFishbonesCollection*        fishbonesCollection() const;
     RimPerforationCollection*      perforationCollection() const;
     RimWellPathFractureCollection* fractureCollection() const;
 
-    void                        setWellNameForExport(const QString& name);
-    QString                     wellNameForExport() const;
-    bool                        hasCompletions() const;
+  void                           setWellNameForExport(const QString& name);
+  QString                        wellNameForExport() const;
+  bool                           hasCompletions() const;
 
-    void                        setUnitSystemSpecificDefaults();
+  void                           setUnitSystemSpecificDefaults();
 
-protected:
-    virtual void                        defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering, QString uiConfigName) override;
+ protected:
+  virtual void                   defineUiTreeOrdering(caf::PdmUiTreeOrdering& uiTreeOrdering,
+                                                      QString uiConfigName) override;
 
 private:
     caf::PdmChildField<RimFishbonesCollection*>         m_fishbonesCollection;
