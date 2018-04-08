@@ -16,24 +16,23 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "cafCmdFeature.h"
 #include "cafCmdExecuteCommand.h"
 #include "cafPdmPointer.h"
 
-
-//==================================================================================================
-/// 
-//==================================================================================================
+//================================================================
 class RicIntersectionBoxAtPosFeature : public caf::CmdFeature
 {
-    CAF_CMD_HEADER_INIT;
+ CAF_CMD_HEADER_INIT;
 
-protected:
-    // Overrides
-    virtual bool isCommandEnabled();
-    virtual void onActionTriggered( bool isChecked );
-    virtual void setupActionLook( QAction* actionToSetup );
+ protected:
+  // Overrides
+  virtual bool isCommandEnabled();
+  virtual void onActionTriggered( bool isChecked );
+  virtual void setupActionLook( QAction* actionToSetup );
 };
 
