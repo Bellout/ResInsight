@@ -2,17 +2,17 @@
 //
 //  Copyright (C) Statoil ASA
 //  Copyright (C) Ceetron Solutions AS
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -36,16 +36,16 @@
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-RiuFemResultTextBuilder::RiuFemResultTextBuilder(RimGeoMechView* reservoirView, 
-                                                 int gridIndex, 
-                                                 int cellIndex, 
+RiuFemResultTextBuilder::RiuFemResultTextBuilder(RimGeoMechView* reservoirView,
+                                                 int gridIndex,
+                                                 int cellIndex,
                                                  int timeStepIndex)
                                                  : m_isIntersectionTriangleSet(false)
 {
     CVF_ASSERT(reservoirView);
-    
+
     m_reservoirView = reservoirView;
     m_gridIndex = gridIndex;
     m_cellIndex = cellIndex;
@@ -56,7 +56,7 @@ RiuFemResultTextBuilder::RiuFemResultTextBuilder(RimGeoMechView* reservoirView,
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiuFemResultTextBuilder::setIntersectionPoint(cvf::Vec3d intersectionPoint)
 {
@@ -64,7 +64,7 @@ void RiuFemResultTextBuilder::setIntersectionPoint(cvf::Vec3d intersectionPoint)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiuFemResultTextBuilder::setIntersectionTriangle(const std::array<cvf::Vec3f, 3>& triangle)
 {
@@ -73,7 +73,7 @@ void RiuFemResultTextBuilder::setIntersectionTriangle(const std::array<cvf::Vec3
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiuFemResultTextBuilder::set2dIntersectionView(Rim2dIntersectionView* intersectionView)
 {
@@ -81,7 +81,7 @@ void RiuFemResultTextBuilder::set2dIntersectionView(Rim2dIntersectionView* inter
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiuFemResultTextBuilder::setFace(int face)
 {
@@ -89,7 +89,7 @@ void RiuFemResultTextBuilder::setFace(int face)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiuFemResultTextBuilder::mainResultText()
 {
@@ -115,7 +115,7 @@ QString RiuFemResultTextBuilder::mainResultText()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiuFemResultTextBuilder::geometrySelectionText(QString itemSeparator)
 {
@@ -126,10 +126,14 @@ QString RiuFemResultTextBuilder::geometrySelectionText(QString itemSeparator)
         RigGeoMechCaseData* geomData = m_reservoirView->geoMechCase()->geoMechData();
         if (geomData)
         {
-         
+
             RigFemPart* femPart = geomData->femParts()->part(m_gridIndex);
             int elementId = femPart->elmId(m_cellIndex);
+
             text += QString("Element : Id[%1]").arg(elementId);
+
+            // text += QString(" m_cellIndex : %1").arg(m_cellIndex);
+            // text += QString(" m_gridIndex : %1").arg(m_gridIndex);
 
             size_t i = 0;
             size_t j = 0;
@@ -178,7 +182,7 @@ QString RiuFemResultTextBuilder::geometrySelectionText(QString itemSeparator)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiuFemResultTextBuilder::gridResultDetails()
 {
@@ -188,7 +192,9 @@ QString RiuFemResultTextBuilder::gridResultDetails()
     {
         RigGeoMechCaseData* eclipseCaseData = m_reservoirView->geoMechCase()->geoMechData();
 
-        this->appendTextFromResultColors(eclipseCaseData, m_gridIndex, m_cellIndex, m_timeStepIndex, m_reservoirView->cellResultResultDefinition(), &text);
+        this->appendTextFromResultColors(eclipseCaseData,
+                                         m_gridIndex, m_cellIndex, m_timeStepIndex,
+                                         m_reservoirView->cellResultResultDefinition(), &text);
 
         if (!text.isEmpty())
         {
@@ -201,7 +207,7 @@ QString RiuFemResultTextBuilder::gridResultDetails()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiuFemResultTextBuilder::formationDetails()
 {
@@ -240,9 +246,12 @@ QString RiuFemResultTextBuilder::formationDetails()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geomData, int gridIndex, int cellIndex, int timeStepIndex, RimGeoMechResultDefinition* resultDefinition, QString* resultInfoText)
+void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geomData,
+                                                         int gridIndex, int cellIndex, int timeStepIndex,
+                                                         RimGeoMechResultDefinition* resultDefinition,
+                                                         QString* resultInfoText)
 {
     if (!resultDefinition)
     {
@@ -251,7 +260,8 @@ void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geo
 
     if (resultDefinition->hasResult())
     {
-        const std::vector<float>& scalarResults = geomData->femPartResults()->resultValues(resultDefinition->resultAddress(), gridIndex, timeStepIndex);
+        const std::vector<float>& scalarResults = geomData->femPartResults()->resultValues(resultDefinition->resultAddress(),
+                                                                                           gridIndex, timeStepIndex);
         if (scalarResults.size())
         {
             caf::AppEnum<RigFemResultPosEnum> resPosAppEnum = resultDefinition->resultPositionType();
@@ -303,37 +313,37 @@ void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geo
             else
             {
                 int elmNodeFaceStartResIdx = cellIndex *24;
- 
+
                 resultInfoText->append(QString("Pos I Face:\n"));
                 for (int ptIdx = 0; ptIdx < 4; ++ptIdx)
                 {
                     resultInfoText->append(QString("\t%2\n").arg(scalarResults[elmNodeFaceStartResIdx+ptIdx]));
                 }
- 
+
                 resultInfoText->append(QString("Neg I Face:\n"));
                 for(int ptIdx = 4; ptIdx < 8; ++ptIdx)
                 {
                     resultInfoText->append(QString("\t%2\n").arg(scalarResults[elmNodeFaceStartResIdx+ptIdx]));
                 }
- 
+
                 resultInfoText->append(QString("Pos J Face:\n"));
                 for(int ptIdx = 8; ptIdx < 12; ++ptIdx)
                 {
                     resultInfoText->append(QString("\t%2\n").arg(scalarResults[elmNodeFaceStartResIdx+ptIdx]));
                 }
- 
+
                 resultInfoText->append(QString("Neg J Face:\n"));
                 for(int ptIdx = 12; ptIdx < 16; ++ptIdx)
                 {
                     resultInfoText->append(QString("\t%2\n").arg(scalarResults[elmNodeFaceStartResIdx+ptIdx]));
                 }
- 
+
                 resultInfoText->append(QString("Pos K Face:\n"));
                 for(int ptIdx = 16; ptIdx < 20; ++ptIdx)
                 {
                     resultInfoText->append(QString("\t%2\n").arg(scalarResults[elmNodeFaceStartResIdx+ptIdx]));
                 }
- 
+
                 resultInfoText->append(QString("Neg K Face:\n"));
                 for(int ptIdx = 20; ptIdx < 24; ++ptIdx)
                 {
@@ -346,7 +356,7 @@ void RiuFemResultTextBuilder::appendTextFromResultColors(RigGeoMechCaseData* geo
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiuFemResultTextBuilder::appendDetails(QString& text, const QString& details)
 {
@@ -358,7 +368,7 @@ void RiuFemResultTextBuilder::appendDetails(QString& text, const QString& detail
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiuFemResultTextBuilder::closestNodeResultText(RimGeoMechResultDefinition* resultColors)
 {
@@ -371,7 +381,7 @@ QString RiuFemResultTextBuilder::closestNodeResultText(RimGeoMechResultDefinitio
     if (resultColors->hasResult())
     {
         if (! (m_reservoirView->geoMechCase() && m_reservoirView->geoMechCase()->geoMechData())) return text;
-    
+
         RigGeoMechCaseData* geomData = m_reservoirView->geoMechCase()->geoMechData();
 
         const std::vector<float>& scalarResults = geomData->femPartResults()->resultValues(resultColors->resultAddress(), m_gridIndex, m_timeStepIndex);
@@ -381,10 +391,10 @@ QString RiuFemResultTextBuilder::closestNodeResultText(RimGeoMechResultDefinitio
             RigFemPart* femPart = geomData->femParts()->part(m_gridIndex);
             RigFemResultPosEnum activeResultPosition = resultColors->resultPositionType();
 
-            RigFemClosestResultIndexCalculator closestIndexCalc(femPart, 
-                                                             activeResultPosition, 
-                                                             m_cellIndex, 
-                                                             m_face, 
+            RigFemClosestResultIndexCalculator closestIndexCalc(femPart,
+                                                             activeResultPosition,
+                                                             m_cellIndex,
+                                                             m_face,
                                                              m_intersectionPoint);
             int resultIndex = closestIndexCalc.resultIndexToClosestResult();
             int closestNodeId = closestIndexCalc.closestNodeId();
@@ -420,7 +430,7 @@ QString RiuFemResultTextBuilder::closestNodeResultText(RimGeoMechResultDefinitio
             }
         }
     }
-   
+
     return text;
 }
 

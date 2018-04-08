@@ -77,40 +77,36 @@ RigCell& RigGridBase::cell(size_t gridLocalCellIndex)
   return m_mainGrid->globalCellArray()[m_indexToStartOfCells + gridLocalCellIndex];
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-const RigCell& RigGridBase::cell(size_t gridLocalCellIndex) const
-{
+// -----------------------------------------------------------------
+const RigCell& RigGridBase::cell(size_t gridLocalCellIndex) const {
+
   CVF_ASSERT(m_mainGrid);
 
   return m_mainGrid->globalCellArray()[m_indexToStartOfCells + gridLocalCellIndex];
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RigGridBase::initSubGridParentPointer()
-{
+// -----------------------------------------------------------------
+void RigGridBase::initSubGridParentPointer() {
+
   RigGridBase* grid = this;
 
   size_t cellIdx;
-  for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx)
-  {
+  for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx) {
     RigCell& cell = grid->cell(cellIdx);
-    if (cell.subGrid())
-    {
+
+    if (cell.subGrid()) {
       cell.subGrid()->setParentGrid(grid);
     }
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// Find the cell index to the maingrid cell containing this cell, and store it as
-/// m_mainGridCellIndex in each cell.
-//--------------------------------------------------------------------------------------------------
-void RigGridBase::initSubCellsMainGridCellIndex()
-{
+// -----------------------------------------------------------------
+/// Find the cell index to the maingrid cell containing this cell,
+/// and store it as m_mainGridCellIndex in each cell.
+///
+// -----------------------------------------------------------------
+void RigGridBase::initSubCellsMainGridCellIndex() {
+
   RigGridBase* grid = this;
   if (grid->isMainGrid())
   {

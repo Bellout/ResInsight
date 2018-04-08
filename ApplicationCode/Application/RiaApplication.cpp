@@ -3,17 +3,17 @@
 //  Copyright (C) 2011-     Statoil ASA
 //  Copyright (C) 2013-     Ceetron Solutions AS
 //  Copyright (C) 2011-2012 Ceetron AS
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -131,9 +131,9 @@ void AppEnum< RiaApplication::RINavigationPolicy >::setUp()
 ///
 //==================================================================================================
 
- 
+
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiaApplication::RiaApplication(int& argc, char** argv)
 :   QApplication(argc, argv)
@@ -163,7 +163,7 @@ RiaApplication::RiaApplication(int& argc, char** argv)
 
     // Start with a project
     m_project = new RimProject;
- 
+
     setWindowIcon(QIcon(":/AppLogo48x48.png"));
 
     m_socketServer = new RiaSocketServer( this);
@@ -190,7 +190,7 @@ RiaApplication::RiaApplication(int& argc, char** argv)
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiaApplication::~RiaApplication()
 {
@@ -201,7 +201,7 @@ RiaApplication::~RiaApplication()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiaApplication* RiaApplication::instance()
 {
@@ -239,7 +239,7 @@ int RiaApplication::parseArgumentsAndRunUnitTestsIfRequested()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setWindowCaptionFromAppState()
 {
@@ -267,7 +267,7 @@ void RiaApplication::setWindowCaptionFromAppState()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::processNonGuiEvents()
 {
@@ -276,10 +276,10 @@ void RiaApplication::processNonGuiEvents()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
-const char* RiaApplication::getVersionStringApp(bool includeCrtInfo)
-{
+const char* RiaApplication::getVersionStringApp(bool includeCrtInfo) {
+
     // Use static buf so we can return ptr
     static char szBuf[1024];
 
@@ -295,7 +295,12 @@ const char* RiaApplication::getVersionStringApp(bool includeCrtInfo)
 #endif //_MT
     }
 
-    cvf::System::sprintf(szBuf, 1024, "%s%s", STRPRODUCTVER, crtInfo.toAscii().ptr());
+    cvf::System::sprintf(szBuf,
+                         1024,
+                         "%s%s%s",
+                         STRPRODUCTVER,
+                         crtInfo.toAscii().ptr(),
+                         "CHACO-HACKED-VERSION-0.1");
 
     return szBuf;
 }
@@ -303,7 +308,7 @@ const char* RiaApplication::getVersionStringApp(bool includeCrtInfo)
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadAction loadAction, RiaProjectModifier* projectModifier)
 {
@@ -384,7 +389,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 
     ///////
     // Load the external data, and initialize stuff that needs specific ordering
-    
+
     // VL check regarding specific order mentioned in comment above...
 
     m_preferences->lastUsedProjectFileName = fullPathProjectFileName;
@@ -408,7 +413,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 
     for(RimOilField* oilField: m_project->oilFields)
     {
-        if (oilField == nullptr) continue; 
+        if (oilField == nullptr) continue;
         if(oilField->formationNamesCollection() != nullptr)
         {
             oilField->formationNamesCollection()->readAllFormationNames();
@@ -420,7 +425,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
     for (size_t oilFieldIdx = 0; oilFieldIdx < m_project->oilFields().size(); oilFieldIdx++)
     {
         RimOilField* oilField = m_project->oilFields[oilFieldIdx];
-        if (oilField == nullptr) continue;        
+        if (oilField == nullptr) continue;
         if (oilField->wellPathCollection == nullptr)
         {
             //printf("Create well path collection for oil field %i in loadProject.\n", oilFieldIdx);
@@ -436,7 +441,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 
     for (RimOilField* oilField:  m_project->oilFields)
     {
-        if (oilField == nullptr) continue; 
+        if (oilField == nullptr) continue;
         // Temporary
         if(!oilField->summaryCaseMainCollection())
         {
@@ -459,7 +464,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
                 rimObservedData->updateMetaData();
             }
         }
-        
+
         oilField->fractureDefinitionCollection()->loadAndUpdateData();
         oilField->fractureDefinitionCollection()->createAndAssignTemplateCopyForNonMatchingUnit();
 
@@ -544,7 +549,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
     {
         m_project->viewLinkerCollection()->viewLinker()->updateOverrides();
     }
-    
+
     // Intersection Views: Sync from intersections in the case.
 
     for (RimCase* cas: casesToLoad)
@@ -555,7 +560,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 
     loadAndUpdatePlotData();
 
-    // NB! This function must be called before executing command objects, 
+    // NB! This function must be called before executing command objects,
     // because the tree view state is restored from project file and sets
     // current active view ( see restoreTreeViewState() )
     // Default behavior for scripts is to use current active view for data read/write
@@ -580,7 +585,7 @@ bool RiaApplication::loadProject(const QString& projectFileName, ProjectLoadActi
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::loadProject(const QString& projectFileName)
 {
@@ -588,7 +593,7 @@ bool RiaApplication::loadProject(const QString& projectFileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::loadAndUpdatePlotData()
 {
@@ -650,7 +655,7 @@ void RiaApplication::loadAndUpdatePlotData()
             plotProgress.incrementProgress();
         }
     }
-    
+
     if (scpColl)
     {
         for (auto plot : scpColl->summaryPlots())
@@ -687,7 +692,7 @@ void RiaApplication::loadAndUpdatePlotData()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::storeTreeViewState()
 {
@@ -746,12 +751,12 @@ void RiaApplication::addWellPathsToModel(QList<QString> wellPathFilePaths)
     }
 
     if (oilField->wellPathCollection) oilField->wellPathCollection->addWellPaths(wellPathFilePaths);
-    
+
     oilField->wellPathCollection->updateConnectedEditors();
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::addWellPathFormationsToModel(QList<QString> wellPathFormationsFilePaths)
 {
@@ -795,13 +800,13 @@ void RiaApplication::addWellLogsToModel(const QList<QString>& wellLogFilePaths)
     RimWellLogFile* wellLogFile = oilField->wellPathCollection->addWellLogs(wellLogFilePaths);
 
     oilField->wellPathCollection->updateConnectedEditors();
-    
+
     RiuMainWindow::instance()->selectAsCurrentItem(wellLogFile);
 }
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::saveProject()
 {
@@ -819,7 +824,7 @@ bool RiaApplication::saveProject()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::saveProjectPromptForFileName()
 {
@@ -855,7 +860,7 @@ bool RiaApplication::saveProjectPromptForFileName()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::hasValidProjectFileExtension(const QString& fileName)
 {
@@ -868,7 +873,7 @@ bool RiaApplication::hasValidProjectFileExtension(const QString& fileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::askUserToSaveModifiedProject()
 {
@@ -905,7 +910,7 @@ bool RiaApplication::askUserToSaveModifiedProject()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::saveProjectAs(const QString& fileName)
 {
@@ -931,7 +936,7 @@ bool RiaApplication::saveProjectAs(const QString& fileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::closeProject()
 {
@@ -962,7 +967,7 @@ void RiaApplication::closeProject()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::onProjectOpenedOrClosed()
 {
@@ -980,7 +985,7 @@ void RiaApplication::onProjectOpenedOrClosed()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::currentProjectPath() const
 {
@@ -1001,7 +1006,7 @@ QString RiaApplication::currentProjectPath() const
 
 //--------------------------------------------------------------------------------------------------
 /// Create an absolute path from a path that is specified relative to the project directory
-/// 
+///
 /// If the path specified in \a projectRelativePath is already absolute, no changes will be made
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::createAbsolutePathFromProjectRelativePath(QString projectRelativePath)
@@ -1028,7 +1033,7 @@ QString RiaApplication::createAbsolutePathFromProjectRelativePath(QString projec
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::openOdbCaseFromFile(const QString& fileName)
 {
@@ -1068,14 +1073,14 @@ bool RiaApplication::openOdbCaseFromFile(const QString& fileName)
     m_project->updateConnectedEditors();
 
     RiuMainWindow::instance()->selectAsCurrentItem(riv->cellResult());
-    
+
     return true;
 }
 
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createMockModel()
 {
@@ -1083,7 +1088,7 @@ void RiaApplication::createMockModel()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createResultsMockModel()
 {
@@ -1092,7 +1097,7 @@ void RiaApplication::createResultsMockModel()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createLargeResultsMockModel()
 {
@@ -1101,7 +1106,7 @@ void RiaApplication::createLargeResultsMockModel()
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createMockModelCustomized()
 {
@@ -1109,7 +1114,7 @@ void RiaApplication::createMockModelCustomized()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createInputMockModel()
 {
@@ -1117,7 +1122,7 @@ void RiaApplication::createInputMockModel()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 const Rim3dView* RiaApplication::activeReservoirView() const
 {
@@ -1133,7 +1138,7 @@ Rim3dView* RiaApplication::activeReservoirView()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RimGridView* RiaApplication::activeGridView()
 {
@@ -1141,7 +1146,7 @@ RimGridView* RiaApplication::activeGridView()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RimViewWindow* RiaApplication::activePlotWindow() const
 {
@@ -1160,7 +1165,7 @@ RimViewWindow* RiaApplication::activePlotWindow() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setActiveReservoirView(Rim3dView* rv)
 {
@@ -1168,7 +1173,7 @@ void RiaApplication::setActiveReservoirView(Rim3dView* rv)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setUseShaders(bool enable)
 {
@@ -1177,7 +1182,7 @@ void RiaApplication::setUseShaders(bool enable)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::useShaders() const
 {
@@ -1191,7 +1196,7 @@ bool RiaApplication::useShaders() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiaApplication::RINavigationPolicy RiaApplication::navigationPolicy() const
 {
@@ -1200,7 +1205,7 @@ RiaApplication::RINavigationPolicy RiaApplication::navigationPolicy() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setShowPerformanceInfo(bool enable)
 {
@@ -1210,7 +1215,7 @@ void RiaApplication::setShowPerformanceInfo(bool enable)
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::showPerformanceInfo() const
 {
@@ -1219,7 +1224,7 @@ bool RiaApplication::showPerformanceInfo() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::parseArguments()
 {
@@ -1234,7 +1239,7 @@ bool RiaApplication::parseArguments()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 int RiaApplication::launchUnitTests()
 {
@@ -1257,7 +1262,7 @@ int RiaApplication::launchUnitTests()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 int RiaApplication::launchUnitTestsWithConsole()
 {
@@ -1282,7 +1287,7 @@ int RiaApplication::launchUnitTestsWithConsole()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::createMainPlotWindow()
 {
@@ -1297,7 +1302,7 @@ void RiaApplication::createMainPlotWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::deleteMainPlotWindow()
 {
@@ -1309,7 +1314,7 @@ void RiaApplication::deleteMainPlotWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiuMainPlotWindow* RiaApplication::getOrCreateAndShowMainPlotWindow()
 {
@@ -1336,7 +1341,7 @@ RiuMainPlotWindow* RiaApplication::getOrCreateAndShowMainPlotWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiuMainPlotWindow* RiaApplication::mainPlotWindow()
 {
@@ -1344,7 +1349,7 @@ RiuMainPlotWindow* RiaApplication::mainPlotWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiuMainWindowBase* RiaApplication::mainWindowByID(int mainWindowID)
 {
@@ -1354,7 +1359,7 @@ RiuMainWindowBase* RiaApplication::mainWindowByID(int mainWindowID)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RimViewWindow* RiaApplication::activeViewWindow()
 {
@@ -1381,7 +1386,7 @@ RimViewWindow* RiaApplication::activeViewWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::isMain3dWindowVisible() const
 {
@@ -1389,7 +1394,7 @@ bool RiaApplication::isMain3dWindowVisible() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::isMainPlotWindowVisible() const
 {
@@ -1399,7 +1404,7 @@ bool RiaApplication::isMainPlotWindowVisible() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::tryCloseMainWindow()
 {
@@ -1415,7 +1420,7 @@ bool RiaApplication::tryCloseMainWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::tryClosePlotWindow()
 {
@@ -1435,7 +1440,7 @@ bool RiaApplication::tryClosePlotWindow()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::addToRecentFiles(const QString& fileName)
 {
@@ -1443,7 +1448,7 @@ void RiaApplication::addToRecentFiles(const QString& fileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::vector<QAction*> RiaApplication::recentFileActions() const
 {
@@ -1451,7 +1456,7 @@ std::vector<QAction*> RiaApplication::recentFileActions() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setStartDir(const QString& startDir)
 {
@@ -1459,7 +1464,7 @@ void RiaApplication::setStartDir(const QString& startDir)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 std::vector<QString> RiaApplication::readFileListFromTextFile(QString listFileName)
 {
@@ -1488,7 +1493,7 @@ std::vector<QString> RiaApplication::readFileListFromTextFile(QString listFileNa
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::waitUntilCommandObjectsHasBeenProcessed()
 {
@@ -1501,7 +1506,7 @@ void RiaApplication::waitUntilCommandObjectsHasBeenProcessed()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::scriptDirectories() const
 {
@@ -1509,7 +1514,7 @@ QString RiaApplication::scriptDirectories() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::scriptEditorPath() const
 {
@@ -1517,7 +1522,7 @@ QString RiaApplication::scriptEditorPath() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::octavePath() const
 {
@@ -1525,7 +1530,7 @@ QString RiaApplication::octavePath() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QStringList RiaApplication::octaveArguments() const
 {
@@ -1553,7 +1558,7 @@ QStringList RiaApplication::octaveArguments() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::slotWorkerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
@@ -1587,7 +1592,7 @@ void RiaApplication::slotWorkerProcessFinished(int exitCode, QProcess::ExitStatu
         return;
     }
 
-    // If multiple cases are present, invoke launchProcess() which will set next current case, and run script on this case 
+    // If multiple cases are present, invoke launchProcess() which will set next current case, and run script on this case
     if (!m_currentCaseIds.empty())
     {
         launchProcess(m_currentProgram, m_currentArguments);
@@ -1601,7 +1606,7 @@ void RiaApplication::slotWorkerProcessFinished(int exitCode, QProcess::ExitStatu
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::launchProcess(const QString& program, const QStringList& arguments)
 {
@@ -1628,9 +1633,9 @@ bool RiaApplication::launchProcess(const QString& program, const QStringList& ar
 
 #ifdef WIN32
         // Octave plugins compiled by ResInsight are dependent on Qt (currently Qt 32-bit only)
-        // Some Octave installations for Windows have included Qt, and some don't. To make sure these plugins always can be executed, 
+        // Some Octave installations for Windows have included Qt, and some don't. To make sure these plugins always can be executed,
         // the path to octave_plugin_dependencies is added to global path
-        
+
         QString pathString = penv.value("PATH", "");
 
         if (pathString == "") pathString = QApplication::applicationDirPath() + "\\octave_plugin_dependencies";
@@ -1677,7 +1682,7 @@ bool RiaApplication::launchProcess(const QString& program, const QStringList& ar
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::launchProcessForMultipleCases(const QString& program, const QStringList& arguments, const std::vector<int>& caseIds)
 {
@@ -1691,7 +1696,7 @@ bool RiaApplication::launchProcessForMultipleCases(const QString& program, const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RiaPreferences* RiaApplication::preferences()
 {
@@ -1699,7 +1704,7 @@ RiaPreferences* RiaApplication::preferences()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::applyPreferences()
 {
@@ -1745,7 +1750,7 @@ void RiaApplication::applyPreferences()
     {
         fontSizeType = caf::FixedAtlasFont::POINT_SIZE_32;
     }
-    
+
     m_customFont = new caf::FixedAtlasFont(fontSizeType);
 
     if (this->project())
@@ -1771,7 +1776,7 @@ void RiaApplication::applyPreferences()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::terminateProcess()
 {
@@ -1785,7 +1790,7 @@ void RiaApplication::terminateProcess()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::waitForProcess() const
 {
@@ -1801,7 +1806,7 @@ void RiaApplication::waitForProcess() const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::lastUsedDialogDirectory(const QString& dialogName)
 {
@@ -1817,7 +1822,7 @@ QString RiaApplication::lastUsedDialogDirectory(const QString& dialogName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::lastUsedDialogDirectoryWithFallback(const QString& dialogName, const QString& fallbackDirectory)
 {
@@ -1837,7 +1842,7 @@ QString RiaApplication::lastUsedDialogDirectoryWithFallback(const QString& dialo
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setLastUsedDialogDirectory(const QString& dialogName, const QString& directory)
 {
@@ -1846,7 +1851,7 @@ void RiaApplication::setLastUsedDialogDirectory(const QString& dialogName, const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 bool RiaApplication::openFile(const QString& fileName)
 {
@@ -1898,7 +1903,7 @@ bool RiaApplication::openFile(const QString& fileName)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::runMultiCaseSnapshots(const QString& templateProjectFileName, std::vector<QString> gridFileNames, const QString& snapshotFolderName)
 {
@@ -1926,7 +1931,7 @@ void RiaApplication::runMultiCaseSnapshots(const QString& templateProjectFileNam
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Font* RiaApplication::standardFont()
 {
@@ -1939,7 +1944,7 @@ cvf::Font* RiaApplication::standardFont()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 cvf::Font* RiaApplication::customFont()
 {
@@ -1949,7 +1954,7 @@ cvf::Font* RiaApplication::customFont()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 RimProject* RiaApplication::project()
 {
@@ -1957,7 +1962,7 @@ RimProject* RiaApplication::project()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::showFormattedTextInMessageBox(const QString& text)
 {
@@ -1978,7 +1983,7 @@ void RiaApplication::showFormattedTextInMessageBox(const QString& text)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QString RiaApplication::commandLineParameterHelp() const
 {
@@ -1997,7 +2002,7 @@ QString RiaApplication::commandLineParameterHelp() const
         "\n"
         "-case <casename>         Import Eclipse case <casename>\n"
         "                         (do not include .GRID/.EGRID)\n"
-        "\n"                      
+        "\n"
         "-savesnapshots           Save snapshot of all views to 'snapshots' folder in project file folder\n"
         "                         Application closes after snapshots are written to file\n"
         "\n"
@@ -2010,7 +2015,7 @@ QString RiaApplication::commandLineParameterHelp() const
         "                         written in the given folder.\n"
         "\n"
         "-updateregressiontestbase <folder> For all sub-folders starting with \"" + RegTestNames::testFolderFilter + "\" of the given folder: \n"
-        "                         Copy the images in the sub-sub-folder " + RegTestNames::generatedFolderName + " to the sub-sub-folder\n" 
+        "                         Copy the images in the sub-sub-folder " + RegTestNames::generatedFolderName + " to the sub-sub-folder\n"
         "                         " + RegTestNames::baseFolderName + " after deleting " + RegTestNames::baseFolderName + " completely.\n"
         "\n"
         "-help, -?                Displays help text\n"
@@ -2022,7 +2027,7 @@ QString RiaApplication::commandLineParameterHelp() const
 
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setCacheDataObject(const QString& key, const QVariant& dataObject)
 {
@@ -2030,7 +2035,7 @@ void RiaApplication::setCacheDataObject(const QString& key, const QVariant& data
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 QVariant RiaApplication::cacheDataObject(const QString& key) const
 {
@@ -2045,7 +2050,7 @@ QVariant RiaApplication::cacheDataObject(const QString& key) const
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::addCommandObject(RimCommandObject* commandObject)
 {
@@ -2053,7 +2058,7 @@ void RiaApplication::addCommandObject(RimCommandObject* commandObject)
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::executeCommandObjects()
 {
@@ -2091,7 +2096,7 @@ void RiaApplication::executeCommandObjects()
 }
 
 //--------------------------------------------------------------------------------------------------
-/// 
+///
 //--------------------------------------------------------------------------------------------------
 void RiaApplication::setHelpText(const QString& helpText)
 {

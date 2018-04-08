@@ -43,7 +43,8 @@ namespace cvf {
 class RiuFemResultTextBuilder
 {
 public:
-    RiuFemResultTextBuilder(RimGeoMechView* reservoirView, int gridIndex, int cellIndex, int timeStepIndex);
+    RiuFemResultTextBuilder(RimGeoMechView* reservoirView,
+                            int gridIndex, int cellIndex, int timeStepIndex);
     void setFace(int face);
     void setIntersectionPoint(cvf::Vec3d intersectionPoint);
     void setIntersectionTriangle(const std::array<cvf::Vec3f, 3>& triangle);
@@ -61,7 +62,10 @@ private:
 
     QString closestNodeResultText(RimGeoMechResultDefinition* resultDefinition);
 
-    void appendTextFromResultColors(RigGeoMechCaseData* eclipseCase, int gridIndex, int cellIndex, int timeStepIndex, RimGeoMechResultDefinition* resultDefinition, QString* resultInfoText);
+    void appendTextFromResultColors(RigGeoMechCaseData* eclipseCase,
+                                    int gridIndex, int cellIndex, int timeStepIndex,
+                                    RimGeoMechResultDefinition* resultDefinition,
+                                    QString* resultInfoText);
 
 private:
     caf::PdmPointer<RimGeoMechView> m_reservoirView;
