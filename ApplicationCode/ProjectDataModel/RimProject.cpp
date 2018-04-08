@@ -605,6 +605,27 @@ std::vector<RimSummaryCase*> RimProject::allSummaryCases() const
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+std::vector<RimSummaryCaseCollection*> RimProject::summaryGroups() const
+{
+    std::vector<RimSummaryCaseCollection*> groups;
+
+    for (RimOilField* oilField : oilFields)
+    {
+        if (!oilField) continue;
+        RimSummaryCaseMainCollection* sumCaseMainColl = oilField->summaryCaseMainCollection();
+        if (sumCaseMainColl)
+        {
+            std::vector<RimSummaryCaseCollection*> g = sumCaseMainColl->summaryCaseCollections();
+            groups.insert(groups.end(), g.begin(), g.end());
+        }
+    }
+
+    return groups;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void RimProject::allNotLinkedViews(std::vector<RimGridView*>& views)
 {
     std::vector<RimCase*> cases;
@@ -624,8 +645,7 @@ void RimProject::allNotLinkedViews(std::vector<RimGridView*>& views)
         std::vector<Rim3dView*> caseViews = rimCase->views();
         for (size_t viewIdx = 0; viewIdx < caseViews.size(); viewIdx++)
         {
-//            RimGridView* gridView = dynamic_cast<RimGridView*>(caseViews[viewIdx]);
-            RimGridView* gridView = reinterpret_cast<RimGridView*>(caseViews[viewIdx]);
+            RimGridView* gridView = dynamic_cast<RimGridView*>(caseViews[viewIdx]);
             
             if (!gridView) continue;
 
@@ -678,8 +698,7 @@ void RimProject::allVisibleGridViews(std::vector<RimGridView*>& views)
     this->allVisibleViews(visibleViews);
     for ( Rim3dView* view : visibleViews )
     {
-        // RimGridView* gridView = dynamic_cast<RimGridView*>(view);
-        RimGridView* gridView = reinterpret_cast<RimGridView*>(view);
+        RimGridView* gridView = dynamic_cast<RimGridView*>(view);
         if ( gridView ) views.push_back(gridView);
     }
 }

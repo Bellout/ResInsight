@@ -66,22 +66,17 @@ RimEclipseResultCase::RimEclipseResultCase()
 {
     CAF_PDM_InitObject("Eclipse Case", ":/Case48x48.png", "", "");
 
-    CAF_PDM_InitField(&caseFileName, "CaseFileName",  QString(),
-                      "Case File Name", "", "" ,"");
-
+    CAF_PDM_InitField(&caseFileName, "CaseFileName",  QString(), "Case File Name", "", "" ,"");
     caseFileName.uiCapability()->setUiReadOnly(true);
 
-    CAF_PDM_InitFieldNoDefault (&m_flowDiagSolutions, "FlowDiagSolutions",
-                                "Flow Diagnostics Solutions", "", "", "");
-
+    CAF_PDM_InitFieldNoDefault (&m_flowDiagSolutions, "FlowDiagSolutions", "Flow Diagnostics Solutions", "", "", "");
     m_flowDiagSolutions.uiCapability()->setUiHidden(true);
     m_flowDiagSolutions.uiCapability()->setUiTreeHidden(true);
     m_flowDiagSolutions.uiCapability()->setUiTreeChildrenHidden(true);
 
     // Obsolete, unused field
-    CAF_PDM_InitField(&caseDirectory, "CaseFolder", QString(),
-                      "Directory", "", "" ,"");
-    caseDirectory.xmlCapability()->setIOWritable(false);
+    CAF_PDM_InitField(&caseDirectory, "CaseFolder", QString(), "Directory", "", "" ,"");
+    caseDirectory.xmlCapability()->setIOWritable(false); 
     caseDirectory.uiCapability()->setUiHidden(true);
 
     flipXAxis.xmlCapability()->setIOWritable(true);
@@ -89,11 +84,8 @@ RimEclipseResultCase::RimEclipseResultCase()
     flipYAxis.xmlCapability()->setIOWritable(true);
     //flipYAxis.uiCapability()->setUiHidden(true);
 
-    CAF_PDM_InitField(&m_sourSimFileName, "SourSimFileName", QString(),
-                      "SourSim File Name", "", "", "");
-    m_sourSimFileName.uiCapability()->setUiEditorTypeName(
-        caf::PdmUiFilePathEditor::uiEditorTypeName());
-
+    CAF_PDM_InitField(&m_sourSimFileName, "SourSimFileName", QString(), "SourSim File Name", "", "", "");
+    m_sourSimFileName.uiCapability()->setUiEditorTypeName(caf::PdmUiFilePathEditor::uiEditorTypeName());
 #ifndef USE_HDF5
     m_sourSimFileName.uiCapability()->setUiHidden(true);
 #endif
@@ -115,10 +107,10 @@ bool RimEclipseResultCase::openEclipseGridFile()
 //--------------------------------------------------------------------------------------------------
 bool RimEclipseResultCase::importGridAndResultMetaData(bool showTimeStepFilter)
 {
-    caf::ProgressInfo progInfo(50, "Reading Eclipse Grid File");
-
-    progInfo.setProgressDescription("Open Grid File");
-    progInfo.setNextProgressIncrement(48);
+     caf::ProgressInfo progInfo(50, "Reading Eclipse Grid File");
+ 
+     progInfo.setProgressDescription("Open Grid File");
+     progInfo.setNextProgressIncrement(48);
 
     // Early exit if data is already read
     if (m_gridAndWellDataIsReadFromFile) return true;
@@ -190,7 +182,7 @@ bool RimEclipseResultCase::importGridAndResultMetaData(bool showTimeStepFilter)
 
         this->setReservoirData(eclipseCase.p());
 
-        readerInterface = readerEclipseOutput;
+         readerInterface = readerEclipseOutput; 
     }
 
     results(RiaDefines::MATRIX_MODEL)->setReaderInterface(readerInterface.p());
@@ -230,7 +222,7 @@ bool RimEclipseResultCase::importGridAndResultMetaData(bool showTimeStepFilter)
         RifReaderEclipseOutput* outReader = dynamic_cast<RifReaderEclipseOutput*>(readerInterface.p());
         outReader->setHdf5FileName(m_sourSimFileName());
     }
-
+    
     return true;
 }
 
@@ -337,7 +329,7 @@ cvf::ref<RifReaderInterface> RimEclipseResultCase::createMockModel(QString model
     cvf::ref<RifReaderMockModel> mockFileInterface = new RifReaderMockModel;
     cvf::ref<RigEclipseCaseData> reservoir = new RigEclipseCaseData(this);
 
-    if (modelName == RiaDefines::mockModelBasic())
+     if (modelName == RiaDefines::mockModelBasic())
     {
         // Create the mock file interface and and RigSerervoir and set them up.
         mockFileInterface->setWorldCoordinates(cvf::Vec3d(10, 10, 10), cvf::Vec3d(20, 20, 20));
@@ -424,7 +416,7 @@ cvf::ref<RifReaderInterface> RimEclipseResultCase::createMockModel(QString model
         }
         else
         {
-            QApplication::restoreOverrideCursor();
+             QApplication::restoreOverrideCursor();
         }
     }
 
@@ -479,12 +471,12 @@ void RimEclipseResultCase::updateFilePathsFromProjectPath(const QString& newProj
     }
 
     setFilesContainingFaults(relocatedFaultFiles);
-
+    
 #if 0 // Output the search path for debugging
     for (size_t i = 0; i < searchedPaths.size(); ++i)
        qDebug() << searchedPaths[i];
-#endif
-
+#endif 
+    
 }
 
 
@@ -506,9 +498,9 @@ RimFlowDiagSolution* RimEclipseResultCase::defaultFlowDiagSolution()
 //--------------------------------------------------------------------------------------------------
 std::vector<RimFlowDiagSolution*> RimEclipseResultCase::flowDiagSolutions()
 {
-    std::vector<RimFlowDiagSolution*> flowSols;
-    for ( const caf::PdmPointer<RimFlowDiagSolution>& fsol: m_flowDiagSolutions )
-    {
+    std::vector<RimFlowDiagSolution*> flowSols; 
+    for ( const caf::PdmPointer<RimFlowDiagSolution>& fsol: m_flowDiagSolutions ) 
+    { 
         flowSols.push_back(fsol.p());
     }
 
@@ -567,7 +559,7 @@ void RimEclipseResultCase::setSourSimFileName(const QString& fileName)
 //--------------------------------------------------------------------------------------------------
 bool RimEclipseResultCase::hasSourSimFile()
 {
-    return !m_sourSimFileName().isEmpty();
+   return !m_sourSimFileName().isEmpty();
 }
 
 //--------------------------------------------------------------------------------------------------

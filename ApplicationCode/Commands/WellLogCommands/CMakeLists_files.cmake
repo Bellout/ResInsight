@@ -23,6 +23,9 @@ ${CMAKE_CURRENT_LIST_DIR}/RicChangeDataSourceFeatureUi.h
 ${CMAKE_CURRENT_LIST_DIR}/RicAsciiExportWellLogPlotFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicWellLogFileCloseFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicMoveWellLogFilesFeature.h
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogCurveFeature.h
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogFileCurveFeature.h
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogRftCurveFeature.h
 )
 
 set (SOURCE_GROUP_SOURCE_FILES
@@ -49,6 +52,9 @@ ${CMAKE_CURRENT_LIST_DIR}/RicChangeDataSourceFeatureUi.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicAsciiExportWellLogPlotFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicWellLogFileCloseFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicMoveWellLogFilesFeature.cpp
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogCurveFeature.cpp
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogFileCurveFeature.cpp
+${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogRftCurveFeature.cpp
 )
 
 list(APPEND CODE_HEADER_FILES

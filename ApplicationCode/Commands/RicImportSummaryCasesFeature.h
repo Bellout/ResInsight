@@ -18,9 +18,14 @@
 
 #pragma once
 
+#include "RiaPreferences.h"
+
 #include "cafCmdFeature.h"
 
 #include <QString>
+
+class RicSummaryCaseRestartDialogResult;
+
 
 //==================================================================================================
 /// 
@@ -32,7 +37,7 @@ class RicImportSummaryCasesFeature : public caf::CmdFeature
 public:
     RicImportSummaryCasesFeature() : m_pathFilter("*"), m_fileNameFilter("*") { }
 
-    static bool createAndAddSummaryCaseFromFile(const QString& fileName);
+    static bool createAndAddSummaryCasesFromFiles(const QStringList& fileName);
 
 protected:
     // Overrides

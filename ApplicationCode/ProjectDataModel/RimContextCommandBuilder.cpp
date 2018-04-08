@@ -35,6 +35,7 @@
 #include "RimEclipsePropertyFilterCollection.h"
 #include "RimEclipseStatisticsCase.h"
 #include "RimEclipseView.h"
+#include "RimEnsambleCurveSetCollection.h"
 #include "RimFaultInView.h"
 #include "RimFlowCharacteristicsPlot.h"
 #include "RimFlowDiagSolution.h"
@@ -262,7 +263,12 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
 
             menuBuilder.addSeparator();
 
+            menuBuilder.subMenuStart("3D Well Log Curves", QIcon(":/WellLogCurve16x16.png"));
+
             menuBuilder << "RicAdd3dWellLogCurveFeature";
+            menuBuilder << "RicAdd3dWellLogFileCurveFeature";
+
+            menuBuilder.subMenuEnd();
 
             menuBuilder << "RicNewWellPathIntersectionFeature";
 
@@ -434,6 +440,10 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
             menuBuilder << "RicEditSummaryPlotFeature";
             menuBuilder << "RicNewSummaryCurveFeature";
             menuBuilder << "RicNewSummaryCrossPlotCurveFeature";
+        }
+        else if (dynamic_cast<RimEnsambleCurveSetCollection*>(uiItem))
+        {
+            menuBuilder << "RicNewSummaryEnsambleCurveSetFeature";
         }
         else if (dynamic_cast<RimSummaryCase*>(uiItem))
         {
@@ -616,7 +626,7 @@ caf::CmdFeatureMenuBuilder RimContextCommandBuilder::commandsFromSelection()
         menuBuilder << "Separator";
         menuBuilder << "RicCutReferencesToClipboardFeature";
         menuBuilder << "Separator";
-		menuBuilder << "RicCloseSummaryCaseFeature";
+        menuBuilder << "RicCloseSummaryCaseFeature";
         menuBuilder << "RicCloseSummaryCaseInCollectionFeature";
         menuBuilder << "RicDeleteSummaryCaseCollectionFeature";
         menuBuilder << "RicCloseObservedDataFeature";

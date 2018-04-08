@@ -57,6 +57,7 @@
 
 #include "cvfPlane.h"
 
+#include "RigVirtualPerforationTransmissibilities.h"
 #include <QDir>
 
 //--------------------------------------------------------------------------------------------------
@@ -315,6 +316,68 @@ void RicWellPathExportCompletionDataFeatureImpl::exportCompletions(const std::ve
     }
 }
 
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+std::vector<RigCompletionData>
+    RicWellPathExportCompletionDataFeatureImpl::computeStaticCompletionsForWellPath(RimWellPath*    wellPath,
+                                                                                    RimEclipseCase* eclipseCase)
+{
+    std::vector<RigCompletionData> completionsPerEclipseCell;
+
+    if (eclipseCase && eclipseCase->eclipseCaseData())
+    {
+        RicExportCompletionDataSettingsUi exportSettings;
+        exportSettings.caseToApply         = eclipseCase;
+        exportSettings.timeStep            = 0;
+        exportSettings.includeFishbones    = true;
+        exportSettings.includePerforations = true;
+        exportSettings.includeFractures    = true;
+
+        {
+            std::vector<RigCompletionData> completionData =
+                RicFishbonesTransmissibilityCalculationFeatureImp::generateFishboneCompdatValuesUsingAdjustedCellVolume(
+                    wellPath, exportSettings);
+
+            std::copy(completionData.begin(), completionData.end(), std::back_inserter(completionsPerEclipseCell));
+        }
+
+        {
+            std::vector<RigCompletionData> completionData =
+                RicExportFractureCompletionsImpl::generateCompdatValuesForWellPath(wellPath, exportSettings, nullptr);
+
+            std::copy(completionData.begin(), completionData.end(), std::back_inserter(completionsPerEclipseCell));
+        }
+    }
+
+    return completionsPerEclipseCell;
+}
+
+//--------------------------------------------------------------------------------------------------
+///
+//--------------------------------------------------------------------------------------------------
+std::vector<RigCompletionData>
+    RicWellPathExportCompletionDataFeatureImpl::computeDynamicCompletionsForWellPath(RimWellPath*    wellPath,
+                                                                                     RimEclipseCase* eclipseCase,
+                                                                                     size_t          timeStepIndex)
+{
+    std::vector<RigCompletionData> completionsPerEclipseCell;
+
+    if (eclipseCase && eclipseCase->eclipseCaseData())
+    {
+        RicExportCompletionDataSettingsUi exportSettings;
+        exportSettings.caseToApply         = eclipseCase;
+        exportSettings.timeStep            = static_cast<int>(timeStepIndex);
+        exportSettings.includeFishbones    = true;
+        exportSettings.includePerforations = true;
+        exportSettings.includeFractures    = true;
+
+        completionsPerEclipseCell = generatePerforationsCompdatValues(wellPath, exportSettings);
+    }
+
+    return completionsPerEclipseCell;
+}
+
 //==================================================================================================
 ///
 //==================================================================================================
@@ -511,6 +574,7 @@ void RicWellPathExportCompletionDataFeatureImpl::printCompletionsToFile(
 
     QTextStream                  stream(&exportFile);
     RifEclipseDataTableFormatter formatter(stream);
+    formatter.setColumnSpacing(3);
 
     for (const auto& gridCompletions : completionsPerGrid)
     {
@@ -656,9 +720,15 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
             .addZeroBasedCellIndex(data.completionDataGridCell().localCellIndexK());
         switch (data.connectionState())
         {
-            case OPEN: formatter.add("OPEN"); break;
-            case SHUT: formatter.add("SHUT"); break;
-            case AUTO: formatter.add("AUTO"); break;
+            case OPEN:
+                formatter.add("OPEN");
+                break;
+            case SHUT:
+                formatter.add("SHUT");
+                break;
+            case AUTO:
+                formatter.add("AUTO");
+                break;
         }
 
         if (RigCompletionData::isDefaultValue(data.saturation()))
@@ -692,10 +762,18 @@ void RicWellPathExportCompletionDataFeatureImpl::generateCompdatTable(RifEclipse
 
             switch (data.direction())
             {
-                case DIR_I: formatter.add("'X'"); break;
-                case DIR_J: formatter.add("'Y'"); break;
-                case DIR_K: formatter.add("'Z'"); break;
-                default: formatter.add("'Z'"); break;
+                case DIR_I:
+                    formatter.add("'X'");
+                    break;
+                case DIR_J:
+                    formatter.add("'Y'");
+                    break;
+                case DIR_K:
+                    formatter.add("'Z'");
+                    break;
+                default:
+                    formatter.add("'Z'");
+                    break;
             }
         }
         else
@@ -827,9 +905,9 @@ std::vector<RigCompletionData> RicWellPathExportCompletionDataFeatureImpl::gener
 
                 completion.setTransAndWPImultBackgroundDataFromPerforation(
                     transmissibility, interval->skinFactor(), interval->diameter(unitSystem), direction);
-                completion.addMetadata("Perforation",
-                                       QString("StartMD: %1 - EndMD: %2").arg(interval->startMD()).arg(interval->endMD()) +
-                                           QString(" : ") + QString::number(transmissibility));
+                completion.addMetadata("Perforation Completion",
+                                       QString("MD In: %1 - MD Out: %2").arg(cell.startMD).arg(cell.endMD) +
+                                           QString(" Transmissibility: ") + QString::number(transmissibility));
                 completionData.push_back(completion);
             }
         }

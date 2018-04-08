@@ -44,6 +44,7 @@ class RigFemResultAddress;
 class RigGeoMechCaseData;
 class RigMainGrid;
 class RigResultAccessor;
+class Rim3dView;
 class RimCellEdgeColors;
 class RimEclipseCellColors;
 class RimIntersection;
@@ -71,12 +72,11 @@ public:
 
     void appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
     void appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
-    void appendPolylinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
-    void appendWellPipePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+    void appendPolylinePartsToModel(Rim3dView& view, cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
 
     const RimIntersection* intersection() const;
 
-    cvf::Mat4d unflattenTransformMatrix(const cvf::Vec3d& intersectionPointUtm);
+    cvf::Mat4d unflattenTransformMatrix(const cvf::Vec3d& intersectionPointFlat);
 
 public:
     static void calculateEclipseTextureCoordinates(cvf::Vec2fArray* textureCoords, 
@@ -121,6 +121,8 @@ private:
     cvf::ref<RivIntersectionGeometryGenerator>   m_crossSectionGenerator;
     cvf::ref<cvf::Part>         m_crossSectionFaces;
     cvf::ref<cvf::Part>         m_crossSectionGridLines;
+    cvf::ref<cvf::Part>         m_crossSectionFaultGridLines;
+    
     cvf::ref<cvf::Vec2fArray>   m_crossSectionFacesTextureCoords;
 
     cvf::ref<cvf::Part>         m_highlightLineAlongPolyline;

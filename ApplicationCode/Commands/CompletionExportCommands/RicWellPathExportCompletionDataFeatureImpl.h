@@ -35,6 +35,7 @@ class RimFishbonesMultipleSubs;
 class RimSimWellInView;
 class RimWellPath;
 class RifEclipseDataTableFormatter;
+class RigVirtualPerforationTransmissibilities;
 
 //==================================================================================================
 /// 
@@ -144,6 +145,13 @@ public:
     static void                                  exportCompletions(const std::vector<RimWellPath*>& wellPaths, 
                                                                    const std::vector<RimSimWellInView*>& simWells, 
                                                                    const RicExportCompletionDataSettingsUi& exportSettings);
+
+    static std::vector<RigCompletionData>        computeStaticCompletionsForWellPath(RimWellPath* wellPath,
+                                                                                     RimEclipseCase* eclipseCase);
+
+    static std::vector<RigCompletionData>        computeDynamicCompletionsForWellPath(RimWellPath* wellPath,
+                                                                                      RimEclipseCase* eclipseCase,
+                                                                                      size_t timeStepIndex);
 
 private:
     static double                                calculateTransmissibilityAsEclipseDoes(RimEclipseCase* eclipseCase,

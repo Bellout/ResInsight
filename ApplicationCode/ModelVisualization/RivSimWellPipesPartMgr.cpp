@@ -20,46 +20,41 @@
 
 #include "RivSimWellPipesPartMgr.h"
 
-#include "RigEclipseCaseData.h"
-#include "RigCell.h"
-#include "RigMainGrid.h"
-#include "RigSimulationWellCenterLineCalculator.h"
+#include "RiaExtractionTools.h"
 
-#include "Rim3dOverlayInfoConfig.h"
-#include "RimCellEdgeColors.h"
-#include "RimCellRangeFilterCollection.h"
-#include "RimEclipseCase.h"
-#include "RimEclipseCellColors.h"
-#include "RimEclipsePropertyFilterCollection.h"
+#include "RigEclipseWellLogExtractor.h"
+#include "RigVirtualPerforationTransmissibilities.h"
+#include "RigWellLogExtractor.h"
+#include "RigWellPath.h"
+
+#include "Rim3dView.h"
 #include "RimEclipseView.h"
-#include "RimReservoirCellResultsStorage.h"
+#include "RimLegendConfig.h"
 #include "RimSimWellInView.h"
 #include "RimSimWellInViewCollection.h"
+#include "RimVirtualPerforationResults.h"
 
 #include "RivPipeGeometryGenerator.h"
-#include "RivWellPathSourceInfo.h"
+#include "RivSectionFlattner.h"
+#include "RivSimWellConnectionSourceInfo.h"
 #include "RivSimWellPipeSourceInfo.h"
+#include "RivWellConnectionFactorGeometryGenerator.h"
+#include "RivWellConnectionSourceInfo.h"
 
+#include "cafDisplayCoordTransform.h"
 #include "cafEffectGenerator.h"
-#include "cafPdmFieldCvfColor.h"
-#include "cafPdmFieldCvfMat4d.h"
 
 #include "cvfDrawableGeo.h"
 #include "cvfModelBasicList.h"
 #include "cvfPart.h"
-#include "cvfRay.h"
 #include "cvfScalarMapperDiscreteLinear.h"
-#include "cvfTransform.h"
-
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RivSimWellPipesPartMgr::RivSimWellPipesPartMgr(RimEclipseView* reservoirView, RimSimWellInView* well)
+RivSimWellPipesPartMgr::RivSimWellPipesPartMgr(RimSimWellInView* well)
+    : m_rimWell(well)
 {
-    m_rimReservoirView = reservoirView;
-    m_rimWell      = well;
-    m_needsTransformUpdate = true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -73,38 +68,117 @@ RivSimWellPipesPartMgr::~RivSimWellPipesPartMgr()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RivSimWellPipesPartMgr::setScaleTransform(cvf::Transform * scaleTransform)
+Rim3dView* RivSimWellPipesPartMgr::viewWithSettings()
 {
-    m_scaleTransform = scaleTransform;
+    Rim3dView* view = nullptr;
+    if (m_rimWell) m_rimWell->firstAncestorOrThisOfType(view);
     
-    scheduleGeometryRegen();
+    return view;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RivSimWellPipesPartMgr::scheduleGeometryRegen()
+void RivSimWellPipesPartMgr::appendDynamicGeometryPartsToModel(cvf::ModelBasicList* model, 
+                                                               size_t frameIndex, 
+                                                               const caf::DisplayCoordTransform* displayXf)
 {
-    m_needsTransformUpdate = true;
+    if (!viewWithSettings()) return;
+
+    if (!m_rimWell->isWellPipeVisible(frameIndex)) return;
+
+    buildWellPipeParts(displayXf, false, 0.0, -1, frameIndex);
+
+    std::list<RivPipeBranchData>::iterator it;
+    for (it = m_wellBranches.begin(); it != m_wellBranches.end(); ++it)
+    {
+        if (it->m_surfacePart.notNull())
+        {
+            model->addPart(it->m_surfacePart.p());
+        }
+
+        if (it->m_centerLinePart.notNull())
+        {
+            model->addPart(it->m_centerLinePart.p());
+        }
+
+        if (it->m_connectionFactorsPart.notNull())
+        {
+            model->addPart(it->m_connectionFactorsPart.p());
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RivSimWellPipesPartMgr::buildWellPipeParts()
+void RivSimWellPipesPartMgr::appendFlattenedDynamicGeometryPartsToModel(cvf::ModelBasicList* model, 
+                                                                        size_t frameIndex, 
+                                                                        const caf::DisplayCoordTransform* displayXf, 
+                                                                        double flattenedIntersectionExtentLength,
+                                                                        int branchIndex)
 {
-    if (m_rimReservoirView.isNull()) return;
+    if (!viewWithSettings()) return;
+
+    if (!m_rimWell->isWellPipeVisible(frameIndex)) return;
+
+    buildWellPipeParts(displayXf, true, flattenedIntersectionExtentLength, branchIndex, frameIndex);
+
+    std::list<RivPipeBranchData>::iterator it;
+    for (it = m_wellBranches.begin(); it != m_wellBranches.end(); ++it)
+    {
+        if (it->m_surfacePart.notNull())
+        {
+            model->addPart(it->m_surfacePart.p());
+        }
+
+        if (it->m_centerLinePart.notNull())
+        {
+            model->addPart(it->m_centerLinePart.p());
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RivSimWellPipesPartMgr::buildWellPipeParts(const caf::DisplayCoordTransform* displayXf,
+                                                bool doFlatten, 
+                                                double flattenedIntersectionExtentLength,
+                                                int branchIndex,
+                                                size_t frameIndex)
+{
+    if (!this->viewWithSettings()) return;
 
     m_wellBranches.clear();
-
+    m_flattenedBranchWellHeadOffsets.clear();
     m_pipeBranchesCLCoords.clear();
     std::vector< std::vector <RigWellResultPoint> > pipeBranchesCellIds;
 
     m_rimWell->calculateWellPipeStaticCenterLine(m_pipeBranchesCLCoords, pipeBranchesCellIds);
 
     double pipeRadius =  m_rimWell->pipeRadius();
+    int crossSectionVertexCount = m_rimWell->pipeCrossSectionVertexCount();
 
-    for (size_t brIdx = 0; brIdx < pipeBranchesCellIds.size(); ++brIdx)
+    // Take branch selection into account
+    size_t branchIdxStart = 0;
+    size_t branchIdxStop = pipeBranchesCellIds.size();
+    if (m_pipeBranchesCLCoords.size() > 1)
+    {
+        if (branchIndex >= 0 && branchIndex < static_cast<int>(branchIdxStop))
+        {
+            branchIdxStart = branchIndex;
+            branchIdxStop  = branchIdxStart + 1;
+        }
+    }
+
+    cvf::Vec3d flattenedStartOffset = cvf::Vec3d::ZERO;
+    if ( m_pipeBranchesCLCoords.size() > branchIdxStart && m_pipeBranchesCLCoords[branchIdxStart].size() )
+    {
+        flattenedStartOffset = { 0.0, 0.0, m_pipeBranchesCLCoords[branchIdxStart][0].z() }; 
+    }
+
+    for (size_t brIdx = branchIdxStart; brIdx <branchIdxStop; ++brIdx)
     {
         cvf::ref<RivSimWellPipeSourceInfo> sourceInfo = new RivSimWellPipeSourceInfo(m_rimWell, brIdx);
 
@@ -116,20 +190,35 @@ void RivSimWellPipesPartMgr::buildWellPipeParts()
         pbd.m_pipeGeomGenerator = new RivPipeGeometryGenerator;
 
         pbd.m_pipeGeomGenerator->setRadius(pipeRadius);
-        pbd.m_pipeGeomGenerator->setCrossSectionVertexCount(m_rimReservoirView->wellCollection()->pipeCrossSectionVertexCount());
+        pbd.m_pipeGeomGenerator->setCrossSectionVertexCount(crossSectionVertexCount);
 
         cvf::ref<cvf::Vec3dArray> cvfCoords = new cvf::Vec3dArray;
         cvfCoords->assign(m_pipeBranchesCLCoords[brIdx]);
         
-        // Scale the centerline coordinates using the Z-scale transform of the grid and correct for the display offset.
-        const RigMainGrid* mainGrid = m_rimReservoirView->mainGrid();
+        flattenedStartOffset.z() = m_pipeBranchesCLCoords[brIdx][0].z();
+        
+        m_flattenedBranchWellHeadOffsets.push_back(flattenedStartOffset.x());
 
-        for (size_t cIdx = 0; cIdx < cvfCoords->size(); ++cIdx)
+        if (doFlatten)
+        {        
+            std::vector<cvf::Mat4d> flatningCSs = RivSectionFlattner::calculateFlatteningCSsForPolyline(m_pipeBranchesCLCoords[brIdx],
+                                                                                                        cvf::Vec3d::Z_AXIS,
+                                                                                                        flattenedStartOffset,
+                                                                                                        &flattenedStartOffset);
+            for (size_t cIdx = 0; cIdx < cvfCoords->size(); ++cIdx)
+            {
+                (*cvfCoords)[cIdx] = ((*cvfCoords)[cIdx]).getTransformedPoint(flatningCSs[cIdx]);
+                (*cvfCoords)[cIdx] = displayXf->scaleToDisplaySize((*cvfCoords)[cIdx]);
+            }
+        }
+        else
         {
-            cvf::Vec4d transfCoord = m_scaleTransform->worldTransform()* cvf::Vec4d((*cvfCoords)[cIdx] - mainGrid->displayModelOffset(), 1);
-            (*cvfCoords)[cIdx][0] = transfCoord[0];
-            (*cvfCoords)[cIdx][1] = transfCoord[1];
-            (*cvfCoords)[cIdx][2] = transfCoord[2];
+            // Scale the centerline coordinates using the Z-scale transform of the grid and correct for the display offset.
+
+            for ( size_t cIdx = 0; cIdx < cvfCoords->size(); ++cIdx )
+            {
+                (*cvfCoords)[cIdx] = displayXf->transformToDisplayCoord((*cvfCoords)[cIdx]);
+            }
         }
 
         pbd.m_pipeGeomGenerator->setPipeCenterCoords(cvfCoords.p());
@@ -138,7 +227,7 @@ void RivSimWellPipesPartMgr::buildWellPipeParts()
 
         if (pbd.m_surfaceDrawable.notNull())
         {
-            pbd.m_surfacePart = new cvf::Part;
+            pbd.m_surfacePart = new cvf::Part(0,"SimWellPipeSurface");
             pbd.m_surfacePart->setDrawable(pbd.m_surfaceDrawable.p());
 
             caf::SurfaceEffectGenerator surfaceGen(cvf::Color4f(m_rimWell->wellPipeColor()), caf::PO_1);
@@ -151,7 +240,7 @@ void RivSimWellPipesPartMgr::buildWellPipeParts()
 
         if (pbd.m_centerLineDrawable.notNull())
         {
-            pbd.m_centerLinePart = new cvf::Part;
+            pbd.m_centerLinePart = new cvf::Part(0,"SimWellPipeCenterLine");
             pbd.m_centerLinePart->setDrawable(pbd.m_centerLineDrawable.p());
 
             caf::MeshEffectGenerator gen(m_rimWell->wellPipeColor());
@@ -166,56 +255,91 @@ void RivSimWellPipesPartMgr::buildWellPipeParts()
             pbd.m_pipeGeomGenerator->setRadius(pipeRadius * 1.1);
             pbd.m_largeSurfaceDrawable = pbd.m_pipeGeomGenerator->createPipeSurface();
         }
-    }
 
-    m_needsTransformUpdate = false;
-}
+        pbd.m_connectionFactorGeometryGenerator = nullptr;
+        pbd.m_connectionFactorsPart = nullptr;
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-RivSimWellPipesPartMgr::RivPipeBranchData* RivSimWellPipesPartMgr::pipeBranchData(size_t branchIndex)
-{
-    if (branchIndex < m_wellBranches.size())
-    {
-        size_t i = 0;
+        RimEclipseView* eclipseView = nullptr;
+        m_rimWell->firstAncestorOrThisOfType(eclipseView);
 
-        auto brIt = m_wellBranches.begin();
-        while (i < branchIndex)
+        if (eclipseView && eclipseView->isVirtualConnectionFactorGeometryVisible())
         {
-            brIt++;
-            i++;
+            RigSimWellData* simWellData = m_rimWell->simWellData();
+
+            if (simWellData && simWellData->hasWellResult(frameIndex))
+            {
+                const RigWellResultFrame& wResFrame = simWellData->wellResultFrame(frameIndex);
+
+                std::vector<CompletionVizData> completionVizDataItems;
+
+                RimVirtualPerforationResults* virtualPerforationResult = eclipseView->virtualPerforationResult();
+                {
+                    auto wellPaths = m_rimWell->wellPipeBranches();
+
+                    const RigWellPath* wellPath = wellPaths[brIdx];
+
+                    RigEclipseWellLogExtractor* extractor = RiaExtractionTools::findOrCreateSimWellExtractor(m_rimWell, wellPath);
+                    if (extractor)
+                    {
+                        std::vector<WellPathCellIntersectionInfo> wellPathCellIntersections = extractor->cellIntersectionInfosAlongWellPath();
+
+                        for (const auto& intersectionInfo : wellPathCellIntersections)
+                        {
+                            size_t globalCellIndex = intersectionInfo.globCellIndex;
+
+                            for (const auto& wellResultPoint : pbd.m_cellIds)
+                            {
+                                if (wellResultPoint.m_gridCellIndex == globalCellIndex)
+                                {
+                                    double startMD = intersectionInfo.startMD;
+                                    double endMD = intersectionInfo.endMD;
+
+                                    double middleMD = (startMD + endMD) / 2.0;
+
+                                    cvf::Vec3d defaultLocationInDomainCoord = wellPath->interpolatedPointAlongWellPath(middleMD);
+
+                                    cvf::Vec3d p1;
+                                    cvf::Vec3d p2;
+                                    wellPath->twoClosestPoints(defaultLocationInDomainCoord, &p1, &p2);
+
+                                    cvf::Vec3d defaultWellPathDirection = (p2 - p1).getNormalized();
+
+                                    cvf::Vec3d anchor = displayXf->transformToDisplayCoord(defaultLocationInDomainCoord);;
+
+                                    const RigWellResultPoint* wResCell = wResFrame.findResultCell(wellResultPoint.m_gridIndex, wellResultPoint.m_gridCellIndex);
+                                    if (wResCell && wResCell->m_isOpen)
+                                    {
+                                        CompletionVizData data(anchor, defaultWellPathDirection, wResCell->connectionFactor(), globalCellIndex);
+
+                                        completionVizDataItems.push_back(data);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!completionVizDataItems.empty())
+                {
+                    double radius = pipeRadius * virtualPerforationResult->geometryScaleFactor();
+                    radius *= 2.0; // Enlarge the radius slightly to make the connection factor visible if geometry scale factor is set to 1.0
+
+                    pbd.m_connectionFactorGeometryGenerator = new RivWellConnectionFactorGeometryGenerator(completionVizDataItems, radius);
+
+                    cvf::ScalarMapper* scalarMapper = virtualPerforationResult->legendConfig()->scalarMapper();
+                    cvf::ref<cvf::Part> part = pbd.m_connectionFactorGeometryGenerator->createSurfacePart(scalarMapper, eclipseView->isLightingDisabled());
+                    if (part.notNull())
+                    {
+                        cvf::ref<RivSimWellConnectionSourceInfo> sourceInfo = new RivSimWellConnectionSourceInfo(m_rimWell, pbd.m_connectionFactorGeometryGenerator.p());
+                        part->setSourceInfo(sourceInfo.p());
+                    }
+
+                    pbd.m_connectionFactorsPart = part;
+                }
+            }
         }
 
-        return &(*brIt);
-    }
-
-    return nullptr;
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivSimWellPipesPartMgr::appendDynamicGeometryPartsToModel(cvf::ModelBasicList* model, size_t frameIndex)
-{
-    if (m_rimReservoirView.isNull()) return;
-    if (m_rimWell.isNull()) return;
-    if (!m_rimWell->isWellPipeVisible(frameIndex)) return;
-
-    if (m_needsTransformUpdate) buildWellPipeParts();
-
-    std::list<RivPipeBranchData>::iterator it;
-    for (it = m_wellBranches.begin(); it != m_wellBranches.end(); ++it)
-    {
-        if (it->m_surfacePart.notNull())
-        {
-            model->addPart(it->m_surfacePart.p());
-        }
-
-        if (it->m_centerLinePart.notNull())
-        {
-            model->addPart(it->m_centerLinePart.p());
-        }
+        if (doFlatten) flattenedStartOffset += { 2*flattenedIntersectionExtentLength, 0.0, 0.0};
     }
 }
 
@@ -254,7 +378,7 @@ void RivSimWellPipesPartMgr::updatePipeResultColor(size_t frameIndex)
 
     caf::ScalarMapperEffectGenerator surfEffGen(scalarMapper.p(), caf::PO_1);
 
-    if (m_rimReservoirView && m_rimReservoirView->isLightingDisabled())
+    if (viewWithSettings() && viewWithSettings()->isLightingDisabled())
     {
         surfEffGen.disableLighting(true);
     }
@@ -375,5 +499,13 @@ void RivSimWellPipesPartMgr::updatePipeResultColor(size_t frameIndex)
             brIt->m_centerLinePart->setEffect(scalarMapperMeshEffect.p());
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<double> RivSimWellPipesPartMgr::flattenedBranchWellHeadOffsets()
+{
+    return m_flattenedBranchWellHeadOffsets;
 }
 

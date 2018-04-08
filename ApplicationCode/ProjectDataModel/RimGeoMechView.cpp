@@ -231,7 +231,7 @@ void RimGeoMechView::createDisplayModel()
    // Cross sections
 
    m_crossSectionVizModel->removeAllParts();
-   m_crossSectionCollection->appendPartsToModel(m_crossSectionVizModel.p(), scaleTransform());
+   m_crossSectionCollection->appendPartsToModel(*this, m_crossSectionVizModel.p(), scaleTransform());
    m_viewer->addStaticModelOnce(m_crossSectionVizModel.p());
 
    // If the animation was active before recreating everything, make viewer view current frame
@@ -383,11 +383,11 @@ void RimGeoMechView::updateLegends()
             m_viewer->addColorLegendToBottomLeftCorner(cellResult()->legendConfig->legend());
         }
 
-        updateTensorLegendTextAndRanges(m_tensorResults->legendConfig(), m_currentTimeStep());
+        updateTensorLegendTextAndRanges(m_tensorResults->arrowColorLegendConfig(), m_currentTimeStep());
 
-        if (tensorResults()->vectorColors() == RimTensorResults::RESULT_COLORS)
+        if (tensorResults()->vectorColors() == RimTensorResults::RESULT_COLORS && tensorResults()->showTensors())
         {
-            m_viewer->addColorLegendToBottomLeftCorner(m_tensorResults->legendConfig->legend());
+            m_viewer->addColorLegendToBottomLeftCorner(m_tensorResults->arrowColorLegendConfig->legend());
         }
     }
 }

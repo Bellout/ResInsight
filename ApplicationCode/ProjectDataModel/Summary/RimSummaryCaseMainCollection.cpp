@@ -18,6 +18,8 @@
 #include "RimSummaryCaseMainCollection.h"
 
 #include "RifEclipseSummaryTools.h"
+#include "RifSummaryCaseRestartSelector.h"
+#include "RifCaseRealizationParametersReader.h"
 
 #include "RimEclipseResultCase.h"
 #include "RimFileSummaryCase.h"
@@ -31,6 +33,27 @@
 
 
 CAF_PDM_SOURCE_INIT(RimSummaryCaseMainCollection,"SummaryCaseCollection");
+
+//--------------------------------------------------------------------------------------------------
+/// Internal function
+//--------------------------------------------------------------------------------------------------
+void addCaseRealizationParametersIfFound(RimSummaryCase& sumCase, const QString modelFolderOrFile)
+{
+    QString parametersFile = RifCaseRealizationParametersFileLocator::locate(modelFolderOrFile);
+    if (!parametersFile.isEmpty())
+    {
+        RifCaseRealizationParametersReader reader(parametersFile);
+
+        // Try parse case realization parameters
+        try
+        {
+            reader.parse();
+            sumCase.setCaseRealizationParameters(reader.parameters());
+        }
+        catch (...) {}
+    }
+
+}
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -90,7 +113,7 @@ void RimSummaryCaseMainCollection::createSummaryCasesFromRelevantEclipseResultCa
                 if (!isFound)
                 {
                     // Create new GridSummaryCase
-                    createAndAddSummaryCaseFromEclipseResultCase(eclResCase);
+                    createAndAddSummaryCasesFromEclipseResultCase(eclResCase);
                 }
             }
         }
@@ -257,41 +280,87 @@ void RimSummaryCaseMainCollection::loadAllSummaryCaseData()
 {
     for (RimSummaryCase* sumCase : allSummaryCases())
     {
-        if (sumCase) sumCase->createSummaryReaderInterface();
+        if (sumCase)
+        {
+            sumCase->createSummaryReaderInterface();
+            addCaseRealizationParametersIfFound(*sumCase, sumCase->summaryHeaderFilename());
+        }
     }
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimSummaryCase* RimSummaryCaseMainCollection::createAndAddSummaryCaseFromEclipseResultCase(RimEclipseResultCase* eclResCase)
+std::vector<RimSummaryCase*> RimSummaryCaseMainCollection::createAndAddSummaryCasesFromEclipseResultCase(RimEclipseResultCase* eclResCase)
 {
-    QString gridFileName = eclResCase->gridFileName();
-    if(RifEclipseSummaryTools::hasSummaryFiles(QDir::toNativeSeparators(gridFileName)))
+    std::vector<RimSummaryCase*>    sumCases;
+    QString                         gridFileName = eclResCase->gridFileName();
+    QString                         summaryHeaderFile;
+    bool                            formatted;
+
+    RifEclipseSummaryTools::findSummaryHeaderFile(QDir::toNativeSeparators(gridFileName), &summaryHeaderFile, &formatted);
+
+    if(!summaryHeaderFile.isEmpty())
     {
-        RimGridSummaryCase* newSumCase = new RimGridSummaryCase();
+        RifSummaryCaseRestartSelector       fileSelector;
+        std::vector<RifSummaryCaseFileInfo> importFileInfos = fileSelector.getFilesToImport(QStringList({ summaryHeaderFile }));
+
+        if (!importFileInfos.empty())
+        {
+            RimGridSummaryCase* newSumCase = new RimGridSummaryCase();
+
+            this->m_cases.push_back(newSumCase);
+            newSumCase->setIncludeRestartFiles(importFileInfos.front().includeRestartFiles);
+            newSumCase->setAssociatedEclipseCase(eclResCase);
+            newSumCase->createSummaryReaderInterface();
+            newSumCase->updateOptionSensitivity();
+            addCaseRealizationParametersIfFound(*newSumCase, importFileInfos.front().fileName);
+            sumCases.push_back(newSumCase);
+
+            // Remove the processed element and add 'orphan' summary cases
+            importFileInfos.erase(importFileInfos.begin());
+
+            for (const RifSummaryCaseFileInfo& fileInfo : importFileInfos)
+            {
+                RimFileSummaryCase* newSumCase = new RimFileSummaryCase();
+
+                this->m_cases.push_back(newSumCase);
+                newSumCase->setIncludeRestartFiles(fileInfo.includeRestartFiles);
+                newSumCase->setSummaryHeaderFileName(fileInfo.fileName);
+                newSumCase->createSummaryReaderInterface();
+                newSumCase->updateOptionSensitivity();
+                addCaseRealizationParametersIfFound(*newSumCase, fileInfo.fileName);
+                sumCases.push_back(newSumCase);
+            }
+        }
+        
+    }
+    return sumCases;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+std::vector<RimSummaryCase*> RimSummaryCaseMainCollection::createAndAddSummaryCasesFromFiles(const QStringList& inputFileNames)
+{
+    std::vector<RimSummaryCase*>        sumCases;
+    RifSummaryCaseRestartSelector       fileSelector;
+    std::vector<RifSummaryCaseFileInfo> importFileInfos = fileSelector.getFilesToImport(inputFileNames);
+
+    for (const RifSummaryCaseFileInfo& fileInfo : importFileInfos)
+    {
+        RimFileSummaryCase* newSumCase = new RimFileSummaryCase();
+
         this->m_cases.push_back(newSumCase);
-        newSumCase->setAssociatedEclipseCase(eclResCase);
+        newSumCase->setIncludeRestartFiles(fileInfo.includeRestartFiles);
+        newSumCase->setSummaryHeaderFileName(fileInfo.fileName);
         newSumCase->createSummaryReaderInterface();
         newSumCase->updateOptionSensitivity();
-        return newSumCase;
+        addCaseRealizationParametersIfFound(*newSumCase, fileInfo.fileName);
+        sumCases.push_back(newSumCase);
     }
-    return nullptr;
-}
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-RimSummaryCase* RimSummaryCaseMainCollection::createAndAddSummaryCaseFromFileName(const QString& fileName)
-{
-    RimFileSummaryCase* newSumCase = new RimFileSummaryCase();
-
-    this->m_cases.push_back(newSumCase);
-    newSumCase->setSummaryHeaderFileName(fileName);
-    newSumCase->createSummaryReaderInterface();
-    newSumCase->updateOptionSensitivity();
-
-    return newSumCase;
+    return sumCases;
 }
 
 //--------------------------------------------------------------------------------------------------

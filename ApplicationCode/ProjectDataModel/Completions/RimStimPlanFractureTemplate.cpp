@@ -403,6 +403,7 @@ FractureWidthAndConductivity RimStimPlanFractureTemplate::widthAndConductivityAt
         const RigFractureCell& wellCell = m_fractureGrid->cellFromIndex(wellCellIndex);
 
         double conductivity = wellCell.getConductivtyValue();
+        values.m_conductivity = conductivity;
 
         std::vector<std::pair<QString, QString> > propertyNamesUnitsOnFile = m_stimPlanFractureDefinitionData->getStimPlanPropertyNamesUnits();
 
@@ -732,7 +733,7 @@ void RimStimPlanFractureTemplate::fractureTriangleGeometry(std::vector<cvf::Vec3
     {
         loadDataAndUpdate();
     }
-    else	
+    else    
     {
         m_stimPlanFractureDefinitionData->createFractureTriangleGeometry(m_wellPathDepthAtFracture,
                                                                          name(),

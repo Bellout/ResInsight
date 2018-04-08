@@ -24,11 +24,15 @@
 #include "RiaColorTables.h"
 #include "RiaPreferences.h"
 
+#include "CompletionExportCommands/RicWellPathExportCompletionDataFeatureImpl.h"
+#include "CompletionExportCommands/RicExportCompletionDataSettingsUi.h"
+
 #include "RigActiveCellInfo.h"
 #include "RigCaseCellResultsData.h"
 #include "RigEclipseCaseData.h"
 #include "RigMainGrid.h"
 #include "RigSimWellData.h"
+#include "RigVirtualPerforationTransmissibilities.h"
 
 #include "Rim2dIntersectionViewCollection.h"
 #include "RimCaseCollection.h"
@@ -43,8 +47,10 @@
 #include "RimFlowPlotCollection.h"
 #include "RimFormationNames.h"
 #include "RimIntersectionCollection.h"
+#include "RimLegendConfig.h"
 #include "RimMainPlotCollection.h"
 #include "RimOilField.h"
+#include "RimPerforationCollection.h"
 #include "RimProject.h"
 #include "RimReservoirCellResultsStorage.h"
 #include "RimStimPlanColors.h"
@@ -53,6 +59,7 @@
 #include "RimSummaryPlot.h"
 #include "RimSummaryPlotCollection.h"
 #include "RimTools.h"
+#include "RimVirtualPerforationResults.h"
 #include "RimWellAllocationPlot.h"
 #include "RimWellLogPlot.h"
 #include "RimWellLogPlotCollection.h"
@@ -305,6 +312,124 @@ void RimEclipseCase::recalculateCompletionTypeAndRedrawAllViews()
             eclipseView->calculateCompletionTypeAndRedrawIfRequired();
         }
     }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RimEclipseCase::deleteVirtualConnectionFactorDataAndRedrawRequiredViews()
+{
+    RigEclipseCaseData* rigEclipseCase = eclipseCaseData();
+
+    if (rigEclipseCase)
+    {
+        rigEclipseCase->setVirtualPerforationTransmissibilities(nullptr);
+    }
+
+    for (Rim3dView* view : views())
+    {
+        RimEclipseView* eclipseView = dynamic_cast<RimEclipseView*>(view);
+        if (eclipseView && eclipseView->isVirtualConnectionFactorGeometryVisible())
+        {
+            eclipseView->scheduleCreateDisplayModelAndRedraw();
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+const RigVirtualPerforationTransmissibilities* RimEclipseCase::computeAndGetVirtualPerforationTransmissibilities()
+{
+    RigEclipseCaseData* rigEclipseCase = eclipseCaseData();
+
+    if (rigEclipseCase->virtualPerforationTransmissibilities() == nullptr)
+    {
+        cvf::ref<RigVirtualPerforationTransmissibilities> perfTrans = new RigVirtualPerforationTransmissibilities;
+
+        std::vector<RimWellPath*> visibleWellPaths;
+        bool anyPerforationsPresent = false;
+        {
+            RimProject* proj = RiaApplication::instance()->project();
+            std::vector<RimWellPath*> wellPaths = proj->allWellPaths();
+            for (auto w : wellPaths)
+            {
+                if (w->showWellPath())
+                {
+                    visibleWellPaths.push_back(w);
+
+                    if (!w->perforationIntervalCollection()->perforations().empty())
+                    {
+                        anyPerforationsPresent = true;
+                    }
+                }
+            }
+        }
+
+        for (auto w : visibleWellPaths)
+        {
+            std::vector<RigCompletionData> staticCompletionData = RicWellPathExportCompletionDataFeatureImpl::computeStaticCompletionsForWellPath(w, this);
+            
+            if (anyPerforationsPresent)
+            {
+                std::vector<std::vector<RigCompletionData>> allCompletionData;
+                
+                for (size_t i = 0; i < timeStepDates().size(); i++)
+                {
+                    std::vector<RigCompletionData> dynamicCompletionDataOneTimeStep = RicWellPathExportCompletionDataFeatureImpl::computeDynamicCompletionsForWellPath(w, this, i);
+
+                    std::copy(staticCompletionData.begin(), staticCompletionData.end(), std::back_inserter(dynamicCompletionDataOneTimeStep));
+
+                    allCompletionData.push_back(dynamicCompletionDataOneTimeStep);
+                }
+            
+                perfTrans->setCompletionDataForWellPath(w, allCompletionData);
+            }
+            else
+            {
+                std::vector<std::vector<RigCompletionData>> allCompletionData;
+                allCompletionData.push_back(staticCompletionData);
+
+                perfTrans->setCompletionDataForWellPath(w, allCompletionData);
+            }
+        }
+
+        ;
+        for (const auto& wellRes : rigEclipseCase->wellResults())
+        {
+            std::vector<std::vector<RigCompletionData>> completionsPerTimeStep;
+            for (size_t i = 0; i < timeStepDates().size(); i++)
+            {
+                std::vector<RigCompletionData> completionData;
+
+                if (wellRes->hasWellResult(i))
+                {
+                    for (const auto& wellResultBranch : wellRes->wellResultFrame(i).m_wellResultBranches)
+                    {
+                        for (const auto& r : wellResultBranch.m_branchResultPoints)
+                        {
+                            if (r.isValid() && r.m_isOpen)
+                            {
+                                RigCompletionData compData(wellRes->m_wellName, RigCompletionDataGridCell(r.m_gridCellIndex, rigEclipseCase->mainGrid()), 0);
+                                compData.setTransmissibility(r.connectionFactor());
+
+                                completionData.push_back(compData);
+                            }
+                        }
+                    }
+
+                }
+
+                completionsPerTimeStep.push_back(completionData);
+
+                perfTrans->setCompletionDataForSimWell(wellRes.p(), completionsPerTimeStep);
+            }
+        }
+
+        rigEclipseCase->setVirtualPerforationTransmissibilities(perfTrans.p());
+    }
+
+    return rigEclipseCase->virtualPerforationTransmissibilities();
 }
 
 //--------------------------------------------------------------------------------------------------

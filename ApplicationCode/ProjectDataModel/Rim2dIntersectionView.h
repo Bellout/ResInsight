@@ -19,12 +19,15 @@
 #pragma once
 
 #include "Rim3dView.h"
-#include "RivIntersectionPartMgr.h"
 #include "cafPdmPtrField.h"
 
 class RimIntersection;
 class RimLegendConfig;
 class RimTernaryLegendConfig;
+class RivSimWellPipesPartMgr;
+class RivWellHeadPartMgr;
+class RivWellPathPartMgr;
+class RivIntersectionPartMgr;
 
 namespace cvf
 {
@@ -44,7 +47,7 @@ public:
 
     void                       setVisible(bool isVisible);
     void                       setIntersection(RimIntersection* intersection);
-    RimIntersection*           intersection();
+    RimIntersection*           intersection() const;
 
     virtual bool               isUsingFormationNames() const override;
     virtual void               scheduleGeometryRegen(RivCellSetEnum geometryType) override;
@@ -58,14 +61,17 @@ public:
 
     void                       update3dInfo();
 
-    cvf::ref<RivIntersectionPartMgr>  flatIntersectionPartMgr() const { return m_flatIntersectionPartMgr; }
-
+    cvf::ref<RivIntersectionPartMgr>  flatIntersectionPartMgr() const;
+    cvf::Vec3d                 transformToUtm(const cvf::Vec3d& unscaledPointInFlatDomain) const;
 
     virtual cvf::ref<caf::DisplayCoordTransform> displayCoordTransform() const override;
+
+    bool                       showDefiningPoints() const;
 
 protected:
     void                       updateLegends();
 
+    virtual bool               isGridVisualizationMode() const override;
     virtual void               axisLabels(cvf::String* xLabel, cvf::String* yLabel, cvf::String* zLabel) override;
     virtual void               createDisplayModel() override;
     virtual void               createPartCollectionFromSelection(cvf::Collection<cvf::Part>* parts) override;
@@ -93,8 +99,11 @@ protected:
     caf::PdmPtrField<RimIntersection*> m_intersection;
 
     cvf::ref<RivIntersectionPartMgr>   m_flatIntersectionPartMgr;
+    cvf::ref<RivSimWellPipesPartMgr>   m_flatSimWellPipePartMgr;
+    cvf::ref<RivWellHeadPartMgr>       m_flatWellHeadPartMgr;
+    cvf::ref<RivWellPathPartMgr>       m_flatWellpathPartMgr;
     cvf::ref<cvf::ModelBasicList>      m_intersectionVizModel;
     cvf::ref<cvf::Transform>           m_scaleTransform;
 
-
+    caf::PdmField<bool>                m_showDefiningPoints;
 };

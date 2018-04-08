@@ -40,15 +40,6 @@ public:
     static void                         readData(const RifElementPropertyMetadata *metadata, RifElementPropertyTable *table);
 };
 
-//==================================================================================================
-///
-//==================================================================================================
-class FileParseException
-{
-public:
-    FileParseException(const QString &message) : message(message) {}
-    QString  message;
-};
 
 //==================================================================================================
 ///

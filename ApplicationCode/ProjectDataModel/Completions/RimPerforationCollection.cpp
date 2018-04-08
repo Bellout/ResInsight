@@ -57,9 +57,7 @@ RimPerforationCollection::~RimPerforationCollection()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RimPerforationCollection::fieldChangedByUi(const caf::PdmFieldHandle* changedField,
-                                                const QVariant& oldValue,
-                                                const QVariant& newValue)
+void RimPerforationCollection::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
 {
     RimProject* proj;
     this->firstAncestorOrThisOfTypeAsserted(proj);

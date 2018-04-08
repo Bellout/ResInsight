@@ -43,6 +43,7 @@ include_directories(
     
     ${CMAKE_CURRENT_SOURCE_DIR}/ResultStatisticsCache
     ${CMAKE_CURRENT_SOURCE_DIR}/ReservoirDataModel
+    ${CMAKE_CURRENT_SOURCE_DIR}/ReservoirDataModel/Completions
     ${CMAKE_CURRENT_SOURCE_DIR}/WellPathImportSsihub
     ${CMAKE_CURRENT_SOURCE_DIR}/GeoMech/OdbReader
     ${CMAKE_CURRENT_SOURCE_DIR}/GeoMech/GeoMechDataModel
@@ -82,6 +83,7 @@ list( APPEND REFERENCED_CMAKE_FILES
 
     ReservoirDataModel/CMakeLists_files.cmake
     ReservoirDataModel/CMakeLists_filesNotToUnitTest.cmake
+    ReservoirDataModel/Completions/CMakeLists_files.cmake
     FileInterface/CMakeLists_files.cmake
     
     ProjectDataModel/CMakeLists_files.cmake
@@ -97,7 +99,7 @@ list( APPEND REFERENCED_CMAKE_FILES
     ModelVisualization/WindowEdgeAxesOverlayItem/CMakeLists_files.cmake
     
     UserInterface/CMakeLists_files.cmake
-	
+    
     Commands/CMakeLists_files.cmake
     Commands/ApplicationCommands/CMakeLists_files.cmake
     Commands/CompletionCommands/CMakeLists_files.cmake
@@ -125,14 +127,14 @@ list( APPEND REFERENCED_CMAKE_FILES
 option (RESINSIGHT_INCLUDE_APPLICATION_UNIT_TESTS 
     "Include ApplicationCode Unit Tests" OFF)
 if (RESINSIGHT_INCLUDE_APPLICATION_UNIT_TESTS)
-	add_definitions(-DUSE_UNIT_TESTS)
+    add_definitions(-DUSE_UNIT_TESTS)
 
     list( APPEND REFERENCED_CMAKE_FILES
         UnitTests/CMakeLists_files.cmake
         )
     
     list( APPEND CPP_SOURCES 
-        ${ResInsight_SOURCE_DIR}/ThirdParty/gtest/gtest-all.cc	
+        ${ResInsight_SOURCE_DIR}/ThirdParty/gtest/gtest-all.cc    
         )
     
 endif()
@@ -156,7 +158,7 @@ add_subdirectory(ResultStatisticsCache)
 
 set( RI_LIBRARIES
     WellPathImportSsihub
-	ResultStatisticsCache
+    ResultStatisticsCache
 )
 
 #
@@ -165,10 +167,10 @@ set( RI_LIBRARIES
 set(RESINSIGHT_ODB_API_DIR "" CACHE PATH "Optional path to the ABAQUS 
     ODB API from Simulia. Needed for support of geomechanical models")
 if(NOT ${RESINSIGHT_ODB_API_DIR} EQUAL "") 
-	add_definitions(-DUSE_ODB_API)
-	add_subdirectory(GeoMech/OdbReader)
-	SET(RESINSIGHT_USE_ODB_API 1)
-	MESSAGE( STATUS "Using ODB-Api from : ${RESINSIGHT_ODB_API_DIR}" )
+    add_definitions(-DUSE_ODB_API)
+    add_subdirectory(GeoMech/OdbReader)
+    SET(RESINSIGHT_USE_ODB_API 1)
+    MESSAGE( STATUS "Using ODB-Api from : ${RESINSIGHT_ODB_API_DIR}" )
 endif()
 
 add_subdirectory(GeoMech/GeoMechDataModel)
@@ -195,7 +197,7 @@ if (RESINSIGHT_FOUND_HDF5)
     source_group( "FileInterface" FILES 
         FileInterface/RifHdf5Reader.h FileInterface/RifHdf5Reader.cpp )
 
-	add_definitions(-DUSE_HDF5)
+    add_definitions(-DUSE_HDF5)
 endif()
 
 if (RESINSIGHT_ENABLE_PROTOTYPE_FEATURE_SOURING)
@@ -274,7 +276,7 @@ set( EXE_FILES
     ${QRC_FILES_CPP}
     ${WIN_RESOURCE}
     ${HEADER_FILES}
-	${REFERENCED_CMAKE_FILES}
+    ${REFERENCED_CMAKE_FILES}
     ../ResInsightVersion.cmake
     ../.clang-format
     Hack/print_functions.hpp)
@@ -354,9 +356,9 @@ if(RESINSIGHT_ENABLE_COTIRE)
         ReservoirDataModel/RigCellGeometryTools.cpp
     )
 
-	foreach (fileToExclude ${COTIRE_EXCLUDE_FILES})
+    foreach (fileToExclude ${COTIRE_EXCLUDE_FILES})
         set_source_files_properties (${fileToExclude} PROPERTIES COTIRE_EXCLUDED TRUE)
-	endforeach(fileToExclude)
+    endforeach(fileToExclude)
 
     # disable precompiled headers
     set_target_properties(ResInsight PROPERTIES COTIRE_ENABLE_PRECOMPILED_HEADER FALSE)
@@ -388,16 +390,16 @@ if (MSVC)
 
     # Odb Dlls
     if (RESINSIGHT_USE_ODB_API)
-	    # Find all the dlls
-	    file (GLOB  RI_ALL_ODB_DLLS  ${RESINSIGHT_ODB_API_DIR}/lib/*.dll)
-	
-	    # Strip off the path
-	    foreach (aDLL  ${RI_ALL_ODB_DLLS})
-		     get_filename_component(filenameWithExt ${aDLL} NAME)
-		     list(APPEND RI_ODB_DLLS ${filenameWithExt} )
-	    endforeach(aDLL)
+        # Find all the dlls
+        file (GLOB  RI_ALL_ODB_DLLS  ${RESINSIGHT_ODB_API_DIR}/lib/*.dll)
+    
+        # Strip off the path
+        foreach (aDLL  ${RI_ALL_ODB_DLLS})
+             get_filename_component(filenameWithExt ${aDLL} NAME)
+             list(APPEND RI_ODB_DLLS ${filenameWithExt} )
+        endforeach(aDLL)
 
-	    foreach (aDLL ${RI_ODB_DLLS})
+        foreach (aDLL ${RI_ODB_DLLS})
             list(APPEND RI_DLL_FILENAMES ${RESINSIGHT_ODB_API_DIR}/lib/${aDLL})
         endforeach()
     endif()
@@ -416,13 +418,13 @@ endif(MSVC)
 foreach (FILE_TO_COPY ${RI_DLL_FILENAMES})
     add_custom_command(TARGET ResInsight POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different  
-						"${FILE_TO_COPY}"  
-						"${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
+                        "${FILE_TO_COPY}"  
+                        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
     if (_unityTargetName)
         add_custom_command(TARGET ${_unityTargetName} POST_BUILD
                             COMMAND ${CMAKE_COMMAND} -E copy_if_different  
-		    				"${FILE_TO_COPY}"  
-		    				"${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
+                            "${FILE_TO_COPY}"  
+                            "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIGURATION>")
     endif()
 endforeach()
 
@@ -443,10 +445,10 @@ if (RESINSIGHT_PRIVATE_INSTALL)
       # tell binary to first attempt to load libraries from its own directory
       set(RESINSIGHT_INSTALL_RPATH "\$ORIGIN")
 
-	  if (${RESINSIGHT_USE_ODB_API})
-		# This is a "hack" to make ResInsight runtime find the ODB so files used when compiling.
-		# statoil wanted it this way, but we should probbly make a different installoptions that does things this way,
-		# and really do copy them when doing PRIVATE_INSTALL
+      if (${RESINSIGHT_USE_ODB_API})
+        # This is a "hack" to make ResInsight runtime find the ODB so files used when compiling.
+        # statoil wanted it this way, but we should probbly make a different installoptions that does things this way,
+        # and really do copy them when doing PRIVATE_INSTALL
         set(RESINSIGHT_INSTALL_RPATH ${RESINSIGHT_INSTALL_RPATH} ${RESINSIGHT_ODB_API_DIR}/lib)
       endif()
       

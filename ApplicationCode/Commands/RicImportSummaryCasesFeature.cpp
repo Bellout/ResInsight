@@ -71,13 +71,9 @@ void RicImportSummaryCasesFeature::onActionTriggered(bool isChecked)
     QStringList fileNames = result.files;
     if (fileNames.isEmpty()) return;
 
-    RimProject*                     proj = app->project();
-    RimSummaryCaseMainCollection*   sumCaseColl = proj->activeOilField() ? proj->activeOilField()->summaryCaseMainCollection() : nullptr;
-    if (!sumCaseColl) return;
-
-    for (auto f : fileNames)
+    if (createAndAddSummaryCasesFromFiles(fileNames))
     {
-        RicImportSummaryCasesFeature::createAndAddSummaryCaseFromFile(f);
+        for (const auto& fileName : fileNames) RiaApplication::instance()->addToRecentFiles(fileName);
     }
 
     std::vector<RimCase*> cases;
@@ -101,26 +97,22 @@ void RicImportSummaryCasesFeature::setupActionLook(QAction* actionToSetup)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RicImportSummaryCasesFeature::createAndAddSummaryCaseFromFile(const QString& fileName)
+bool RicImportSummaryCasesFeature::createAndAddSummaryCasesFromFiles(const QStringList& fileNames)
 {
     RiaApplication* app = RiaApplication::instance();
     RimProject* proj = app->project();
     RimSummaryCaseMainCollection* sumCaseColl = proj->activeOilField() ? proj->activeOilField()->summaryCaseMainCollection() : nullptr;
     if (!sumCaseColl) return false;
 
-    RimSummaryCase* sumCase = sumCaseColl->createAndAddSummaryCaseFromFileName(fileName);
+    std::vector<RimSummaryCase*> sumCases = sumCaseColl->createAndAddSummaryCasesFromFiles(fileNames);
     sumCaseColl->updateAllRequiredEditors();
 
     RiuMainPlotWindow* mainPlotWindow = app->getOrCreateAndShowMainPlotWindow();
-    if (mainPlotWindow)
+    if (mainPlotWindow && !sumCases.empty())
     {
-        mainPlotWindow->selectAsCurrentItem(sumCase);
+        mainPlotWindow->selectAsCurrentItem(sumCases.back());
 
         mainPlotWindow->updateSummaryPlotToolBar();
     }
-    
-    app->addToRecentFiles(fileName);
-
     return true;
 }
-

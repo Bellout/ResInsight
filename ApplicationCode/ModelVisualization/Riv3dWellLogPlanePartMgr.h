@@ -20,9 +20,9 @@
 
 #include "cvfBase.h"
 #include "cvfObject.h"
-#include "cvfVector3.h"
 
 #include "Rim3dWellLogCurve.h"
+#include "Rim3dWellLogCurveCollection.h"
 
 #include "cafPdmPointer.h"
 
@@ -30,32 +30,56 @@
 
 namespace cvf
 {
-    class ModelBasicList;
-    class Part;
+class ModelBasicList;
+class Drawable;
+class Effect;
+class Part;
+class BoundingBox;
+class Color3f;
 }
 
 namespace caf
 {
-    class DisplayCoordTransform;
+class DisplayCoordTransform;
 }
 
+class RimGridView;
+class RimWellPath;
 class Riv3dWellLogCurveGeometryGenerator;
-class RigWellPath;
+class Riv3dWellLogGridGeometryGenerator;
 
 class Riv3dWellLogPlanePartMgr : public cvf::Object
 {
 public:
-    Riv3dWellLogPlanePartMgr(RigWellPath* wellPathGeometry);
+    Riv3dWellLogPlanePartMgr(RimWellPath* wellPath, RimGridView* gridView);
 
-    void append3dWellLogCurvesToModel(cvf::ModelBasicList* model, 
-                                      const caf::DisplayCoordTransform* displayCoordTransform,
-                                      std::vector<Rim3dWellLogCurve*>   rim3dWellLogCurves);
+    void appendPlaneToModel(cvf::ModelBasicList*              model,
+                            const caf::DisplayCoordTransform* displayCoordTransform,
+                            const cvf::BoundingBox&           wellPathClipBoundingBox);
 private:
-    std::vector<cvf::Vec3f> createCurveVertices(const Rim3dWellLogCurve* rim3dWellLogCurve,
-                                                const caf::DisplayCoordTransform* displayCoordTransform);
-    std::vector<cvf::uint>  createPolylineIndices(size_t vertexCount);
+    void append3dWellLogCurvesToModel(cvf::ModelBasicList*              model,
+                                      const caf::DisplayCoordTransform* displayCoordTransform,
+                                      const cvf::BoundingBox&           wellPathClipBoundingBox);
+
+    void appendGridToModel(cvf::ModelBasicList*                 model,
+                           const caf::DisplayCoordTransform*    displayCoordTransform,
+                           const cvf::BoundingBox&              wellPathClipBoundingBox,
+                           const Rim3dWellLogCurve::DrawPlane&  drawPlane,
+                           double                               gridIntervalSize);
+
+    cvf::ref<cvf::Part> createPart(cvf::Drawable* drawable, cvf::Effect* effect);
+
+    static double planeAngle(const Rim3dWellLogCurve::DrawPlane& drawPlane);
+
+    double wellPathCenterToPlotStartOffset(Rim3dWellLogCurveCollection::PlanePosition planePosition) const;
+    double planeWidth() const;
+
+    cvf::Color3f curveColor(size_t index);
 
 private:
     cvf::ref<Riv3dWellLogCurveGeometryGenerator> m_3dWellLogCurveGeometryGenerator;
-    cvf::ref<RigWellPath> m_wellPathGeometry;
+    cvf::ref<Riv3dWellLogGridGeometryGenerator>  m_3dWellLogGridGeometryGenerator;
+
+    caf::PdmPointer<RimWellPath> m_wellPath;
+    caf::PdmPointer<RimGridView> m_gridView;
 };

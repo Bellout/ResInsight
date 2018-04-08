@@ -27,6 +27,20 @@
 #include "cafPdmUiFieldHandle.h"
 #include "cafPdmUiFilePathEditor.h"
 
+namespace caf 
+{
+    template<>
+    void RiaPreferences::SummaryRestartFilesImportModeType::setUp()
+    {
+        addItem(RiaPreferences::ASK_USER, "ASK_USER", "Ask user");
+        addItem(RiaPreferences::IMPORT, "IMPORT", "Always import");
+        addItem(RiaPreferences::NOT_IMPORT, "NOT_IMPORT", "Never import");
+        addItem(RiaPreferences::SEPARATE_CASES, "SEPARATE_CASES", "Import as separate summary cases");
+        setDefault(RiaPreferences::ASK_USER);
+    }
+}
+
+
 CAF_PDM_SOURCE_INIT(RiaPreferences, "RiaPreferences");
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -87,6 +101,9 @@ RiaPreferences::RiaPreferences(void)
     
     CAF_PDM_InitField(&loadAndShowSoil, "loadAndShowSoil", true, "Load and Show SOIL", "", "", "");
     loadAndShowSoil.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+
+    CAF_PDM_InitFieldNoDefault(&summaryRestartFilesImportMode, "summaryRestartFilesImportMode", "Import summary restart files", "", "", "");
+    //loadAndShowSoil.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
     CAF_PDM_InitFieldNoDefault(&m_readerSettings,        "readerSettings", "Reader Settings", "", "", "");
     m_readerSettings = new RifReaderSettings;
@@ -175,6 +192,9 @@ void RiaPreferences::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& 
         newCaseBehaviourGroup->add(&loadAndShowSoil);
     
         m_readerSettings->defineUiOrdering(uiConfigName, *newCaseBehaviourGroup);
+
+        caf::PdmUiGroup* restartBehaviourGroup = uiOrdering.addNewGroup("Summary Restart Files");
+        restartBehaviourGroup->add(&summaryRestartFilesImportMode);
     }
     else if (uiConfigName == m_tabNames[2])
     {

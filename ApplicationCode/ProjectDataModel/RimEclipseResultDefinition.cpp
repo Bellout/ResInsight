@@ -25,6 +25,8 @@
 #include "RigEclipseCaseData.h"
 #include "RigFlowDiagResultAddress.h"
 
+#include "Rim3dView.h"
+#include "Rim3dWellLogCurve.h"
 #include "RimCellEdgeColors.h"
 #include "RimEclipseCase.h"
 #include "RimEclipseCellColors.h"
@@ -33,12 +35,11 @@
 #include "RimEclipseResultCase.h"
 #include "RimEclipseView.h"
 #include "RimFlowDiagSolution.h"
+#include "RimGridTimeHistoryCurve.h"
 #include "RimIntersectionCollection.h"
 #include "RimPlotCurve.h"
 #include "RimReservoirCellResultsStorage.h"
-#include "Rim3dView.h"
 #include "RimViewLinker.h"
-#include "RimGridTimeHistoryCurve.h"
 #include "RimWellLogExtractionCurve.h"
 
 #include "cafPdmUiListEditor.h"
@@ -99,7 +100,7 @@ RimEclipseResultDefinition::RimEclipseResultDefinition()
     m_porosityModelUiField.xmlCapability()->setIOReadable(false);
     m_porosityModelUiField.xmlCapability()->setIOWritable(false);
 
-    CAF_PDM_InitField(&m_resultVariableUiField, "MResultVariable", RiaDefines::undefinedResultName(), "Property", "", "", "" );
+    CAF_PDM_InitField(&m_resultVariableUiField, "MResultVariable", RiaDefines::undefinedResultName(), "Result Property", "", "", "" );
     m_resultVariableUiField.xmlCapability()->setIOReadable(false);
     m_resultVariableUiField.xmlCapability()->setIOWritable(false);
     m_resultVariableUiField.uiCapability()->setUiEditorTypeName(caf::PdmUiListEditor::uiEditorTypeName());
@@ -336,6 +337,13 @@ void RimEclipseResultDefinition::updateAnyFieldHasChanged()
     {
         curve->updateConnectedEditors();
     }
+
+    Rim3dWellLogCurve* rim3dWellLogCurve = nullptr;
+    this->firstAncestorOrThisOfType(rim3dWellLogCurve);
+    if (rim3dWellLogCurve)
+    {
+        rim3dWellLogCurve->updateConnectedEditors();
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -433,6 +441,13 @@ void RimEclipseResultDefinition::loadDataAndUpdate()
     if (curve)
     {
         curve->loadDataAndUpdate(true);
+    }
+
+    Rim3dWellLogCurve* rim3dWellLogCurve = nullptr;
+    this->firstAncestorOrThisOfType(rim3dWellLogCurve);
+    if (rim3dWellLogCurve)
+    {
+        rim3dWellLogCurve->updateCurveIn3dView();
     }
 }
 

@@ -27,11 +27,8 @@ add_subdirectory(AppFwk/cafTests/cafTestApplication)
 # Turn on using solution folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-set_property(TARGET cafPdmCore cafPdmUiCore cafPdmXml 
-	cafProjectDataModel PROPERTY FOLDER "ProjectDataModel")
-
-set_property(TARGET cafPdmCore_UnitTests cafPdmXml_UnitTests 
-	cafProjectDataModel_UnitTests PROPERTY FOLDER "UnitTests")
+set_property(TARGET cafPdmCore cafPdmUiCore cafPdmXml cafProjectDataModel PROPERTY FOLDER "ProjectDataModel")
+set_property(TARGET cafPdmCore_UnitTests cafPdmXml_UnitTests cafProjectDataModel_UnitTests PROPERTY FOLDER "UnitTests")
 
 option (USE_CEE_VIZ "Enable visualization projects" ON)
 if (USE_CEE_VIZ)

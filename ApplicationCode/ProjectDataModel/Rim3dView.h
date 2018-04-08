@@ -16,43 +16,31 @@
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
-
 #pragma once
+
 #include "RiuViewerToViewInterface.h"
 #include "RimViewWindow.h"
 
+#include "RivCellSetEnum.h"
+
 #include "cafAppEnum.h"
-#include "cafPdmChildArrayField.h"
-#include "cafPdmChildField.h"
 #include "cafPdmField.h"
+#include "cafPdmObject.h"
+
 #include "cafPdmFieldCvfColor.h"    
 #include "cafPdmFieldCvfMat4d.h"
 #include "cafPdmFieldCvfVec3d.h"
-#include "cafPdmObject.h"
 
-#include "RivCellSetEnum.h"
-
-#include "cvfArray.h"
 #include "cvfBase.h"
 #include "cvfCollection.h"
 #include "cvfObject.h"
 
 #include <QPointer>
 
-
-class Rim3dOverlayInfoConfig;
 class RimCase;
-class RimCellRangeFilter;
-class RimCellRangeFilterCollection;
-class RimIntersectionCollection;
-class RimGridCollection;
-class RimPropertyFilterCollection;
-class RimViewController;
-class RimViewLinker;
 class RiuViewer;
 class RimWellPathCollection;
 class RivWellPathsPartMgr; 
-class RimWellPath; 
 
 namespace cvf
 {
@@ -72,10 +60,13 @@ namespace caf
 
 enum PartRenderMaskEnum
 {
-    surfaceBit      = 0x00000001,
-    meshSurfaceBit  = 0x00000002,
-    faultBit        = 0x00000004,
-    meshFaultBit    = 0x00000008,
+    surfaceBit      = 1,
+    meshSurfaceBit  = 2,
+    faultBit        = 4,
+    meshFaultBit    = 8,
+    intersectionCellFaceBit    = 16,
+    intersectionCellMeshBit    = 32,
+    intersectionFaultMeshBit   = 64
 };
 
 
@@ -117,7 +108,7 @@ public:
     void                                    disableLighting(bool disable);
     bool                                    isLightingDisabled() const;
 
-    bool                                    isGridVisualizationMode() const;
+    virtual bool                            isGridVisualizationMode() const = 0;
 
     void                                    setScaleZAndUpdate(double scaleZ);
     virtual bool                            showActiveCellsOnly();
@@ -146,11 +137,11 @@ public:
 
     cvf::ref<caf::DisplayCoordTransform>    displayCoordTransform() const override;
 
-    size_t                                  wellPathSegmentIndexFromTriangleIndex(size_t triangleIndex, RimWellPath* wellPath) const; 
-
     virtual RimCase*                        ownerCase() const = 0;
 
 protected:
+    static void                             removeModelByName(cvf::Scene* scene, const cvf::String& modelName);
+
     virtual void                            setDefaultView();
     void                                    disableGridBoxField();
     void                                    disablePerspectiveProjectionField();

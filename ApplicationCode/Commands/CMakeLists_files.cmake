@@ -31,7 +31,6 @@ ${CMAKE_CURRENT_LIST_DIR}/RicHideIntersectionFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicHideIntersectionBoxFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicImportElementPropertyFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicSelectColorResult.h
-${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogCurveFeature.h
 
 ${CMAKE_CURRENT_LIST_DIR}/RicWellLogsImportFileFeature.h
 
@@ -66,6 +65,7 @@ ${CMAKE_CURRENT_LIST_DIR}/RicGridStatisticsDialog.h
 ${CMAKE_CURRENT_LIST_DIR}/RicShowGridStatisticsFeature.h
 
 ${CMAKE_CURRENT_LIST_DIR}/RicFileHierarchyDialog.h
+${CMAKE_CURRENT_LIST_DIR}/RicSummaryCaseRestartDialog.h
 )
 
 
@@ -100,7 +100,6 @@ ${CMAKE_CURRENT_LIST_DIR}/RicHideIntersectionFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicHideIntersectionBoxFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicImportElementPropertyFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicSelectColorResult.cpp
-${CMAKE_CURRENT_LIST_DIR}/RicAdd3dWellLogCurveFeature.cpp
 
 ${CMAKE_CURRENT_LIST_DIR}/RicTogglePerspectiveViewFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicImportGeoMechCaseFeature.cpp
@@ -130,6 +129,7 @@ ${CMAKE_CURRENT_LIST_DIR}/RicGridStatisticsDialog.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicShowGridStatisticsFeature.cpp
 
 ${CMAKE_CURRENT_LIST_DIR}/RicFileHierarchyDialog.cpp
+${CMAKE_CURRENT_LIST_DIR}/RicSummaryCaseRestartDialog.cpp
 )
 
 
@@ -144,6 +144,7 @@ ${SOURCE_GROUP_SOURCE_FILES}
 list(APPEND QT_MOC_HEADERS
 ${CMAKE_CURRENT_LIST_DIR}/RicGridStatisticsDialog.h
 ${CMAKE_CURRENT_LIST_DIR}/RicFileHierarchyDialog.h
+${CMAKE_CURRENT_LIST_DIR}/RicSummaryCaseRestartDialog.h
 )
 
 source_group( "CommandFeature" FILES ${SOURCE_GROUP_HEADER_FILES} ${SOURCE_GROUP_SOURCE_FILES} ${CMAKE_CURRENT_LIST_DIR}/CMakeLists_files.cmake )

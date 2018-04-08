@@ -41,7 +41,6 @@ class RigEclipseTimeStepInfo;
 //==================================================================================================
 /// Class containing the results for the complete number of active cells. Both main grid and LGR's
 //==================================================================================================
-
 class RigCaseCellResultsData : public cvf::Object
 {
 public:

@@ -32,6 +32,7 @@
 #include "cvfVector3.h"
 
 #include <vector>
+#include <cmath>
 
 class RigFractureGrid;
 class RimFractureContainment;
@@ -44,6 +45,7 @@ public:
     FractureWidthAndConductivity()
         : m_width(0.0)
         , m_permeability(0.0)
+        , m_conductivity(HUGE_VAL)
     {
     }
 
@@ -60,6 +62,8 @@ public:
 
     // Unit : mD (milliDarcy)
     double m_permeability;
+
+    double m_conductivity;
 };
 
 //==================================================================================================
@@ -159,8 +163,6 @@ protected:
     virtual void                    defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) override;
     virtual void                    defineEditorAttribute(const caf::PdmFieldHandle* field, QString uiConfigName, caf::PdmUiEditorAttribute* attribute) override;
     virtual QList<caf::PdmOptionItemInfo> calculateValueOptions(const caf::PdmFieldHandle* fieldNeedingOptions, bool* useOptionsOnly) override;
-
-    virtual bool                    supportsConductivityScaling() const { return false; }
 
 private:
     void                            prepareFieldsForUiDisplay();

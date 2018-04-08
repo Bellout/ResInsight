@@ -16,7 +16,6 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-// ---------------------------------------------------------------
 #include "RicIntersectionBoxXSliceFeature.h"
 
 #include "RiaApplication.h"
@@ -36,57 +35,56 @@
 
 #include <QAction>
 
-// ---------------------------------------------------------------
-CAF_CMD_SOURCE_INIT(RicIntersectionBoxXSliceFeature,
-                    "RicIntersectionBoxXSliceFeature");
+CAF_CMD_SOURCE_INIT(RicIntersectionBoxXSliceFeature, "RicIntersectionBoxXSliceFeature");
 
-// ---------------------------------------------------------------
-bool RicIntersectionBoxXSliceFeature::isCommandEnabled() {
-  return true;
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool RicIntersectionBoxXSliceFeature::isCommandEnabled()
+{
+    return true;
 }
 
-// ---------------------------------------------------------------
-void RicIntersectionBoxXSliceFeature::onActionTriggered(bool isChecked) {
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RicIntersectionBoxXSliceFeature::onActionTriggered(bool isChecked)
+{
+    RimGridView* activeView = RiaApplication::instance()->activeGridView();
+    if (activeView)
+    {
+        RimIntersectionCollection* coll = activeView->crossSectionCollection();
+        CVF_ASSERT(coll);
 
-  RimGridView* activeView = RiaApplication::instance()->activeGridView();
+        RimIntersectionBox* intersectionBox = new RimIntersectionBox();
+        intersectionBox->name = QString("X-slice (Intersection box)");
 
-  if (activeView) {
-    // -----------------------------------------------------------
-    RimIntersectionCollection* coll = activeView->crossSectionCollection();
-    CVF_ASSERT(coll);
+        coll->appendIntersectionBoxAndUpdate(intersectionBox);
 
-    // -----------------------------------------------------------
-    RimIntersectionBox* intersectionBox = new RimIntersectionBox();
-    intersectionBox->name = QString("X-slice (Intersection box)");
+        cvf::Vec3d domainCoord = activeView->viewer()->lastPickPositionInDomainCoords();
+        intersectionBox->setToDefaultSizeSlice(RimIntersectionBox::PLANE_STATE_X, domainCoord);
 
-    // -----------------------------------------------------------
-    coll->appendIntersectionBoxAndUpdate(intersectionBox);
+        coll->updateConnectedEditors();
+        RiuMainWindow::instance()->selectAsCurrentItem(intersectionBox);
 
-    // -----------------------------------------------------------
-    cvf::Vec3d domainCoord = activeView->viewer()->lastPickPositionInDomainCoords();
-    intersectionBox->setToDefaultSizeSlice(RimIntersectionBox::PLANE_STATE_X, domainCoord);
+        RimGridView* rimView = nullptr;
+        coll->firstAncestorOrThisOfType(rimView);
+        if (rimView)
+        {
+            rimView->showGridCells(false);
+            RiuMainWindow::instance()->refreshDrawStyleActions();
 
-    // -----------------------------------------------------------
-    coll->updateConnectedEditors();
-    RiuMainWindow::instance()->selectAsCurrentItem(intersectionBox);
-
-    // -----------------------------------------------------------
-    RimGridView* rimView = nullptr;
-    coll->firstAncestorOrThisOfType(rimView);
-
-    if (rimView) {
-      rimView->showGridCells(false);
-      RiuMainWindow::instance()->refreshDrawStyleActions();
-
-      rimView->scheduleCreateDisplayModelAndRedraw();
+            rimView->scheduleCreateDisplayModelAndRedraw();
+        }
     }
-  }
 }
 
-// ---------------------------------------------------------------
-void
-RicIntersectionBoxXSliceFeature::setupActionLook(QAction* actionToSetup) {
-  actionToSetup->setIcon(QIcon(":/IntersectionXPlane16x16.png"));
-  actionToSetup->setText("X-slice Intersection Box");
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void RicIntersectionBoxXSliceFeature::setupActionLook(QAction* actionToSetup)
+{
+    actionToSetup->setIcon(QIcon(":/IntersectionXPlane16x16.png"));
+    actionToSetup->setText("X-slice Intersection Box");
 }
 

@@ -19,8 +19,8 @@
 #pragma once
 
 #include "cvfBase.h"
-#include "cvfObject.h"
 #include "cvfDrawableGeo.h"
+#include "cvfObject.h"
 #include "cvfVector3.h"
 
 #include "cafPdmPointer.h"
@@ -29,13 +29,42 @@
 
 namespace caf
 {
-    class DisplayCoordTransform;
+class DisplayCoordTransform;
 }
+
+namespace cvf
+{
+class BoundingBox;
+}
+
+class RigWellPath;
+class RimWellPath;
 
 class Riv3dWellLogCurveGeometryGenerator : public cvf::Object
 {
 public:
-    Riv3dWellLogCurveGeometryGenerator() = default;
+    Riv3dWellLogCurveGeometryGenerator(RimWellPath* wellPath);
 
-    cvf::ref<cvf::DrawableGeo> createDrawable(const std::vector<cvf::Vec3f>& vertices, const std::vector<cvf::uint>& indices ) const;
+    cvf::ref<cvf::DrawableGeo> createCurveLine(const caf::DisplayCoordTransform* displayCoordTransform,
+                                               const cvf::BoundingBox&           wellPathClipBoundingBox,
+                                               const std::vector<double>&        resultValues,
+                                               const std::vector<double>&        resultMds,
+                                               double                            planeAngle,
+                                               double                            planeOffsetFromWellPathCenter,
+                                               double                            planeWidth) const;
+private:
+    void createCurveVerticesAndIndices(const std::vector<double>&        resultValues,
+                                       const std::vector<double>&        resultMds,
+                                       double                            planeAngle,
+                                       double                            planeOffsetFromWellPathCenter,
+                                       double                            planeWidth,
+                                       const caf::DisplayCoordTransform* displayCoordTransform,
+                                       const cvf::BoundingBox&           wellPathClipBoundingBox,
+                                       std::vector<cvf::Vec3f>*          vertices,
+                                       std::vector<cvf::uint>*           indices) const;
+
+    const RigWellPath* wellPathGeometry() const;
+
+private:
+    caf::PdmPointer<RimWellPath> m_wellPath;
 };

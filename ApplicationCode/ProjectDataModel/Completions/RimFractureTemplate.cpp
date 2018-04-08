@@ -78,8 +78,8 @@ namespace caf
     void caf::AppEnum<RimFractureTemplate::NonDarcyFlowEnum>::setUp()
     {
         addItem(RimFractureTemplate::NON_DARCY_NONE,        "None",         "None");
-        addItem(RimFractureTemplate::NON_DARCY_COMPUTED,    "Computed",     "Compute D-factor from Parameters");
-        addItem(RimFractureTemplate::NON_DARCY_USER_DEFINED,"UserDefined",  "By User Defined D-factor");
+        addItem(RimFractureTemplate::NON_DARCY_COMPUTED,    "Computed",     "Compute D-factor");
+        addItem(RimFractureTemplate::NON_DARCY_USER_DEFINED,"UserDefined",  "User Defined D-factor");
 
         setDefault(RimFractureTemplate::NON_DARCY_NONE);
     }
@@ -134,9 +134,9 @@ RimFractureTemplate::RimFractureTemplate()
     CAF_PDM_InitField(&m_userDefinedDFactor,            "UserDefinedDFactor",      1.0, "D Factor", "", "", "");
 
     CAF_PDM_InitFieldNoDefault(&m_fractureWidthType,    "FractureWidthType",     "Type", "", "", "");
-    CAF_PDM_InitField_Basic(&m_fractureWidth,           "FractureWidth",  0.1,    "Fracture Width (h)");
+    CAF_PDM_InitField_Basic(&m_fractureWidth,           "FractureWidth",  0.01,    "Fracture Width (h)");
 
-    CAF_PDM_InitField_Basic(&m_inertialCoefficient,     "InertialCoefficient",  0.006083236,    "<html>Inertial Coefficient (&beta;)</html>");
+    CAF_PDM_InitField_Basic(&m_inertialCoefficient,     "InertialCoefficient",  0.006083236,    "<html>Inertial Coefficient (&beta;)</html> [Forch. unit]");
 
     CAF_PDM_InitFieldNoDefault(&m_permeabilityType,         "PermeabilityType",     "Type", "", "", "");
     CAF_PDM_InitField_Basic(&m_relativePermeability,        "RelativePermeability", 1.0,    "Relative Permeability");
@@ -324,11 +324,8 @@ void RimFractureTemplate::defineUiOrdering(QString uiConfigName, caf::PdmUiOrder
         group->add(&m_heightScaleFactor);
         group->add(&m_widthScaleFactor);
         group->add(&m_dFactorScaleFactor);
+        group->add(&m_conductivityScaleFactor);
 
-        if (supportsConductivityScaling())
-        {
-            group->add(&m_conductivityScaleFactor);
-        }
         group->add(&m_scaleApplyButton);
     }
 
@@ -614,6 +611,16 @@ double RimFractureTemplate::dFactor() const
 //--------------------------------------------------------------------------------------------------
 double RimFractureTemplate::kh() const
 {
+    // kh           = permeability * h
+    // conductivity = permeability * h
+
+    auto values = widthAndConductivityAtWellPathIntersection();
+    if (values.m_conductivity != HUGE_VAL)
+    {
+        // If conductivity is found in stim plan file, use this directly
+        return values.m_conductivity;
+    }
+    
     return effectivePermeability() * fractureWidth();
 }
 
@@ -680,7 +687,7 @@ void RimFractureTemplate::setScaleFactors(double width, double height, double dF
     m_widthScaleFactor = width;
     m_heightScaleFactor = height;
     m_dFactorScaleFactor = dFactor;
-    m_conductivityScaleFactor = supportsConductivityScaling() ? conductivity : 1.0;
+    m_conductivityScaleFactor = conductivity;
 }
 
 //--------------------------------------------------------------------------------------------------

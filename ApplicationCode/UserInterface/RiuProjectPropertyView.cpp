@@ -53,23 +53,17 @@ RiuProjectAndPropertyView::RiuProjectAndPropertyView(QWidget* parent, Qt::Window
     m_projectTreeView->treeView()->setDragDropMode(QAbstractItemView::DragDrop);
 
     m_projectTreeView->treeView()->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_projectTreeView->treeView(),
-            SIGNAL(customContextMenuRequested(const QPoint&)),
-            RiuMainWindow::instance(),
-            SLOT(customMenuRequested(const QPoint&)));
+    connect(m_projectTreeView->treeView(), SIGNAL(customContextMenuRequested(const QPoint&)), RiuMainWindow::instance(), SLOT(customMenuRequested(const QPoint&)));
 
     // Property view
     m_propertyView = new caf::PdmUiPropertyView;
 
-    connect(m_projectTreeView,
-            SIGNAL(selectedObjectChanged(caf::PdmObjectHandle*)),
-            m_propertyView,
-            SLOT(showProperties(caf::PdmObjectHandle*)));
+    connect(m_projectTreeView, SIGNAL(selectedObjectChanged(caf::PdmObjectHandle*)), m_propertyView, SLOT(showProperties(caf::PdmObjectHandle*)));
 
     QWidget* propertyEditorWithHeader = new QWidget;
     {
         QLabel* propertyHeader = new QLabel;
-        propertyHeader->setText("Editor");
+        propertyHeader->setText("Property Editor");
         propertyHeader->setStyleSheet("QLabel { background-color: #CCCCCC }");
         propertyHeader->setFixedHeight(20);
 

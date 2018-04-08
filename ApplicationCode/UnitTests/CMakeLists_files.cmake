@@ -1,6 +1,6 @@
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_LIST_DIR}/RiaTestDataDirectory.h.cmake
-				${CMAKE_BINARY_DIR}/Generated/RiaTestDataDirectory.h
+                ${CMAKE_BINARY_DIR}/Generated/RiaTestDataDirectory.h
 )
 
 set (SOURCE_GROUP_HEADER_FILES
@@ -40,6 +40,7 @@ ${CMAKE_CURRENT_LIST_DIR}/RimRelocatePath-Test.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RigTransmissibilityCondenser-Test.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RiaEclipseUnitTools-Test.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RiaTextFileCompare-Test.cpp
+${CMAKE_CURRENT_LIST_DIR}/RifCaseRealizationParametersReader-Test.cpp
 )
 
 list(APPEND CODE_HEADER_FILES

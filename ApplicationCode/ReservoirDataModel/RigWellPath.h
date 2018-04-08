@@ -23,6 +23,11 @@
 #include "cvfMath.h"
 #include "cvfVector3.h"
 
+namespace cvf
+{
+    class BoundingBox;
+}
+
 #include <vector>
 
 
@@ -40,14 +45,24 @@ public:
     void                        setDatumElevation(double value);
     bool                        hasDatumElevation() const;
     double                      datumElevation() const;
-    cvf::Vec3d                  interpolatedPointAlongWellPath(double measuredDepth) const;
+    cvf::Vec3d                  interpolatedPointAlongWellPath(double measuredDepth, 
+                                                               double * horizontalLengthAlongWellToStartClipPoint = nullptr) const;
     double                      wellPathAzimuthAngle(const cvf::Vec3d& position) const;
     void                        twoClosestPoints(const cvf::Vec3d& position, cvf::Vec3d* p1, cvf::Vec3d* p2) const;
 
     std::pair<std::vector<cvf::Vec3d>, std::vector<double> > 
-                                clippedPointSubset(double startMD, double endMD) const;
+                                clippedPointSubset(double startMD, 
+                                                   double endMD, 
+                                                   double * horizontalLengthAlongWellToStartClipPoint = nullptr) const;
 
     std::vector<cvf::Vec3d>     wellPathPointsIncludingInterpolatedIntersectionPoint(double intersectionMeasuredDepth) const;
+
+    static bool                 isPolylineTouchingBBox(const std::vector<cvf::Vec3d> &polyLine, 
+                                                       const cvf::BoundingBox& caseBB);
+    static std::vector<cvf::Vec3d> clipPolylineStartAboveZ(const std::vector<cvf::Vec3d> &polyLine,
+                                                           double maxZ,
+                                                           double * horizontalLengthAlongWellToClipPoint,
+                                                           size_t * indexToFirstVisibleSegment);
 
 private:
     bool    m_hasDatumElevation;

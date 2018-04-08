@@ -25,7 +25,7 @@
 #include "ert/ecl/ecl_file.h"
 
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, WellTestErt)
 {
 
@@ -56,11 +56,11 @@ TEST(RigReservoirTest, WellTestErt)
 
 
 #if 0
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// This file contains test code taken from the test cases in ERT source code.
 //  There is a typedef issue (center) between ERT and QTextStream, so this file does not include any 
 //  Qt files.
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, WellTestErt)
 {
     char filename[1024] = "TEST10K_FLT_LGR_NNC.UNRST";
@@ -120,11 +120,11 @@ TEST(RigReservoirTest, WellTestErt)
 #endif
 
 #if 0
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// This file contains test code taken from the test cases in ERT source code.
 //  There is a typedef issue (center) between ERT and QTextStream, so this file does not include any 
 //  Qt files.
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, ElipseInputGridFile)
 {
     RigCaseData res;
@@ -155,9 +155,9 @@ TEST(RigReservoirTest, ReadFaults)
 
 
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, ReadFaultsRecursively)
 {
     //TODO: Establish a way to define location of test model files

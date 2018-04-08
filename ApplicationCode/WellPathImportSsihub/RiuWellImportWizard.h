@@ -1,17 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) 2011-2012 Statoil ASA, Ceetron AS
-//
+// 
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-//
+// 
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-//
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
+// 
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -42,42 +42,42 @@ class RimWellPathEntry;
 
 namespace caf
 {
-class PdmUiTreeView;
-class PdmUiListView;
-class PdmUiPropertyView;
-class PdmObjectCollection;
+    class PdmUiTreeView;
+    class PdmUiListView;
+    class PdmUiPropertyView;
+    class PdmObjectCollection;
 }
 
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class AuthenticationPage : public QWizardPage
 {
- Q_OBJECT
+    Q_OBJECT
 
- public:
-  AuthenticationPage(const QString& webServiceAddress, QWidget *parent = nullptr);
+public:
+    AuthenticationPage(const QString& webServiceAddress, QWidget *parent = nullptr);
 
-  virtual void initializePage();
+    virtual void initializePage();
 };
 
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class FieldSelectionPage : public QWizardPage
 {
- Q_OBJECT
+    Q_OBJECT
 
- public:
-  FieldSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
-  ~FieldSelectionPage();
+public:
+    FieldSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+    ~FieldSelectionPage();
 
-  virtual void initializePage();
+    virtual void initializePage();
 
- private:
-  caf::PdmUiPropertyView* m_propertyView;
+private:
+    caf::PdmUiPropertyView* m_propertyView;
 };
 
 
@@ -87,174 +87,171 @@ class FieldSelectionPage : public QWizardPage
 //--------------------------------------------------------------------------------------------------
 class ObjectGroupWithHeaders : public caf::PdmObjectCollection
 {
- public:
-  ObjectGroupWithHeaders()    {};
+public:
+    ObjectGroupWithHeaders()    {};
 
-  virtual void defineObjectEditorAttribute(QString uiConfigName,
-                                           caf::PdmUiEditorAttribute * attribute);
+    virtual void defineObjectEditorAttribute(QString uiConfigName, caf::PdmUiEditorAttribute * attribute);
 };
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class DownloadEntity
 {
- public:
-  QString name;
-  QString requestUrl;
-  QString responseFilename;
+public:
+    QString name;
+    QString requestUrl;
+    QString responseFilename;
 };
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class SummaryPageDownloadEntity : public caf::PdmObject
 {
- CAF_PDM_HEADER_INIT;
+    CAF_PDM_HEADER_INIT;
 
- public:
-  SummaryPageDownloadEntity();
+public:
+    SummaryPageDownloadEntity();
 
-  caf::PdmField<QString> name;
-  caf::PdmField<QString> requestUrl;
-  caf::PdmField<QString> responseFilename;
+    caf::PdmField<QString> name;
+    caf::PdmField<QString> requestUrl;
+    caf::PdmField<QString> responseFilename;
 };
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class WellSelectionPage : public QWizardPage
 {
- Q_OBJECT
+    Q_OBJECT
 
- public:
-  WellSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
-  ~WellSelectionPage();
+public:
+    WellSelectionPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+    ~WellSelectionPage();
 
-  virtual void initializePage();
-  void         buildWellTreeView();
+    virtual void initializePage();
+    void         buildWellTreeView();
 
-  void        selectedWellPathEntries(std::vector<DownloadEntity>& downloadEntities,
-                                      caf::PdmObjectHandle* objHandle);
- private:
-  void        sortObjectsByDescription(caf::PdmObjectCollection* objects);
+    void        selectedWellPathEntries(std::vector<DownloadEntity>& downloadEntities, caf::PdmObjectHandle* objHandle);
+private:
+    void        sortObjectsByDescription(caf::PdmObjectCollection* objects);
 
- private:
-  ObjectGroupWithHeaders* m_regionsWithVisibleWells;
-  RimWellPathImport*      m_wellPathImportObject;
-  caf::PdmUiTreeView*     m_wellSelectionTreeView;
+private:
+    ObjectGroupWithHeaders* m_regionsWithVisibleWells;
+    RimWellPathImport*      m_wellPathImportObject;
+    caf::PdmUiTreeView*     m_wellSelectionTreeView;
 
 };
 
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class WellSummaryPage : public QWizardPage
 {
- Q_OBJECT
+    Q_OBJECT
 
- public:
-  WellSummaryPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
+public:
+    WellSummaryPage(RimWellPathImport* wellPathImport, QWidget* parent = nullptr);
 
-  virtual void initializePage();
+    virtual void initializePage();
 
-  void updateSummaryPage();
+    void updateSummaryPage();
 
- private slots:
-  void slotShowDetails();
+private slots:
+    void slotShowDetails();
 
- private:
-  RimWellPathImport*  m_wellPathImportObject;
-  QTextEdit*          m_textEdit;
-  caf::PdmUiListView* m_listView;
-  caf::PdmObjectCollection*  m_objectGroup;
+private:
+    RimWellPathImport*  m_wellPathImportObject;
+    QTextEdit*          m_textEdit;
+    caf::PdmUiListView* m_listView;
+    caf::PdmObjectCollection*  m_objectGroup;
 };
 
 
 
 //--------------------------------------------------------------------------------------------------
-///
+/// 
 //--------------------------------------------------------------------------------------------------
 class RiuWellImportWizard : public QWizard
 {
- Q_OBJECT
+    Q_OBJECT
 
- public:
-  enum DownloadState{DOWNLOAD_FIELDS, DOWNLOAD_WELLS, DOWNLOAD_WELL_PATH, DOWNLOAD_UNDEFINED};
+public:
+    enum DownloadState{ DOWNLOAD_FIELDS, DOWNLOAD_WELLS, DOWNLOAD_WELL_PATH, DOWNLOAD_UNDEFINED};
 
- public:
-  RiuWellImportWizard(const QString& webServiceAddress, const QString& downloadFolder, RimWellPathImport* wellPathImportObject, QWidget *parent = nullptr);
-  ~RiuWellImportWizard();
+public:
+    RiuWellImportWizard(const QString& webServiceAddress, const QString& downloadFolder, RimWellPathImport* wellPathImportObject, QWidget *parent = nullptr);
+    ~RiuWellImportWizard();
 
-  void        setCredentials(const QString& username,
-                             const QString& password);
-  QStringList absoluteFilePathsToWellPaths() const;
+    void        setCredentials(const QString& username, const QString& password);
+    QStringList absoluteFilePathsToWellPaths() const;
 
-  // Methods used from the wizard pages
-  void        resetAuthenticationCount();
+    // Methods used from the wizard pages
+    void        resetAuthenticationCount();
 
- public slots:
-  void        downloadWellPaths();
-  void        downloadWells();
-  void        downloadFields();
+public slots:
+    void        downloadWellPaths();
+    void        downloadWells();
+    void        downloadFields();
+    
+    void        checkDownloadQueueAndIssueRequests();
 
-  void        checkDownloadQueueAndIssueRequests();
+    void        issueHttpRequestToFile( QString completeUrlText, QString destinationFileName );
+    void        cancelDownload();
 
-  void        issueHttpRequestToFile( QString completeUrlText, QString destinationFileName );
-  void        cancelDownload();
+    void        httpFinished();
+    void        httpReadyRead();
 
-  void        httpFinished();
-  void        httpReadyRead();
+    void        slotAuthenticationRequired(QNetworkReply* networkReply, QAuthenticator* authenticator);
 
-  void        slotAuthenticationRequired(QNetworkReply* networkReply, QAuthenticator* authenticator);
-
-  int         wellSelectionPageId();
+    int         wellSelectionPageId();
 
 #ifndef QT_NO_OPENSSL
-  void sslErrors(QNetworkReply*,const QList<QSslError> &errors);
+    void sslErrors(QNetworkReply*,const QList<QSslError> &errors);
 #endif
 
- private slots:
-  void        slotCurrentIdChanged(int currentId);
+private slots:
+    void        slotCurrentIdChanged(int currentId);
 
- private:
-  void        startRequest(QUrl url);
-  void        setUrl(const QString& httpAddress);
+private:
+    void        startRequest(QUrl url);
+    void        setUrl(const QString& httpAddress);
 
-  QString     jsonFieldsFilePath();
-  QString     jsonWellsFilePath();
+    QString     jsonFieldsFilePath();
+    QString     jsonWellsFilePath();
 
-  void        updateFieldsModel();
-  void        parseWellsResponse(RimOilFieldEntry* oilFieldEntry);
-
-
-  QString     getValue(const QString& key, const QString& stringContent);
+    void        updateFieldsModel();
+    void        parseWellsResponse(RimOilFieldEntry* oilFieldEntry);
 
 
- private:
-  QString                 m_webServiceAddress;
-  QString                 m_destinationFolder;
+    QString     getValue(const QString& key, const QString& stringContent);
 
-  RimWellPathImport*      m_wellPathImportObject;
-  caf::PdmUiTreeView*     m_pdmTreeView;
 
-  QProgressDialog*        m_myProgressDialog;
+private:
+    QString                 m_webServiceAddress;
+    QString                 m_destinationFolder;
 
-  QUrl                    m_url;
-  QNetworkAccessManager   m_networkAccessManager;
-  QNetworkReply*          m_reply;
-  QFile*                  m_file;
-  bool                    m_httpRequestAborted;
+    RimWellPathImport*      m_wellPathImportObject;
+    caf::PdmUiTreeView*     m_pdmTreeView;
 
-  bool                    m_firstTimeRequestingAuthentication;
+    QProgressDialog*        m_myProgressDialog;
 
-  QList<DownloadEntity>   m_wellRequestQueue;
+    QUrl                    m_url;
+    QNetworkAccessManager   m_networkAccessManager;
+    QNetworkReply*          m_reply;
+    QFile*                  m_file;
+    bool                    m_httpRequestAborted;
 
-  DownloadState           m_currentDownloadState;
+    bool                    m_firstTimeRequestingAuthentication;
 
-  int                     m_fieldSelectionPageId;
-  int                     m_wellSelectionPageId;
-  int                     m_wellSummaryPageId;
+    QList<DownloadEntity>   m_wellRequestQueue;
+
+    DownloadState           m_currentDownloadState;
+    
+    int                     m_fieldSelectionPageId;
+    int                     m_wellSelectionPageId;
+    int                     m_wellSummaryPageId;
 };
 

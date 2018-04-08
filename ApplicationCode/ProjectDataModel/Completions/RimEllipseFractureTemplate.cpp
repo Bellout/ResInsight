@@ -48,7 +48,7 @@ CAF_PDM_SOURCE_INIT(RimEllipseFractureTemplate, "RimEllipseFractureTemplate");
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimEllipseFractureTemplate::RimEllipseFractureTemplate(void)
+RimEllipseFractureTemplate::RimEllipseFractureTemplate()
 {
     CAF_PDM_InitObject("Fracture Template", ":/FractureTemplate16x16.png", "", "");
 
@@ -195,11 +195,11 @@ void RimEllipseFractureTemplate::assignConductivityToCellsInsideEllipse()
 
             std::vector<cvf::Vec3f> ellipseFracPolygon = fractureBorderPolygon();
             std::vector<cvf::Vec3d> ellipseFracPolygonDouble;
-            for (auto v : ellipseFracPolygon) ellipseFracPolygonDouble.push_back(static_cast<cvf::Vec3d>(v));
+            for (const auto& v : ellipseFracPolygon) ellipseFracPolygonDouble.push_back(static_cast<cvf::Vec3d>(v));
             std::vector<std::vector<cvf::Vec3d> >clippedFracturePolygons = RigCellGeometryTools::intersectPolygons(cellPolygon, ellipseFracPolygonDouble);
-            if (clippedFracturePolygons.size() > 0)
+            if (!clippedFracturePolygons.empty())
             {
-                for (auto clippedFracturePolygon : clippedFracturePolygons)
+                for (const auto& clippedFracturePolygon : clippedFracturePolygons)
                 {
                     double areaCutPolygon = cvf::GeometryTools::polygonAreaNormal3D(clippedFracturePolygon).length();
                     if (areaCutPolygon < areaTresholdForIncludingCell) cond = 0.0; //Cell is excluded from calculation, cond is set to zero. Must be included for indexing to be correct
@@ -216,11 +216,11 @@ void RimEllipseFractureTemplate::assignConductivityToCellsInsideEllipse()
     
     m_fractureGrid->setFractureCells(fractureCells);
 
-	// Set well intersection to center of ellipse
+    // Set well intersection to center of ellipse
     std::pair<size_t, size_t> wellCenterFractureCellIJ = std::make_pair(numberOfCellsI / 2, numberOfCellsJ / 2);
     m_fractureGrid->setWellCenterFractureCellIJ(wellCenterFractureCellIJ);
     
-	m_fractureGrid->setICellCount(numberOfCellsI);
+    m_fractureGrid->setICellCount(numberOfCellsI);
     m_fractureGrid->setJCellCount(numberOfCellsJ);
 }
 
@@ -283,7 +283,8 @@ double RimEllipseFractureTemplate::conductivity() const
         //Conductivity should be md-ft, but width is in inches 
         cond = m_userDefinedEffectivePermeability * RiaEclipseUnitTools::inchToFeet(m_width);
     }
-    return cond;
+
+    return m_conductivityScaleFactor * cond;
 }
 
 //--------------------------------------------------------------------------------------------------

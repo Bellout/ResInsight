@@ -116,14 +116,16 @@ void RigMainGrid::initAllSubCellsMainGridCellIndex()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-cvf::Vec3d RigMainGrid::displayModelOffset() const {
+cvf::Vec3d RigMainGrid::displayModelOffset() const
+{
     return m_displayModelOffset;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RigMainGrid::setDisplayModelOffset(cvf::Vec3d offset) {
+void RigMainGrid::setDisplayModelOffset(cvf::Vec3d offset)
+{
     m_displayModelOffset = offset;
 }
 
@@ -472,7 +474,7 @@ bool RigMainGrid::isFaceNormalsOutwards() const
 //--------------------------------------------------------------------------------------------------
 const RigFault* RigMainGrid::findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex, cvf::StructGridInterface::FaceType face) const
 {
-    CVF_ASSERT(m_faultsPrCellAcc.notNull());
+    CVF_TIGHT_ASSERT(m_faultsPrCellAcc.notNull());
 
     if (face == cvf::StructGridInterface::NO_FACE) return nullptr;
 

@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) 2011-     Statoil ASA
 //  Copyright (C) 2013-     Ceetron Solutions AS
@@ -16,7 +16,7 @@
 //  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
 //  for more details.
 //
-////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
 
 #include "gtest/gtest.h"
 
@@ -34,12 +34,12 @@
 #include <QDebug>
 
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, BasicTest)
 {
-  RifEclipseUnifiedRestartFileAccess unrstAccess;
+    RifEclipseUnifiedRestartFileAccess unrstAccess;
 
 /*
     QStringList filenames;
@@ -70,8 +70,7 @@ TEST(RigReservoirTest, BasicTest)
     cvf::ref<RifReaderEclipseOutput> readerInterfaceEcl = new RifReaderEclipseOutput;
     cvf::ref<RigCaseData> reservoir = new RigCaseData;
 
-    // Location of test dataset received from Håkon Høgstøl
-    in July 2011 with 10k active cells
+    // Location of test dataset received from Håkon Høgstøl in July 2011 with 10k active cells
 #ifdef WIN32
     QString filename("TEST10K_FLT_LGR_NNC.EGRID");
 #else
@@ -123,9 +122,9 @@ TEST(RigReservoirTest, BasicTest)
 
 
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, DISABLED_BasicTest)
 {
 
@@ -260,8 +259,9 @@ TEST(RigReservoirTest, UnifiedTestFile)
 
 }
 
-void buildResultInfoString(RigReservoir* reservoir,
-RiaDefines::PorosityModelType porosityModel, RiaDefines::ResultCatType resultType)
+
+
+void buildResultInfoString(RigReservoir* reservoir, RiaDefines::PorosityModelType porosityModel, RiaDefines::ResultCatType resultType)
 {
     RigCaseCellResultsData* matrixResults = reservoir->results(porosityModel);
     {
@@ -379,9 +379,9 @@ TEST(RigReservoirTest, UnifiedTestFile)
 }
 */
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, BasicTest)
 {
     cvf::ref<RifReaderEclipseOutput> readerInterfaceEcl = new RifReaderEclipseOutput;
@@ -436,18 +436,15 @@ TEST(RigReservoirTest, BasicTest)
 
 
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(RigReservoirTest, WellTest)
 {
-    cvf::ref<RifReaderEclipseOutput>
-    readerInterfaceEcl = new RifReaderEclipseOutput;
-
+    cvf::ref<RifReaderEclipseOutput> readerInterfaceEcl = new RifReaderEclipseOutput;
     cvf::ref<RigEclipseCaseData> reservoir = new RigEclipseCaseData;
 
-    // Location of test dataset received from Håkon Høgstøl in
-    // July 2011 with 10k active cells
+    // Location of test dataset received from Håkon Høgstøl in July 2011 with 10k active cells
 #ifdef WIN32
     QString filename("TEST10K_FLT_LGR_NNC.EGRID");
 #else
@@ -461,28 +458,30 @@ TEST(RigReservoirTest, WellTest)
     EXPECT_TRUE(mainGridWellCells->size() == reservoir->mainGrid()->cellCount());
 }
 
+
+
 #endif
 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 /// 
-//------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------
 TEST(DISABLED_RigReservoirTest, WellTest)
 {
-  cvf::ref<RifReaderEclipseOutput> readerInterfaceEcl = new RifReaderEclipseOutput;
-  cvf::ref<RigEclipseCaseData> reservoir = new RigEclipseCaseData(nullptr);
+    cvf::ref<RifReaderEclipseOutput> readerInterfaceEcl = new RifReaderEclipseOutput;
+    cvf::ref<RigEclipseCaseData> reservoir = new RigEclipseCaseData(nullptr);
 
-  // Location of test dataset received from Håkon Høgstøl in July 2011 with 10k active cells
+    // Location of test dataset received from Håkon Høgstøl in July 2011 with 10k active cells
 #ifdef WIN32
-  QString filename("d:/Models/Statoil/soursim/PKMUNK_NOV_TEST_SS.GRID");
+    QString filename("d:/Models/Statoil/soursim/PKMUNK_NOV_TEST_SS.GRID");
     QString sourSim("d:/Models/Statoil/soursim/result.sourres.00001");
 #else
-  QString filename("/mnt/hgfs/Statoil/testcase_juli_2011/data/TEST10K_FLT_LGR_NNC.EGRID");
-  QString sourSim("d:/Models/Statoil/soursim/result.sourres");
+    QString filename("/mnt/hgfs/Statoil/testcase_juli_2011/data/TEST10K_FLT_LGR_NNC.EGRID");
+    QString sourSim("d:/Models/Statoil/soursim/result.sourres");
 #endif
 
-  bool result = readerInterfaceEcl->open(filename, reservoir.p());
-  EXPECT_TRUE(result);
+    bool result = readerInterfaceEcl->open(filename, reservoir.p());
+    EXPECT_TRUE(result);
 
-  readerInterfaceEcl->setHdf5FileName(sourSim);
+    readerInterfaceEcl->setHdf5FileName(sourSim);
 }
 

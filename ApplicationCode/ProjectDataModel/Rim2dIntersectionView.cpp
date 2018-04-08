@@ -17,19 +17,9 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include "Rim2dIntersectionView.h"
-#include "Rim2dIntersectionViewCollection.h"
-#include "RimIntersection.h"
 #include "RimCase.h"
-#include "RiuViewer.h"
+#include "RimIntersection.h"
 #include "RimGridView.h"
-#include "RivIntersectionPartMgr.h"
-#include "RivTernarySaturationOverlayItem.h"
-
-#include "cvfPart.h"
-#include "cvfModelBasicList.h"
-#include "cvfTransform.h"
-#include "cvfScene.h"
-
 #include "Rim3dOverlayInfoConfig.h"
 #include "RimEclipseView.h"
 #include "RimEclipseCellColors.h"
@@ -40,8 +30,22 @@
 #include "RimSimWellInView.h"
 #include "RimWellPath.h"
 
-#include <QDateTime>
+#include "RiuViewer.h"
+
+#include "RivIntersectionPartMgr.h"
+#include "RivTernarySaturationOverlayItem.h"
+#include "RivSimWellPipesPartMgr.h"
+#include "RivWellHeadPartMgr.h"
+#include "RivWellPathPartMgr.h"
+
 #include "cafDisplayCoordTransform.h"
+
+#include "cvfModelBasicList.h"
+#include "cvfTransform.h"
+#include "cvfScene.h"
+#include "cvfPart.h"
+
+#include <QDateTime>
 
 CAF_PDM_SOURCE_INIT(Rim2dIntersectionView, "Intersection2dView"); 
 
@@ -71,6 +75,8 @@ Rim2dIntersectionView::Rim2dIntersectionView(void)
     m_ternaryLegendConfig.uiCapability()->setUiTreeChildrenHidden(true);
     m_ternaryLegendConfig.xmlCapability()->disableIO();
     m_ternaryLegendConfig = new RimTernaryLegendConfig();
+
+    CAF_PDM_InitField(&m_showDefiningPoints, "ShowDefiningPoints", true, "Show Points", "", "", "");
 
     m_showWindow = false;
     m_scaleTransform = new cvf::Transform();
@@ -118,7 +124,7 @@ void Rim2dIntersectionView::setIntersection(RimIntersection* intersection)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-RimIntersection* Rim2dIntersectionView::intersection()
+RimIntersection* Rim2dIntersectionView::intersection() const
 {
     return m_intersection();
 }
@@ -291,11 +297,45 @@ void Rim2dIntersectionView::update3dInfo()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+cvf::ref<RivIntersectionPartMgr> Rim2dIntersectionView::flatIntersectionPartMgr() const
+{
+    return m_flatIntersectionPartMgr;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim2dIntersectionView::isGridVisualizationMode() const
+{
+    return true;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+cvf::Vec3d Rim2dIntersectionView::transformToUtm(const cvf::Vec3d& unscaledPointInFlatDomain) const
+{
+    cvf::Mat4d unflatXf = this->flatIntersectionPartMgr()->unflattenTransformMatrix(unscaledPointInFlatDomain);
+
+    return unscaledPointInFlatDomain.getTransformedPoint(unflatXf);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 cvf::ref<caf::DisplayCoordTransform> Rim2dIntersectionView::displayCoordTransform() const
 {
    cvf::ref<caf::DisplayCoordTransform> dispTx = new caf::DisplayCoordTransform();
    dispTx->setScale(cvf::Vec3d(1.0, 1.0, scaleZ()));
    return dispTx;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim2dIntersectionView::showDefiningPoints() const
+{
+    return m_showDefiningPoints;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -351,16 +391,7 @@ int Rim2dIntersectionView::timeStepCount()
 //--------------------------------------------------------------------------------------------------
 bool Rim2dIntersectionView::isWindowVisible()
 {
-    if (m_showWindow())
-    {
-        Rim2dIntersectionViewCollection* viewColl = nullptr;
-        this->firstAncestorOrThisOfTypeAsserted(viewColl);
-        return viewColl->isActive();
-    }
-    else 
-    {
-        return false;
-    }
+    return m_showWindow();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -392,14 +423,46 @@ void Rim2dIntersectionView::createDisplayModel()
 
     m_flatIntersectionPartMgr = new RivIntersectionPartMgr(m_intersection(), true);
 
+
     m_intersectionVizModel->removeAllParts();
     
     m_flatIntersectionPartMgr->appendNativeCrossSectionFacesToModel(m_intersectionVizModel.p(), scaleTransform());
     m_flatIntersectionPartMgr->appendMeshLinePartsToModel(m_intersectionVizModel.p(), scaleTransform());
-    m_flatIntersectionPartMgr->appendPolylinePartsToModel(m_intersectionVizModel.p(), scaleTransform());
-    m_flatIntersectionPartMgr->appendWellPipePartsToModel(m_intersectionVizModel.p(), scaleTransform());
+    m_flatIntersectionPartMgr->appendPolylinePartsToModel(*this, m_intersectionVizModel.p(), scaleTransform());
 
     m_flatIntersectionPartMgr->applySingleColorEffect();
+
+    m_flatSimWellPipePartMgr = nullptr;
+    m_flatWellHeadPartMgr = nullptr;
+
+    if ( m_intersection->type() == RimIntersection::CS_SIMULATION_WELL
+        && m_intersection->simulationWell() )
+    {
+        RimEclipseView* eclipseView = nullptr;
+        m_intersection->firstAncestorOrThisOfType(eclipseView);
+
+        if ( eclipseView )
+        {
+            m_flatSimWellPipePartMgr = new RivSimWellPipesPartMgr(m_intersection->simulationWell()); 
+            m_flatWellHeadPartMgr = new RivWellHeadPartMgr(m_intersection->simulationWell());
+        }
+    }
+
+    m_flatWellpathPartMgr = nullptr;
+    if ( m_intersection->type() == RimIntersection::CS_WELL_PATH
+        && m_intersection->wellPath() )
+    {
+        Rim3dView* settingsView = nullptr;
+        m_intersection->firstAncestorOrThisOfType(settingsView);
+        if ( settingsView )
+        {
+            m_flatWellpathPartMgr = new RivWellPathPartMgr(m_intersection->wellPath(), settingsView);
+            m_flatWellpathPartMgr->appendFlattenedStaticGeometryPartsToModel(m_intersectionVizModel.p(),
+                                                                             this->displayCoordTransform().p(),
+                                                                             this->ownerCase()->characteristicCellSize(),
+                                                                             this->ownerCase()->activeCellsBoundingBox());
+        }
+    }
 
     m_viewer->addStaticModelOnce(m_intersectionVizModel.p());
     
@@ -420,30 +483,66 @@ void Rim2dIntersectionView::createDisplayModel()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::createPartCollectionFromSelection(cvf::Collection<cvf::Part>* parts)
-{
-}
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::onTimeStepChanged()
-{
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void Rim2dIntersectionView::clampCurrentTimestep()
-{
-}
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
 void Rim2dIntersectionView::updateCurrentTimeStep()
 {
     update3dInfo();
     updateLegends();
+
+    if ( m_flatSimWellPipePartMgr.notNull() )
+    {
+        cvf::Scene* frameScene = m_viewer->frame(m_currentTimeStep);
+        if (frameScene)
+        {
+            {
+                cvf::String name = "SimWellPipeMod";
+                Rim3dView::removeModelByName(frameScene, name);
+
+                cvf::ref<cvf::ModelBasicList> simWellModelBasicList = new cvf::ModelBasicList;
+                simWellModelBasicList->setName(name);
+
+                m_flatSimWellPipePartMgr->appendFlattenedDynamicGeometryPartsToModel(simWellModelBasicList.p(),
+                                                                                     m_currentTimeStep,
+                                                                                     this->displayCoordTransform().p(),
+                                                                                     m_intersection->extentLength(), 
+                                                                                     m_intersection->branchIndex());
+
+                for ( double offset : m_flatSimWellPipePartMgr->flattenedBranchWellHeadOffsets() )
+                {
+                    m_flatWellHeadPartMgr->appendFlattenedDynamicGeometryPartsToModel(simWellModelBasicList.p(),
+                                                                                      m_currentTimeStep,
+                                                                                      this->displayCoordTransform().p(), 
+                                                                                      offset);
+                }
+
+                simWellModelBasicList->updateBoundingBoxesRecursive();
+                frameScene->addModel(simWellModelBasicList.p());
+                m_flatSimWellPipePartMgr->updatePipeResultColor(m_currentTimeStep);
+            }
+        }
+    }
+
+    if ( m_flatWellpathPartMgr.notNull() )
+    {
+        cvf::Scene* frameScene = m_viewer->frame(m_currentTimeStep);
+        if (frameScene)
+        {
+            {
+                cvf::String name = "WellPipeDynMod";
+                Rim3dView::removeModelByName(frameScene, name);
+                cvf::ref<cvf::ModelBasicList> dynWellPathModel = new cvf::ModelBasicList;
+                dynWellPathModel->setName(name);
+
+                m_flatWellpathPartMgr->appendFlattenedDynamicGeometryPartsToModel(dynWellPathModel.p(),
+                                                                                  m_currentTimeStep,
+                                                                                  this->displayCoordTransform().p(),
+                                                                                  this->ownerCase()->characteristicCellSize(),
+                                                                                  this->ownerCase()->activeCellsBoundingBox());
+                dynWellPathModel->updateBoundingBoxesRecursive();
+                frameScene->addModel(dynWellPathModel.p());
+            }
+        }
+    }
+
 
     if ((this->hasUserRequestedAnimation() && this->hasResults()))
     {
@@ -530,6 +629,26 @@ void Rim2dIntersectionView::resetLegendsInViewer()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::createPartCollectionFromSelection(cvf::Collection<cvf::Part>* parts)
+{
+}
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::onTimeStepChanged()
+{
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim2dIntersectionView::clampCurrentTimestep()
+{
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 void Rim2dIntersectionView::updateStaticCellColors()
 {
 }
@@ -572,7 +691,8 @@ void Rim2dIntersectionView::fieldChangedByUi(const caf::PdmFieldHandle* changedF
 {
     Rim3dView::fieldChangedByUi(changedField, oldValue, newValue);
 
-    if (changedField == & m_intersection)
+    if (changedField == & m_intersection ||
+        changedField == &m_showDefiningPoints)
     {
         this->loadDataAndUpdate();
     }
@@ -587,4 +707,10 @@ void Rim2dIntersectionView::defineUiOrdering(QString uiConfigName, caf::PdmUiOrd
     uiOrdering.add(&m_intersection);
 
     Rim3dView::defineUiOrdering(uiConfigName, uiOrdering);
+
+    if (m_intersection->hasDefiningPoints())
+    {
+        caf::PdmUiGroup* plGroup = uiOrdering.addNewGroup("Defining Points");
+        plGroup->add(&m_showDefiningPoints);
+    }
 }

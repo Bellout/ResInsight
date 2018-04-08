@@ -27,56 +27,52 @@
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RifReaderMockModel::open(const QString& fileName,
-                              RigEclipseCaseData* eclipseCase) {
+bool RifReaderMockModel::open(const QString& fileName, RigEclipseCaseData* eclipseCase)
+{
+    m_reservoirBuilder.populateReservoir(eclipseCase);
+  
+    m_reservoir = eclipseCase;
 
-  m_reservoirBuilder.populateReservoir(eclipseCase);
+    RigCaseCellResultsData* cellResults = eclipseCase->results(RiaDefines::MATRIX_MODEL);
 
-  m_reservoir = eclipseCase;
-
-  RigCaseCellResultsData* cellResults = eclipseCase->results(RiaDefines::MATRIX_MODEL);
-
-  std::vector<RigEclipseTimeStepInfo> timeStepInfos;
-  {
-    std::vector<QDateTime> dates;
-    std::vector<double> days;
-    std::vector<int> repNumbers;
-
-    for (int i = 0; i < static_cast<int>(m_reservoirBuilder.timeStepCount()); i++)
+    std::vector<RigEclipseTimeStepInfo> timeStepInfos;
     {
-      dates.push_back(QDateTime(QDate(2012+i, 6, 1)));
-      days.push_back(i);
-      repNumbers.push_back(i);
+        std::vector<QDateTime> dates;
+        std::vector<double> days;
+        std::vector<int> repNumbers;
+
+        for (int i = 0; i < static_cast<int>(m_reservoirBuilder.timeStepCount()); i++)
+        {
+            dates.push_back(QDateTime(QDate(2012+i, 6, 1)));
+            days.push_back(i);
+            repNumbers.push_back(i);
+        }
+
+        timeStepInfos = RigEclipseTimeStepInfo::createTimeStepInfos(dates, repNumbers, days);
     }
 
-    timeStepInfos = RigEclipseTimeStepInfo::createTimeStepInfos(dates, repNumbers, days);
-  }
+    for (size_t i = 0; i < m_reservoirBuilder.resultCount(); i++)
+    {
+        size_t resIdx = cellResults->findOrCreateScalarResultIndex(RiaDefines::DYNAMIC_NATIVE, QString("Dynamic_Result_%1").arg(i), false);
+        cellResults->setTimeStepInfos(resIdx, timeStepInfos);
+    }
 
-  for (size_t i = 0; i < m_reservoirBuilder.resultCount(); i++)
-  {
-    size_t resIdx = cellResults->findOrCreateScalarResultIndex(RiaDefines::DYNAMIC_NATIVE,
-                                                               QString("Dynamic_Result_%1").arg(i),
-                                                               false);
-    cellResults->setTimeStepInfos(resIdx, timeStepInfos);
-  }
+    if (m_reservoirBuilder.timeStepCount() == 0) return true;
 
-  if (m_reservoirBuilder.timeStepCount() == 0) return true;
+    std::vector<RigEclipseTimeStepInfo> staticResultTimeStepInfos;
+    staticResultTimeStepInfos.push_back(timeStepInfos[0]);
 
-  std::vector<RigEclipseTimeStepInfo> staticResultTimeStepInfos;
-  staticResultTimeStepInfos.push_back(timeStepInfos[0]);
+    for (int i = 0; i < static_cast<int>(m_reservoirBuilder.resultCount()); i++)
+    {
+        QString varEnd;
+        if (i == 0) varEnd = "X";
+        if (i == 1) varEnd = "Y";
+        int resIndex = 0;
+        if (i > 1) resIndex = i;
 
-  for (int i = 0; i < static_cast<int>(m_reservoirBuilder.resultCount()); i++)
-  {
-    QString varEnd;
-    if (i == 0) varEnd = "X";
-    if (i == 1) varEnd = "Y";
-    int resIndex = 0;
-    if (i > 1) resIndex = i;
-
-    size_t resIdx = cellResults->findOrCreateScalarResultIndex(RiaDefines::STATIC_NATIVE,
-                                                               QString("Static_Result_%1%2").arg(resIndex).arg(varEnd), false);
-    cellResults->setTimeStepInfos(resIdx, staticResultTimeStepInfos);
-  }
+        size_t resIdx = cellResults->findOrCreateScalarResultIndex(RiaDefines::STATIC_NATIVE, QString("Static_Result_%1%2").arg(resIndex).arg(varEnd), false);
+        cellResults->setTimeStepInfos(resIdx, staticResultTimeStepInfos);
+    }
 
 
 #define ADD_INPUT_PROPERTY(Name) \
@@ -90,45 +86,39 @@ bool RifReaderMockModel::open(const QString& fileName,
         this->inputProperty(resultName, &values); \
     }
 
-  ADD_INPUT_PROPERTY("PORO");
-  ADD_INPUT_PROPERTY("PERM");
-  ADD_INPUT_PROPERTY("MULTX");
-
-  return true;
+    ADD_INPUT_PROPERTY("PORO");
+    ADD_INPUT_PROPERTY("PERM");
+    ADD_INPUT_PROPERTY("MULTX");
+   
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RifReaderMockModel::inputProperty(const QString& propertyName,
-                                       std::vector<double>* values)
+bool RifReaderMockModel::inputProperty(const QString& propertyName, std::vector<double>* values)
 {
-  return m_reservoirBuilder.inputProperty(m_reservoir, propertyName, values);
+    return m_reservoirBuilder.inputProperty(m_reservoir, propertyName, values);
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RifReaderMockModel::staticResult(const QString& result,
-                                      RiaDefines::PorosityModelType matrixOrFracture,
-                                      std::vector<double>* values)
+bool RifReaderMockModel::staticResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, std::vector<double>* values)
 {
-  m_reservoirBuilder.staticResult(m_reservoir, result, values);
+    m_reservoirBuilder.staticResult(m_reservoir, result, values);
 
-  return true;
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-bool RifReaderMockModel::dynamicResult(const QString& result,
-                                       RiaDefines::PorosityModelType matrixOrFracture,
-                                       size_t stepIndex,
-                                       std::vector<double>* values)
+bool RifReaderMockModel::dynamicResult(const QString& result, RiaDefines::PorosityModelType matrixOrFracture, size_t stepIndex, std::vector<double>* values)
 {
-  m_reservoirBuilder.dynamicResult(m_reservoir, result, stepIndex, values);
+    m_reservoirBuilder.dynamicResult(m_reservoir, result, stepIndex, values);
 
-  return true;
+    return true;
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -136,10 +126,10 @@ bool RifReaderMockModel::dynamicResult(const QString& result,
 //--------------------------------------------------------------------------------------------------
 RifReaderMockModel::RifReaderMockModel() : m_reservoir(nullptr)
 {
-  /*
-  m_cellResults.push_back("Dummy results");
-  m_cellProperties.push_back("Dummy static result");
-  */
+    /*
+    m_cellResults.push_back("Dummy results");
+    m_cellProperties.push_back("Dummy static result");
+    */
 }
 
 RifReaderMockModel::~RifReaderMockModel()
@@ -150,10 +140,9 @@ RifReaderMockModel::~RifReaderMockModel()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RifReaderMockModel::setWorldCoordinates(cvf::Vec3d minWorldCoordinate,
-                                             cvf::Vec3d maxWorldCoordinate)
+void RifReaderMockModel::setWorldCoordinates(cvf::Vec3d minWorldCoordinate, cvf::Vec3d maxWorldCoordinate)
 {
-  m_reservoirBuilder.setWorldCoordinates(minWorldCoordinate, maxWorldCoordinate);
+    m_reservoirBuilder.setWorldCoordinates(minWorldCoordinate, maxWorldCoordinate);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -161,7 +150,7 @@ void RifReaderMockModel::setWorldCoordinates(cvf::Vec3d minWorldCoordinate,
 //--------------------------------------------------------------------------------------------------
 void RifReaderMockModel::setGridPointDimensions(const cvf::Vec3st& gridPointDimensions)
 {
-  m_reservoirBuilder.setGridPointDimensions(gridPointDimensions);
+    m_reservoirBuilder.setGridPointDimensions(gridPointDimensions);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -169,17 +158,15 @@ void RifReaderMockModel::setGridPointDimensions(const cvf::Vec3st& gridPointDime
 //--------------------------------------------------------------------------------------------------
 void RifReaderMockModel::setResultInfo(size_t resultCount, size_t timeStepCount)
 {
-  m_reservoirBuilder.setResultInfo(resultCount, timeStepCount);
+    m_reservoirBuilder.setResultInfo(resultCount, timeStepCount);
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RifReaderMockModel::addLocalGridRefinement(const cvf::Vec3st& minCellPosition,
-                                                const cvf::Vec3st& maxCellPosition,
-                                                const cvf::Vec3st& singleCellRefinementFactors)
+void RifReaderMockModel::addLocalGridRefinement(const cvf::Vec3st& minCellPosition, const cvf::Vec3st& maxCellPosition, const cvf::Vec3st& singleCellRefinementFactors)
 {
-  m_reservoirBuilder.addLocalGridRefinement(minCellPosition, maxCellPosition, singleCellRefinementFactors);
+    m_reservoirBuilder.addLocalGridRefinement(minCellPosition, maxCellPosition, singleCellRefinementFactors);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -187,7 +174,7 @@ void RifReaderMockModel::addLocalGridRefinement(const cvf::Vec3st& minCellPositi
 //--------------------------------------------------------------------------------------------------
 void RifReaderMockModel::populateReservoir(RigEclipseCaseData* eclipseCase)
 {
-  m_reservoirBuilder.populateReservoir(eclipseCase);
+    m_reservoirBuilder.populateReservoir(eclipseCase);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -195,6 +182,6 @@ void RifReaderMockModel::populateReservoir(RigEclipseCaseData* eclipseCase)
 //--------------------------------------------------------------------------------------------------
 void RifReaderMockModel::enableWellData(bool enableWellData)
 {
-  m_reservoirBuilder.enableWellData(enableWellData);
+    m_reservoirBuilder.enableWellData(enableWellData);
 }
 

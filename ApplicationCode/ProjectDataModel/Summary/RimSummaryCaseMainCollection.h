@@ -44,8 +44,8 @@ public:
     std::vector<RimSummaryCaseCollection*>  summaryCaseCollections() const;
 
     void                createSummaryCasesFromRelevantEclipseResultCases();
-    RimSummaryCase*     createAndAddSummaryCaseFromEclipseResultCase(RimEclipseResultCase* eclResCase);
-    RimSummaryCase*     createAndAddSummaryCaseFromFileName(const QString& fileName);
+    std::vector<RimSummaryCase*> createAndAddSummaryCasesFromEclipseResultCase(RimEclipseResultCase* eclResCase);
+    std::vector<RimSummaryCase*> createAndAddSummaryCasesFromFiles(const QStringList& inputFileNames);
     
     RimSummaryCase*     findSummaryCaseFromEclipseResultCase(RimEclipseResultCase* eclResCase) const;
     RimSummaryCase*     findSummaryCaseFromFileName(const QString& fileName) const;

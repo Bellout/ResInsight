@@ -24,6 +24,7 @@
 #include "Rim3dView.h"
 #include "RimPerforationInterval.h"
 #include "RimWellPath.h"
+#include "Rim2dIntersectionView.h"
 
 #include "RiuMainWindow.h"
 
@@ -34,6 +35,7 @@
 
 #include "cvfPart.h"
 #include "cvfVector3.h"
+#include "RivIntersectionPartMgr.h"
 
 
 //--------------------------------------------------------------------------------------------------
@@ -104,14 +106,19 @@ bool RicWellPathViewerEventHandler::handleEvent(const RicViewerEventObject& even
         if (!rimView) return false;
 
         cvf::ref<caf::DisplayCoordTransform> transForm = rimView->displayCoordTransform();
-        cvf::Vec3d domainCoord = transForm->transformToDomainCoord(eventObject.m_globalIntersectionPoint);
+        cvf::Vec3d pickedPositionInUTM = transForm->transformToDomainCoord(eventObject.m_globalIntersectionPoint);
 
-        double measuredDepth = wellPathSourceInfo->measuredDepth(wellPathTriangleIndex, domainCoord);
+        if (auto intersectionView = dynamic_cast<Rim2dIntersectionView*>(rimView))
+        {
+            pickedPositionInUTM = intersectionView->transformToUtm(pickedPositionInUTM);
+        }
+
+        double measuredDepth = wellPathSourceInfo->measuredDepth(wellPathTriangleIndex, pickedPositionInUTM);
 
         // NOTE: This computation was used to find the location for a fracture when clicking on a well path
         // It turned out that the computation was a bit inaccurate
         // Consider to use code in RigSimulationWellCoordsAndMD instead
-        cvf::Vec3d trueVerticalDepth = wellPathSourceInfo->trueVerticalDepth(wellPathTriangleIndex, domainCoord);
+        cvf::Vec3d trueVerticalDepth = wellPathSourceInfo->closestPointOnCenterLine(wellPathTriangleIndex, pickedPositionInUTM);
 
         QString wellPathText;
         wellPathText += QString("Well path name : %1\n").arg(wellPathSourceInfo->wellPath()->name());

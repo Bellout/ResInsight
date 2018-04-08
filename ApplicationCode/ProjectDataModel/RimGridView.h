@@ -20,6 +20,15 @@
 
 #include "Rim3dView.h"
 
+#include "cvfBase.h"
+#include "cvfArray.h"
+
+class Rim3dOverlayInfoConfig;
+class RimIntersectionCollection;
+class RimPropertyFilterCollection;
+class RimGridCollection;
+class RimCellRangeFilterCollection;
+
 class RimGridView : public Rim3dView
 {
     CAF_PDM_HEADER_INIT;
@@ -46,8 +55,10 @@ public:
     RimViewController*                                viewController() const override;
     RimViewLinker*                                    assosiatedViewLinker() const override;
                                                       
-protected:                                            
-    static void                                       removeModelByName(cvf::Scene* scene, const cvf::String& modelName);
+
+    virtual bool                                      isGridVisualizationMode() const override;
+
+protected:
                                                       
     virtual void                                      onTimeStepChanged() override;
     virtual void                                      calculateCurrentTotalCellVisibility(cvf::UByteArray* totalVisibility, int timeStep) = 0;

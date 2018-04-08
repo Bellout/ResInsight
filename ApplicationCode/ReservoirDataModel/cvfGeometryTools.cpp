@@ -27,10 +27,7 @@ namespace cvf
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-cvf::Vec3d GeometryTools::computeFaceCenter(const cvf::Vec3d& v0,
-                                            const cvf::Vec3d& v1,
-                                            const cvf::Vec3d& v2,
-                                            const cvf::Vec3d& v3)
+cvf::Vec3d GeometryTools::computeFaceCenter(const cvf::Vec3d& v0, const cvf::Vec3d& v1, const cvf::Vec3d& v2, const cvf::Vec3d& v3)
 {
     cvf::Vec3d centerCoord = v0;
     centerCoord += v1;
@@ -44,8 +41,7 @@ cvf::Vec3d GeometryTools::computeFaceCenter(const cvf::Vec3d& v0,
 //--------------------------------------------------------------------------------------------------
 /// Ez = Plane normal, Ex = in XY plane (horizontal), Ey = semi vertical upwards
 //--------------------------------------------------------------------------------------------------
-cvf::Mat3f GeometryTools::computePlaneHorizontalRotationMx(const cvf::Vec3f& inPlaneVec0,
-                                                           const cvf::Vec3f& inPlaneVec1)
+cvf::Mat3f GeometryTools::computePlaneHorizontalRotationMx(const cvf::Vec3f& inPlaneVec0, const cvf::Vec3f& inPlaneVec1)
 { 
     cvf::Vec3f Ez = inPlaneVec0 ^ inPlaneVec1;
 
@@ -75,7 +71,7 @@ cvf::Mat3f GeometryTools::computePlaneHorizontalRotationMx(const cvf::Vec3f& inP
 /// 
 //--------------------------------------------------------------------------------------------------
 
-int GeometryTools::findClosestAxis(const cvf::Vec3d& vec)
+int GeometryTools::findClosestAxis(const cvf::Vec3d& vec )
 {
     int closestAxis = 0;
     double maxComponent = fabs(vec.x());
@@ -103,9 +99,7 @@ int GeometryTools::findClosestAxis(const cvf::Vec3d& vec)
 
 double const MY_PI = 4 * atan(1.0);
 
-double GeometryTools::getAngle(const cvf::Vec3d& positiveNormalAxis,
-                               const cvf::Vec3d& v1,
-                               const cvf::Vec3d& v2)
+double GeometryTools::getAngle(const cvf::Vec3d& positiveNormalAxis, const cvf::Vec3d& v1, const cvf::Vec3d& v2)
 {
     bool isOk = false;
     cvf::Vec3d v1N = v1.getNormalized(&isOk);
@@ -139,8 +133,7 @@ double GeometryTools::getAngle(const cvf::Vec3d& positiveNormalAxis,
 /// If v1 or v2 is zero, the method will return 0.
 //--------------------------------------------------------------------------------------------------
 
-double GeometryTools::getAngle(const cvf::Vec3d& v1,
-                               const cvf::Vec3d& v2)
+double GeometryTools::getAngle(const cvf::Vec3d& v1, const cvf::Vec3d& v2)
 {
     bool isOk = false;
     cvf::Vec3d v1N = v1.getNormalized(&isOk);

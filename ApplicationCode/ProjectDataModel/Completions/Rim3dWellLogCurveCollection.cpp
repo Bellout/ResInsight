@@ -19,8 +19,20 @@
 #include "Rim3dWellLogCurveCollection.h"
 
 #include "Rim3dWellLogCurve.h"
+#include "RimProject.h"
 
 CAF_PDM_SOURCE_INIT(Rim3dWellLogCurveCollection, "Rim3dWellLogCurveCollection");
+
+namespace caf
+{
+    template<>
+    void AppEnum< Rim3dWellLogCurveCollection::PlanePosition >::setUp()
+    {
+        addItem(Rim3dWellLogCurveCollection::ALONG_WELLPATH, "ALONG_WELLPATH", "On One Side of Well Path");
+        addItem(Rim3dWellLogCurveCollection::ON_WELLPATH, "ON_WELLPATH", "On Well Path");
+        setDefault(Rim3dWellLogCurveCollection::ALONG_WELLPATH);
+    }
+}
 
 //--------------------------------------------------------------------------------------------------
 /// 
@@ -29,8 +41,12 @@ Rim3dWellLogCurveCollection::Rim3dWellLogCurveCollection()
 {
     CAF_PDM_InitObject("3D Track", ":/WellLogCurve16x16.png", "", "");
 
-    CAF_PDM_InitField(&m_showCurves, "Show3dWellLogCurves", true, "Show 3d Well Log Curves", "", "", "");
-    m_showCurves.uiCapability()->setUiHidden(true);
+    CAF_PDM_InitField(&m_showPlot, "Show3dWellLogCurves", true, "Show 3d Well Log Curves", "", "", "");
+    m_showPlot.uiCapability()->setUiHidden(true);
+
+    CAF_PDM_InitField(&m_showGrid, "Show3dWellLogGrid", true, "Show Grid", "", "", "");
+
+    CAF_PDM_InitFieldNoDefault(&m_planePosition, "PlanePosition", "Plane Position", "", "", "");
 
     CAF_PDM_InitFieldNoDefault(&m_3dWellLogCurves, "ArrayOf3dWellLogCurves", "", "", "", "");
     m_3dWellLogCurves.uiCapability()->setUiTreeHidden(true);
@@ -66,6 +82,30 @@ void Rim3dWellLogCurveCollection::add3dWellLogCurve(Rim3dWellLogCurve* curve)
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+bool Rim3dWellLogCurveCollection::isShowingGrid() const
+{
+    return m_showGrid;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+bool Rim3dWellLogCurveCollection::isShowingPlot() const
+{
+    return m_showPlot;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+Rim3dWellLogCurveCollection::PlanePosition Rim3dWellLogCurveCollection::planePosition() const
+{
+    return m_planePosition();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 std::vector<Rim3dWellLogCurve*> Rim3dWellLogCurveCollection::vectorOf3dWellLogCurves() const
 {
     std::vector<Rim3dWellLogCurve*> curves;
@@ -80,7 +120,28 @@ std::vector<Rim3dWellLogCurve*> Rim3dWellLogCurveCollection::vectorOf3dWellLogCu
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
+void Rim3dWellLogCurveCollection::fieldChangedByUi(const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue)
+{
+    RimProject* proj;
+    this->firstAncestorOrThisOfTypeAsserted(proj);
+    proj->createDisplayModelAndRedrawAllViews();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
 caf::PdmFieldHandle* Rim3dWellLogCurveCollection::objectToggleField()
 {
-    return &m_showCurves;
+    return &m_showPlot;
+}
+
+//--------------------------------------------------------------------------------------------------
+/// 
+//--------------------------------------------------------------------------------------------------
+void Rim3dWellLogCurveCollection::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering)
+{
+    caf::PdmUiGroup* settingsGroup = uiOrdering.addNewGroup("Track Settings");
+
+    settingsGroup->add(&m_showGrid);
+    settingsGroup->add(&m_planePosition);
 }

@@ -62,14 +62,14 @@ RiaSocketServer::RiaSocketServer(QObject* parent)
 
     if (!m_tcpServer->listen(QHostAddress::LocalHost, 40001)) 
     {
-        // m_errorMessageDialog->showMessage("Octave communication disabled :\n"
-        //                                   "\n"
-        //                                   "This instance of ResInsight could not start the Socket Server enabling octave to get and set data.\n"
-        //                                   "This is probably because you already have a running ResInsight process.\n"
-        //                                   "Octave can only communicate with one ResInsight process at a time, so the Octave\n"
-        //                                   "communication in this ResInsight instance will be disabled.\n"
-        //                                   "\n"
-        //                                   + tr("The error from the socket system is: %1.").arg(m_tcpServer->errorString()));
+        m_errorMessageDialog->showMessage("Octave communication disabled :\n"
+                                          "\n"
+                                          "This instance of ResInsight could not start the Socket Server enabling octave to get and set data.\n"
+                                          "This is probably because you already have a running ResInsight process.\n"
+                                          "Octave can only communicate with one ResInsight process at a time, so the Octave\n"
+                                          "communication in this ResInsight instance will be disabled.\n"
+                                          "\n"
+                                          + tr("The error from the socket system is: %1.").arg(m_tcpServer->errorString()));
         return;
     }
 
@@ -145,18 +145,18 @@ RimEclipseCase* RiaSocketServer::findReservoir(int caseId)
         // If the active mdi window is different from an Eclipse view, search through available mdi windows to find the last activated
         // Eclipse view. The sub windows are returned with the most recent activated window at the back.
         QList<QMdiSubWindow*> subWindows = RiuMainWindow::instance()->subWindowList(QMdiArea::ActivationHistoryOrder);
-		for (int i = subWindows.size() - 1; i > -1; i--)
-		{
-			RiuViewer* viewer = subWindows[i]->widget()->findChild<RiuViewer*>();
-			if (viewer)
-			{
+        for (int i = subWindows.size() - 1; i > -1; i--)
+        {
+            RiuViewer* viewer = subWindows[i]->widget()->findChild<RiuViewer*>();
+            if (viewer)
+            {
                 RimEclipseView* riv = dynamic_cast<RimEclipseView*>(viewer->ownerReservoirView());
                 if (riv)
                 {
                     return riv->eclipseCase();
                 }
-			}
-		}
+            }
+        }
     }
     else
     {
