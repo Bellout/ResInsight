@@ -28,41 +28,47 @@ class RimOilRegionEntry;
 
 class RimWellPathImport : public caf::PdmObject
 {
-    CAF_PDM_HEADER_INIT;
+ CAF_PDM_HEADER_INIT;
 
-public:
+ public:
 
-    enum UtmFilterEnum
-    {
-        UTM_FILTER_OFF,
-        UTM_FILTER_PROJECT,
-        UTM_FILTER_CUSTOM
-    };
+  enum UtmFilterEnum
+  {
+    UTM_FILTER_OFF,
+    UTM_FILTER_PROJECT,
+    UTM_FILTER_CUSTOM
+  };
 
-public:
-    RimWellPathImport();
-    ~RimWellPathImport();
+ public:
+  RimWellPathImport();
+  ~RimWellPathImport();
 
-    caf::PdmField<bool>                             wellTypeSurvey;
-    caf::PdmField<bool>                             wellTypePlans;
+  caf::PdmField<bool>                             wellTypeSurvey;
+  caf::PdmField<bool>                             wellTypePlans;
 
-    caf::PdmField< caf::AppEnum< UtmFilterEnum > >  utmFilterMode;
-    caf::PdmField<double>                           north;
-    caf::PdmField<double>                           south;
-    caf::PdmField<double>                           east;
-    caf::PdmField<double>                           west;
+  caf::PdmField< caf::AppEnum< UtmFilterEnum > >  utmFilterMode;
+  caf::PdmField<double>                           north;
+  caf::PdmField<double>                           south;
+  caf::PdmField<double>                           east;
+  caf::PdmField<double>                           west;
 
-    caf::PdmChildArrayField<RimOilRegionEntry*>       regions;
+  caf::PdmChildArrayField<RimOilRegionEntry*>       regions;
 
-    void updateRegions(const QStringList& regions, const QStringList& fields, const QStringList& edmIds);
+  void updateRegions(const QStringList& regions,
+                     const QStringList& fields,
+                     const QStringList& edmIds);
 
-    virtual void initAfterRead();
-    virtual void fieldChangedByUi( const caf::PdmFieldHandle* changedField, const QVariant& oldValue, const QVariant& newValue );
-    virtual void defineObjectEditorAttribute( QString uiConfigName, caf::PdmUiEditorAttribute * attribute );
+  virtual void initAfterRead();
+  virtual void fieldChangedByUi(const caf::PdmFieldHandle* changedField,
+                                const QVariant& oldValue,
+                                const QVariant& newValue );
 
-    void updateFieldVisibility();
+  virtual void defineObjectEditorAttribute(QString uiConfigName,
+                                           caf::PdmUiEditorAttribute * attribute );
 
-    void updateFilePaths();
+  void updateFieldVisibility();
+
+  void updateFilePaths();
 
 };
 

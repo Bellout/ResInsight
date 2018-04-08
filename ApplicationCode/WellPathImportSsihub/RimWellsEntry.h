@@ -23,42 +23,43 @@
 #include "cafAppEnum.h"
 
 
-
-
 class RimWellPathEntry : public caf::PdmObject
 {
-    CAF_PDM_HEADER_INIT;
+ CAF_PDM_HEADER_INIT;
 
-public:
-    enum WellTypeEnum
-    {
-        WELL_SURVEY,
-        WELL_PLAN,
-        WELL_ALL
-    };
-
-
-public:
-    RimWellPathEntry();
-
-    static RimWellPathEntry* createWellPathEntry(const QString& name, const QString& surveyType, const QString& requestUrl, const QString& absolutePath, WellTypeEnum wellType);
+ public:
+  enum WellTypeEnum
+  {
+    WELL_SURVEY,
+    WELL_PLAN,
+    WELL_ALL
+  };
 
 
-    virtual caf::PdmFieldHandle*    userDescriptionField();
-    virtual caf::PdmFieldHandle*    objectToggleField();
-    
-    caf::PdmField<QString>                          name;
-    caf::PdmField<bool>                             selected;
+ public:
+  RimWellPathEntry();
 
-    caf::PdmField< caf::AppEnum< WellTypeEnum > >   wellPathType;
-    caf::PdmField<QString>                          surveyType;
-    caf::PdmField<QString>                          requestUrl;
+  static RimWellPathEntry* createWellPathEntry(const QString& name,
+                                               const QString& surveyType,
+                                               const QString& requestUrl,
+                                               const QString& absolutePath,
+                                               WellTypeEnum wellType);
 
-    bool                                            isWellPathValid();
-    caf::PdmField<QString>                          wellPathFilePath;  // Location of the well path response
+  virtual caf::PdmFieldHandle*    userDescriptionField();
+  virtual caf::PdmFieldHandle*    objectToggleField();
 
-private:
-    static QString undefinedWellPathLocation();
+  caf::PdmField<QString>                          name;
+  caf::PdmField<bool>                             selected;
+
+  caf::PdmField< caf::AppEnum< WellTypeEnum > >   wellPathType;
+  caf::PdmField<QString>                          surveyType;
+  caf::PdmField<QString>                          requestUrl;
+
+  bool                                            isWellPathValid();
+  caf::PdmField<QString>                          wellPathFilePath;  // Location of the well path response
+
+ private:
+  static QString undefinedWellPathLocation();
 };
 
 
