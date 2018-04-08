@@ -116,16 +116,14 @@ void RigMainGrid::initAllSubCellsMainGridCellIndex()
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-cvf::Vec3d RigMainGrid::displayModelOffset() const
-{
+cvf::Vec3d RigMainGrid::displayModelOffset() const {
     return m_displayModelOffset;
 }
 
 //--------------------------------------------------------------------------------------------------
 /// 
 //--------------------------------------------------------------------------------------------------
-void RigMainGrid::setDisplayModelOffset(cvf::Vec3d offset)
-{
+void RigMainGrid::setDisplayModelOffset(cvf::Vec3d offset) {
     m_displayModelOffset = offset;
 }
 
