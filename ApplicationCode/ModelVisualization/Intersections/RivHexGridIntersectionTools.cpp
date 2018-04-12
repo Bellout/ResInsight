@@ -83,31 +83,25 @@ void RivEclipseIntersectionGrid::cellCornerIndices(size_t cellIndex,
       cornerIndicesSource = m_mainGrid->globalCellArray()[cellIndex].cornerIndices();
 
   memcpy(cornerIndices, cornerIndicesSource.data(), 8);
+  // RIHack::print_ri_hck(__func__, __FILE__);
+}
+
+// ---------------------------------------------------------------
+const RigFault*
+RivEclipseIntersectionGrid::findFaultFromCellIndexAndCellFace(
+    size_t reservoirCellIndex,
+    cvf::StructGridInterface::FaceType face) const {
   RIHack::print_ri_hck(__func__, __FILE__);
+  return m_mainGrid->findFaultFromCellIndexAndCellFace(reservoirCellIndex, face);
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-const RigFault* RivEclipseIntersectionGrid::findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex,
-                                                                              cvf::StructGridInterface::FaceType face) const
-{
-    return m_mainGrid->findFaultFromCellIndexAndCellFace(reservoirCellIndex, face);
+// ---------------------------------------------------------------
+RivFemIntersectionGrid::RivFemIntersectionGrid(
+    const RigFemPart * femPart) : m_femPart(femPart) {
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-RivFemIntersectionGrid::RivFemIntersectionGrid(const RigFemPart * femPart) : m_femPart(femPart)
-{
-
-}
-
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-cvf::Vec3d RivFemIntersectionGrid::displayOffset() const
-{
+// ---------------------------------------------------------------
+cvf::Vec3d RivFemIntersectionGrid::displayOffset() const {
   return cvf::Vec3d::ZERO;
 }
 
@@ -134,7 +128,7 @@ bool RivFemIntersectionGrid::useCell(size_t cellIndex) const {
   // -------------------------------------------------------------
   if (!(elmType == HEX8 || elmType == HEX8P)) return false;
 
-  RIHack::print_ri_hck(__func__, __FILE__);
+  // RIHack::print_ri_hck(__func__, __FILE__);
   return true;
 }
 
@@ -162,7 +156,7 @@ RivFemIntersectionGrid::cellCornerVertices(size_t cellIndex,
   cellCorners[7] = cvf::Vec3d(nodeCoords[cornerIndices[7]]);
 
   // -------------------------------------------------------------
-  RIHack::print_ri_hck(__func__, __FILE__);
+  // RIHack::print_ri_hck(__func__, __FILE__);
 }
 
 // ---------------------------------------------------------------
@@ -188,12 +182,10 @@ void RivFemIntersectionGrid::cellCornerIndices(size_t cellIndex,
 
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-const RigFault* RivFemIntersectionGrid::findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex,
-                                                                          cvf::StructGridInterface::FaceType face) const
-{
-    return nullptr;
+// ---------------------------------------------------------------
+const RigFault* RivFemIntersectionGrid::
+findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex,
+                                  cvf::StructGridInterface::FaceType face) const {
+  return nullptr;
 }
 
