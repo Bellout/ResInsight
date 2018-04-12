@@ -18,61 +18,54 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #include "RigGridBase.h"
 #include "RigMainGrid.h"
 #include "RigCell.h"
 #include "RigCaseCellResultsData.h"
 #include "RigResultAccessorFactory.h"
 
+// ---------------------------------------------------------------
 #include "cvfAssert.h"
 
-
+// ---------------------------------------------------------------
 RigGridBase::RigGridBase(RigMainGrid* mainGrid):
     m_gridPointDimensions(0,0,0),
     m_indexToStartOfCells(0),
-    m_mainGrid(mainGrid)
-{
-  if (mainGrid == nullptr)
-  {
+    m_mainGrid(mainGrid) {
+
+  // -------------------------------------------------------------
+  if (mainGrid == nullptr) {
     m_gridIndex = 0;
     m_gridId    = 0;
-  }
-  else
-  {
+
+  } else {
     m_gridIndex = cvf::UNDEFINED_SIZE_T;
     m_gridId = cvf::UNDEFINED_INT;
   }
 }
 
-
-RigGridBase::~RigGridBase(void)
-{
+// ---------------------------------------------------------------
+RigGridBase::~RigGridBase(void) {
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RigGridBase::setGridName(const std::string& gridName)
-{
+// ---------------------------------------------------------------
+void RigGridBase::setGridName(const std::string& gridName) {
   m_gridName = gridName;
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-std::string RigGridBase::gridName() const
-{
+// ---------------------------------------------------------------
+std::string RigGridBase::gridName() const {
   return m_gridName;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// Do we need this ?
-//--------------------------------------------------------------------------------------------------
-RigCell& RigGridBase::cell(size_t gridLocalCellIndex)
-{
+// ---------------------------------------------------------------
+// Do we need this ?
+RigCell& RigGridBase::cell(size_t gridLocalCellIndex) {
   CVF_ASSERT(m_mainGrid);
 
-  CVF_ASSERT(m_indexToStartOfCells + gridLocalCellIndex < m_mainGrid->globalCellArray().size());
+  CVF_ASSERT(m_indexToStartOfCells + gridLocalCellIndex
+                 < m_mainGrid->globalCellArray().size());
 
   return m_mainGrid->globalCellArray()[m_indexToStartOfCells + gridLocalCellIndex];
 }
@@ -85,9 +78,10 @@ const RigCell& RigGridBase::cell(size_t gridLocalCellIndex) const {
   return m_mainGrid->globalCellArray()[m_indexToStartOfCells + gridLocalCellIndex];
 }
 
-// -----------------------------------------------------------------
+// ---------------------------------------------------------------
 void RigGridBase::initSubGridParentPointer() {
 
+  // -------------------------------------------------------------
   RigGridBase* grid = this;
 
   size_t cellIdx;
@@ -100,36 +94,39 @@ void RigGridBase::initSubGridParentPointer() {
   }
 }
 
-// -----------------------------------------------------------------
+// ---------------------------------------------------------------
 /// Find the cell index to the maingrid cell containing this cell,
 /// and store it as m_mainGridCellIndex in each cell.
 ///
-// -----------------------------------------------------------------
+// ---------------------------------------------------------------
 void RigGridBase::initSubCellsMainGridCellIndex() {
 
+  // -------------------------------------------------------------
   RigGridBase* grid = this;
-  if (grid->isMainGrid())
-  {
+  if (grid->isMainGrid()) {
     size_t cellIdx;
-    for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx)
-    {
+
+    for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx) {
       RigCell& cell = grid->cell(cellIdx);
       cell.setMainGridCellIndex(cellIdx);
     }
-  }
-  else
-  {
+
+  } else {
+
     size_t cellIdx;
-    for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx)
-    {
+    for (cellIdx = 0; cellIdx < grid->cellCount(); ++cellIdx) {
+
+      // -----------------------------------------------------------
       RigLocalGrid* localGrid = static_cast<RigLocalGrid*>(grid);
       RigGridBase* parentGrid = localGrid->parentGrid();
 
+      // -----------------------------------------------------------
       RigCell& cell = localGrid->cell(cellIdx);
       size_t parentCellIndex = cell.parentCellIndex();
 
-      while (!parentGrid->isMainGrid())
-      {
+      while (!parentGrid->isMainGrid()) {
+
+        // ---------------------------------------------------------
         const RigCell& parentCell = parentGrid->cell(parentCellIndex);
         parentCellIndex = parentCell.parentCellIndex();
 
@@ -137,17 +134,19 @@ void RigGridBase::initSubCellsMainGridCellIndex() {
         parentGrid = localGrid->parentGrid();
       }
 
+      // -----------------------------------------------------------
       cell.setMainGridCellIndex(parentCellIndex);
     }
   }
 }
 
 
-//--------------------------------------------------------------------------------------------------
-/// For main grid, this will work with reservoirCellIndices retrieving the correct lgr cells as well.
-/// the cell() call retrieves correct cell, because main grid has offset of 0, and we access the global
-/// cell array in main grid.
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
+// For main grid, this will work with reservoirCellIndices
+// retrieving the correct lgr cells as well. the cell() call
+// retrieves correct cell, because main grid has offset of 0,
+// and we access the global cell array in main grid.
+// ---------------------------------------------------------------
 void RigGridBase::cellCornerVertices(size_t cellIndex,
                                      cvf::Vec3d vertices[8]) const {
 
@@ -163,47 +162,60 @@ void RigGridBase::cellCornerVertices(size_t cellIndex,
   vertices[7].set(m_mainGrid->nodes()[indices[7]]);
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-size_t RigGridBase::cellIndexFromIJK(size_t i, size_t j, size_t k) const
-{
-  CVF_TIGHT_ASSERT(i != cvf::UNDEFINED_SIZE_T && j != cvf::UNDEFINED_SIZE_T && k != cvf::UNDEFINED_SIZE_T );
-  CVF_TIGHT_ASSERT(i < m_gridPointDimensions.x() && j < m_gridPointDimensions.y() && k < m_gridPointDimensions.z()  );
+// ---------------------------------------------------------------
+size_t
+RigGridBase::cellIndexFromIJK(size_t i,
+                              size_t j,
+                              size_t k) const {
 
-  size_t ci = i + j*(m_gridPointDimensions.x() - 1) + k*((m_gridPointDimensions.x() - 1)*(m_gridPointDimensions.y() - 1));
+  // RIHack::print_ri_hck(__func__, __FILE__);
+  // -------------------------------------------------------------
+  CVF_TIGHT_ASSERT(i != cvf::UNDEFINED_SIZE_T
+                       && j != cvf::UNDEFINED_SIZE_T
+                       && k != cvf::UNDEFINED_SIZE_T );
+
+  // -------------------------------------------------------------
+//  CVF_TIGHT_ASSERT(i < m_gridPointDimensions.x()
+//                       && j < m_gridPointDimensions.y()
+//                       && k < m_gridPointDimensions.z());
+
+  // -------------------------------------------------------------
+  size_t ci = i
+      + j*(m_gridPointDimensions.x() - 1)
+      + k*((m_gridPointDimensions.x() - 1)*(m_gridPointDimensions.y() - 1));
+
   return ci;
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------
 void RigGridBase::cellMinMaxCordinates(size_t cellIndex,
                                        cvf::Vec3d* minCoordinate,
                                        cvf::Vec3d* maxCoordinate) const {
 
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-bool RigGridBase::ijkFromCellIndex(size_t cellIndex, size_t* i, size_t* j, size_t* k) const
-{
+// ---------------------------------------------------------------
+bool RigGridBase::ijkFromCellIndex(size_t cellIndex,
+                                   size_t* i,
+                                   size_t* j,
+                                   size_t* k) const {
+
+  // -------------------------------------------------------------
   CVF_TIGHT_ASSERT(cellIndex < cellCount());
 
+  // -------------------------------------------------------------
   size_t index = cellIndex;
 
-  if (cellCountI() <= 0 || cellCountJ() <= 0)
-  {
+  if (cellCountI() <= 0 || cellCountJ() <= 0) {
     return false;
   }
 
+  // -------------------------------------------------------------
   *k      = index/(cellCountI()*cellCountJ());
   index   -= (*k)*(cellCountI()*cellCountJ());
   *j      = index/cellCountI();
   index   -= (*j)*cellCountI();
   *i      = index;
-
 
   return true;
 }
