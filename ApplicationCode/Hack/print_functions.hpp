@@ -12,6 +12,8 @@
 #include <iomanip>
 #include <string>
 #include <algorithm>
+#include <QtCore/QString>
+#include <QtCore/QStringList>
 
 // ---------------------------------------------------------------
 using std::remove;
@@ -65,14 +67,14 @@ inline void set_str_frmt(ostringstream &dbg_msg) {
 /*!
  * \brief Prints debug messages template
  * @param debug_msg
- * @param dbg_loc
+ * @param dbg_locrig
  * Use:
   print_grd_dbg(true, true, dbg_loc, dbg_msg)
  *
  */
 inline void print_dbg_template(bool dbg_mode, bool append,
-                               string dbg_file, string dbg_loc,
-                               string dbg_msg) {
+                               const string dbg_file, string dbg_loc,
+                               const string dbg_msg) {
 
   // -------------------------------------------------------------
   fstream fs;
@@ -86,11 +88,15 @@ inline void print_dbg_template(bool dbg_mode, bool append,
     // -----------------------------------------------------------
     string ts = get_time_stamp();
     dbg_loc = "[" + ts + "] (" + dbg_loc + ") => ";
-    dbg_msg = "[" + dbg_msg + "]\n";
+
+    // -----------------------------------------------------------
+    QStringList qt_str;
+    qt_str << QString::fromStdString(dbg_msg).split("/");
+    string dbg_msg_fxd = "[" + qt_str.last().toStdString() + "]\n";
 
     // -----------------------------------------------------------
     fs.write(dbg_loc.c_str(), dbg_loc.size());
-    fs.write(dbg_msg.c_str(), dbg_msg.size());
+    fs.write(dbg_msg_fxd.c_str(), dbg_msg_fxd.size());
     fs.close();
   }
 };
