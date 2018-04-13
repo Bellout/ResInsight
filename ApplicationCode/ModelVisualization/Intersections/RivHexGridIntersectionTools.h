@@ -47,14 +47,17 @@ class RivIntersectionHexGridInterface : public cvf::Object
   virtual cvf::BoundingBox boundingBox() const = 0;
 
   // -------------------------------------------------------------
-  virtual void findIntersectingCells(const cvf::BoundingBox& intersectingBB,
-                                     std::vector<size_t>* intersectedCells) const = 0;
+  virtual void findIntersectingCells(
+      const cvf::BoundingBox& intersectingBB,
+      std::vector<size_t>* intersectedCells) const = 0;
 
   // -------------------------------------------------------------
   virtual bool useCell(size_t cellIndex) const = 0;
 
   // -------------------------------------------------------------
-  virtual void cellCornerVertices(size_t cellIndex, cvf::Vec3d cellCorners[8]) const = 0;
+  virtual void cellCornerVertices(size_t cellIndex,
+                                  cvf::Vec3d cellCorners[8]) const = 0;
+
   virtual void cellCornerIndices(size_t cellIndex, size_t cornerIndices[8]) const = 0;
     virtual const RigFault* findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex, 
                                                               cvf::StructGridInterface::FaceType face) const = 0;
