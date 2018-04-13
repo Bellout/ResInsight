@@ -17,8 +17,10 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 
+// ---------------------------------------------------------------
 #pragma once
 
+// ---------------------------------------------------------------
 #include "cvfBase.h"
 #include "cvfObject.h"
 #include "cvfColor4.h"
@@ -26,19 +28,22 @@
 #include "cvfArray.h"
 #include "cvfMatrix4.h"
 
+// ---------------------------------------------------------------
 #include "cafPdmPointer.h"
 
+// ---------------------------------------------------------------
 #include <list>
 
-namespace cvf
-{
-    class ModelBasicList;
-    class Transform;
-    class Part;
-    class ScalarMapper;
-    class DrawableGeo;
+// ---------------------------------------------------------------
+namespace cvf {
+class ModelBasicList;
+class Transform;
+class Part;
+class ScalarMapper;
+class DrawableGeo;
 }
 
+// ---------------------------------------------------------------
 class RigFemPart;
 class RigFemResultAddress;
 class RigGeoMechCaseData;
@@ -54,91 +59,122 @@ class RivIntersectionHexGridInterface;
 class RivIntersectionVertexWeights;
 class RivPipeGeometryGenerator;
 
-//==================================================================================================
-///
-///
-//==================================================================================================
-
+// ===============================================================
 class RivIntersectionPartMgr : public cvf::Object
 {
-public:
-    explicit RivIntersectionPartMgr(RimIntersection* rimCrossSection, bool isFlattened = false);
+ public:
+  // -------------------------------------------------------------
+  explicit RivIntersectionPartMgr(RimIntersection* rimCrossSection,
+                                  bool isFlattened = false);
 
-    void applySingleColorEffect();
-    void updateCellResultColor(size_t timeStepIndex, 
-                               const cvf::ScalarMapper* scalarColorMapper, 
-                               const RivTernaryScalarMapper* ternaryColorMapper);
+  // -------------------------------------------------------------
+  void applySingleColorEffect();
+  void
+  updateCellResultColor(size_t timeStepIndex,
+                        const cvf::ScalarMapper* scalarColorMapper,
+                        const RivTernaryScalarMapper* ternaryColorMapper);
 
+  // -------------------------------------------------------------
+  void
+  appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model,
+                                       cvf::Transform* scaleTransform);
 
-    void appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
-    void appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
-    void appendPolylinePartsToModel(Rim3dView& view, cvf::ModelBasicList* model, cvf::Transform* scaleTransform);
+  // -------------------------------------------------------------
+  void
+  appendMeshLinePartsToModel(cvf::ModelBasicList* model,
+                             cvf::Transform* scaleTransform);
 
-    const RimIntersection* intersection() const;
+  // -------------------------------------------------------------
+  void
+  appendPolylinePartsToModel(Rim3dView& view,
+                             cvf::ModelBasicList* model,
+                             cvf::Transform* scaleTransform);
 
-    cvf::Mat4d unflattenTransformMatrix(const cvf::Vec3d& intersectionPointFlat);
+  // -------------------------------------------------------------
+  const RimIntersection* intersection() const;
 
-public:
-    static void calculateEclipseTextureCoordinates(cvf::Vec2fArray* textureCoords, 
-                                                   const std::vector<size_t>& triangleToCellIdxMap, 
-                                                   const RigResultAccessor* resultAccessor, 
-                                                   const cvf::ScalarMapper* mapper);
+  // -------------------------------------------------------------
+  cvf::Mat4d unflattenTransformMatrix(
+      const cvf::Vec3d& intersectionPointFlat);
 
-    static void calculateNodeOrElementNodeBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords, 
-                                                                    const std::vector<RivIntersectionVertexWeights> &vertexWeights,
-                                                                    const std::vector<float> &resultValues,
-                                                                    bool isElementNodalResult,
-                                                                    const RigFemPart* femPart,
-                                                                    const cvf::ScalarMapper* mapper);
+ public:
+  // -------------------------------------------------------------
+  static void
+  calculateEclipseTextureCoordinates(
+      cvf::Vec2fArray* textureCoords,
+      const std::vector<size_t>& triangleToCellIdxMap,
+      const RigResultAccessor* resultAccessor,
+      const cvf::ScalarMapper* mapper);
 
-    static void calculateElementBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords,
-                                                          const std::vector<float> &resultValues,
-                                                          const std::vector<size_t>& triangleToCellIdx,
-                                                          const cvf::ScalarMapper* mapper);
+  // -------------------------------------------------------------
+  static void calculateNodeOrElementNodeBasedGeoMechTextureCoords(
+      cvf::Vec2fArray* textureCoords,
+      const std::vector<RivIntersectionVertexWeights> &vertexWeights,
+      const std::vector<float> &resultValues,
+      bool isElementNodalResult,
+      const RigFemPart* femPart,
+      const cvf::ScalarMapper* mapper);
 
-    static void calculateGeoMechTensorXfTextureCoords(cvf::Vec2fArray* textureCoords, 
-                                                      const cvf::Vec3fArray* triangelVertices,
-                                                      const std::vector<RivIntersectionVertexWeights> &vertexWeights,
-                                                      RigGeoMechCaseData* caseData,
-                                                      const RigFemResultAddress& resVarAddress,
-                                                      int   timeStepIdx,
-                                                      const cvf::ScalarMapper* mapper);
+  // -------------------------------------------------------------
+  static void calculateElementBasedGeoMechTextureCoords(
+      cvf::Vec2fArray* textureCoords,
+      const std::vector<float> &resultValues,
+      const std::vector<size_t>& triangleToCellIdx,
+      const cvf::ScalarMapper* mapper);
 
-    static void calculatePlaneAngleTextureCoords(cvf::Vec2fArray* textureCoords, 
-                                                 const cvf::Vec3fArray* triangelVertices, 
-                                                 const RigFemResultAddress& resVarAddress, 
-                                                 const cvf::ScalarMapper* mapper);
-private:
-    void generatePartGeometry();
-    void createPolyLineParts(bool useBufferObjects);
-    void createExtrusionDirParts(bool useBufferObjects);
+  // -------------------------------------------------------------
+  static void calculateGeoMechTensorXfTextureCoords(
+      cvf::Vec2fArray* textureCoords,
+      const cvf::Vec3fArray* triangelVertices,
+      const std::vector<RivIntersectionVertexWeights> &vertexWeights,
+      RigGeoMechCaseData* caseData,
+      const RigFemResultAddress& resVarAddress,
+      int   timeStepIdx,
+      const cvf::ScalarMapper* mapper);
 
-    cvf::ref<RivIntersectionHexGridInterface> createHexGridInterface();
+  // -------------------------------------------------------------
+  static void calculatePlaneAngleTextureCoords(
+      cvf::Vec2fArray* textureCoords,
+      const cvf::Vec3fArray* triangelVertices,
+      const RigFemResultAddress& resVarAddress,
+      const cvf::ScalarMapper* mapper);
 
-private:
-    caf::PdmPointer<RimIntersection> m_rimCrossSection;
+ private:
+  // -------------------------------------------------------------
+  void generatePartGeometry();
+  void createPolyLineParts(bool useBufferObjects);
+  void createExtrusionDirParts(bool useBufferObjects);
 
-    cvf::ref<RivIntersectionGeometryGenerator>   m_crossSectionGenerator;
-    cvf::ref<cvf::Part>         m_crossSectionFaces;
-    cvf::ref<cvf::Part>         m_crossSectionGridLines;
-    cvf::ref<cvf::Part>         m_crossSectionFaultGridLines;
-    
-    cvf::ref<cvf::Vec2fArray>   m_crossSectionFacesTextureCoords;
+  cvf::ref<RivIntersectionHexGridInterface> createHexGridInterface();
 
-    cvf::ref<cvf::Part>         m_highlightLineAlongPolyline;
-    cvf::ref<cvf::Part>         m_highlightPointsForPolyline;
+ private:
+  // -------------------------------------------------------------
+  caf::PdmPointer<RimIntersection> m_rimCrossSection;
 
-    cvf::ref<cvf::Part>         m_highlightLineAlongExtrusionDir;
-    cvf::ref<cvf::Part>         m_highlightPointsForExtrusionDir;
+  cvf::ref<RivIntersectionGeometryGenerator> m_crossSectionGenerator;
 
-    struct RivPipeBranchData
-    {
-        cvf::ref<RivPipeGeometryGenerator>  m_pipeGeomGenerator;
-        cvf::ref<cvf::Part>                 m_surfacePart;
-        cvf::ref<cvf::Part>                 m_centerLinePart;
-    };
-    std::list<RivPipeBranchData> m_wellBranches;
+  cvf::ref<cvf::Part> m_crossSectionFaces;
+  cvf::ref<cvf::Part> m_crossSectionGridLines;
+  cvf::ref<cvf::Part> m_crossSectionFaultGridLines;
 
-    bool                        m_isFlattened;
+  cvf::ref<cvf::Vec2fArray> m_crossSectionFacesTextureCoords;
+
+  cvf::ref<cvf::Part> m_highlightLineAlongPolyline;
+  cvf::ref<cvf::Part> m_highlightPointsForPolyline;
+
+  cvf::ref<cvf::Part> m_highlightLineAlongExtrusionDir;
+  cvf::ref<cvf::Part> m_highlightPointsForExtrusionDir;
+
+  // -------------------------------------------------------------
+  struct RivPipeBranchData {
+    cvf::ref<RivPipeGeometryGenerator> m_pipeGeomGenerator;
+    cvf::ref<cvf::Part> m_surfacePart;
+    cvf::ref<cvf::Part> m_centerLinePart;
+  };
+
+  std::list<RivPipeBranchData> m_wellBranches;
+
+  // -------------------------------------------------------------
+  bool                        m_isFlattened;
 };
 

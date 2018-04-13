@@ -23,7 +23,7 @@
 #include "RigFemPart.h"
 #include "RigMainGrid.h"
 
-// ---------------------------------------------------------------
+// ===============================================================
 RivEclipseIntersectionGrid::
 RivEclipseIntersectionGrid(const RigMainGrid * mainGrid,
                            const RigActiveCellInfo* activeCellInfo,

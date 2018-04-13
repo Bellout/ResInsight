@@ -75,13 +75,14 @@
 #include "cvfRenderStatePoint.h"
 #include "cvfStructGridGeometryGenerator.h"
 #include "cvfTransform.h"
+#include "cvfColor3.h"
 
 // ---------------------------------------------------------------
 #include <functional>
 #include "RiaApplication.h"
 #include "RiaPreferences.h"
 
-// ---------------------------------------------------------------
+// ===============================================================
 RivIntersectionPartMgr::
 RivIntersectionPartMgr(RimIntersection* rimCrossSection,
                        bool isFlattened)
@@ -94,32 +95,66 @@ RivIntersectionPartMgr(RimIntersection* rimCrossSection,
   // -------------------------------------------------------------
   m_crossSectionFacesTextureCoords = new cvf::Vec2fArray;
 
-    cvf::Vec3d flattenedPolylineStartPoint;
+  // -------------------------------------------------------------
+  // Define starting point + polylines
+  cvf::Vec3d flattenedPolylineStartPoint;
+  std::vector< std::vector <cvf::Vec3d> > polyLines =
+      m_rimCrossSection->polyLines(&flattenedPolylineStartPoint);
 
-    std::vector< std::vector <cvf::Vec3d> > polyLines = m_rimCrossSection->polyLines(&flattenedPolylineStartPoint);
-    if (polyLines.size() > 0)
-    {
+  // -------------------------------------------------------------
+  RIHack::print_ri_hck_vec(__func__, __FILE__,
+                           "flattenedPolylineStartPoint: ",
+                           flattenedPolylineStartPoint);
+
+  // -------------------------------------------------------------
+  string dbg_str_ii, dbg_str_jj;
+  for(size_t ii=0; ii < polyLines.size(); ++ii) {
+    for (size_t jj = 0; jj < polyLines[ii].size(); ++jj) {
+      RIHack::print_ri_hck_vec("", "",
+                               "ii:" + std::to_string(ii)
+                                   + " jj:" + std::to_string(jj)
+                                   + " ",
+                               polyLines[ii][jj]);
+    }
+  }
+
+  // -------------------------------------------------------------
+  if (polyLines.size() > 0) {
+
+    // -----------------------------------------------------------
     cvf::Vec3d direction = m_rimCrossSection->extrusionDirection();
     cvf::ref<RivIntersectionHexGridInterface> hexGrid = createHexGridInterface();
-        m_crossSectionGenerator = new RivIntersectionGeometryGenerator(m_rimCrossSection, 
+
+    // -----------------------------------------------------------
+    m_crossSectionGenerator =
+        new RivIntersectionGeometryGenerator(m_rimCrossSection,
                                              polyLines,
                                              direction,
                                              hexGrid.p(),
                                              m_isFlattened,
-                                                                       flattenedPolylineStartPoint);
+                                             flattenedPolylineStartPoint);
+
+
   }
+
+  // No use here
+  // m_crossSectionGenerator.p()->crossSection()->enableExtraDebugText(true);
+  // m_crossSectionGenerator.p()->crossSection()->showExtraDebugText();
+
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::applySingleColorEffect() {
 
   // -------------------------------------------------------------
   if (m_crossSectionGenerator.isNull()) return;
 
   // -------------------------------------------------------------
-  caf::SurfaceEffectGenerator geometryEffgen(cvf::Color3f::OLIVE, caf::PO_1);
+  caf::SurfaceEffectGenerator geometryEffgen(cvf::Color3f::OLIVE,
+                                             caf::PO_1);
 
-  cvf::ref<cvf::Effect> geometryOnlyEffect = geometryEffgen.generateCachedEffect();
+  cvf::ref<cvf::Effect> geometryOnlyEffect =
+      geometryEffgen.generateCachedEffect();
 
   // -------------------------------------------------------------
   if (m_crossSectionFaces.notNull()) {
@@ -128,28 +163,28 @@ void RivIntersectionPartMgr::applySingleColorEffect() {
 
   // -------------------------------------------------------------
   // Update mesh colors as well, in case of change
-    RiaPreferences* prefs = RiaApplication::instance()->preferences();
+  RiaPreferences* prefs = RiaApplication::instance()->preferences();
 
-    if (m_crossSectionGridLines.notNull())
-    {
-  cvf::ref<cvf::Effect> eff;
-        caf::MeshEffectGenerator CrossSectionEffGen(prefs->defaultGridLineColors());
-  eff = CrossSectionEffGen.generateCachedEffect();
+  if (m_crossSectionGridLines.notNull())
+  {
+    cvf::ref<cvf::Effect> eff;
+    caf::MeshEffectGenerator CrossSectionEffGen(prefs->defaultGridLineColors());
+    eff = CrossSectionEffGen.generateCachedEffect();
 
     m_crossSectionGridLines->setEffect(eff.p());
   }
 
-    if (m_crossSectionFaultGridLines.notNull())
-    {
-        cvf::ref<cvf::Effect> eff;
-        caf::MeshEffectGenerator CrossSectionEffGen(prefs->defaultFaultGridLineColors());
-        eff = CrossSectionEffGen.generateCachedEffect();
+  if (m_crossSectionFaultGridLines.notNull())
+  {
+    cvf::ref<cvf::Effect> eff;
+    caf::MeshEffectGenerator CrossSectionEffGen(prefs->defaultFaultGridLineColors());
+    eff = CrossSectionEffGen.generateCachedEffect();
 
-        m_crossSectionFaultGridLines->setEffect(eff.p());
-    }
+    m_crossSectionFaultGridLines->setEffect(eff.p());
+  }
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::
 updateCellResultColor(size_t timeStepIndex,
                       const cvf::ScalarMapper* scalarColorMapper,
@@ -349,7 +384,7 @@ updateCellResultColor(size_t timeStepIndex,
   }
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::
 calculateNodeOrElementNodeBasedGeoMechTextureCoords(
     cvf::Vec2fArray* textureCoords,
@@ -410,7 +445,7 @@ calculateNodeOrElementNodeBasedGeoMechTextureCoords(
   }
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::
 calculateElementBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords,
                                           const std::vector<float> &resultValues,
@@ -454,7 +489,7 @@ calculateElementBasedGeoMechTextureCoords(cvf::Vec2fArray* textureCoords,
   }
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::
 calculateGeoMechTensorXfTextureCoords(cvf::Vec2fArray* textureCoords,
                                       const cvf::Vec3fArray* triangelVertices,
@@ -510,7 +545,7 @@ calculateGeoMechTensorXfTextureCoords(cvf::Vec2fArray* textureCoords,
 
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::
 calculatePlaneAngleTextureCoords(cvf::Vec2fArray* textureCoords,
                                  const cvf::Vec3fArray* triangelVertices,
@@ -565,7 +600,7 @@ calculatePlaneAngleTextureCoords(cvf::Vec2fArray* textureCoords,
 
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 // Calculates the texture coordinates in a "nearly" one dimensional
 // texture. Undefined values are coded with a y-texturecoordinate
 // value of 1.0 instead of the normal 0.5
@@ -613,7 +648,7 @@ calculateEclipseTextureCoordinates(cvf::Vec2fArray* textureCoords,
   }
 }
 
-// ---------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::generatePartGeometry() {
 
   // -------------------------------------------------------------
@@ -625,6 +660,7 @@ void RivIntersectionPartMgr::generatePartGeometry() {
   // -------------------------------------------------------------
   // Surface geometry
   {
+    // -----------------------------------------------------------
     cvf::ref<cvf::DrawableGeo>
         geo = m_crossSectionGenerator->generateSurface();
 
@@ -651,7 +687,7 @@ void RivIntersectionPartMgr::generatePartGeometry() {
 
       // ---------------------------------------------------------
       part->updateBoundingBox();
-            part->setEnableMask(intersectionCellFaceBit);
+      part->setEnableMask(intersectionCellFaceBit);
       part->setPriority(RivPartPriority::PartType::Intersection);
 
       // ---------------------------------------------------------
@@ -659,13 +695,18 @@ void RivIntersectionPartMgr::generatePartGeometry() {
     }
   }
 
-    // Cell Mesh geometry
-    {
-        cvf::ref<cvf::DrawableGeo> geoMesh = m_crossSectionGenerator->createMeshDrawable();
-        if (geoMesh.notNull())
-        {
-            if (useBufferObjects)
+  // -------------------------------------------------------------
+  // Cell Mesh geometry
   {
+    // -----------------------------------------------------------
+    cvf::ref<cvf::DrawableGeo> geoMesh =
+        m_crossSectionGenerator->createMeshDrawable();
+
+    // -----------------------------------------------------------
+    if (geoMesh.notNull()) {
+
+      // ---------------------------------------------------------
+      if (useBufferObjects) {
         geoMesh->setRenderMode(cvf::DrawableGeo::BUFFER_OBJECT);
       }
 
@@ -676,7 +717,7 @@ void RivIntersectionPartMgr::generatePartGeometry() {
 
       // ---------------------------------------------------------
       part->updateBoundingBox();
-            part->setEnableMask(intersectionCellMeshBit);
+      part->setEnableMask(intersectionCellMeshBit);
       part->setPriority(RivPartPriority::PartType::MeshLines);
 
       // ---------------------------------------------------------
@@ -684,27 +725,36 @@ void RivIntersectionPartMgr::generatePartGeometry() {
     }
   }
 
-    // Fault Mesh geometry
-    {
-        cvf::ref<cvf::DrawableGeo> geoMesh = m_crossSectionGenerator->createFaultMeshDrawable();
-        if (geoMesh.notNull())
-        {
-            if (useBufferObjects)
-            {
-                geoMesh->setRenderMode(cvf::DrawableGeo::BUFFER_OBJECT);
-            }
+  // Fault Mesh geometry
+  {
+    // -----------------------------------------------------------
+    cvf::ref<cvf::DrawableGeo> geoMesh =
+        m_crossSectionGenerator->createFaultMeshDrawable();
 
-            cvf::ref<cvf::Part> part = new cvf::Part;
-            part->setName("Cross Section faultmesh");
-            part->setDrawable(geoMesh.p());
+    // -----------------------------------------------------------
+    if (geoMesh.notNull()) {
 
-            part->updateBoundingBox();
-            part->setEnableMask(intersectionFaultMeshBit);
-            part->setPriority(RivPartPriority::PartType::FaultMeshLines);
+      // ---------------------------------------------------------
+      if (useBufferObjects) {
+        geoMesh->setRenderMode(cvf::DrawableGeo::BUFFER_OBJECT);
+      }
 
-            m_crossSectionFaultGridLines = part;
-        }
+      // ---------------------------------------------------------
+      cvf::ref<cvf::Part> part = new cvf::Part;
+      part->setName("Cross Section faultmesh");
+      part->setDrawable(geoMesh.p());
+
+      // ---------------------------------------------------------
+      part->updateBoundingBox();
+      part->setEnableMask(intersectionFaultMeshBit);
+      part->setPriority(RivPartPriority::PartType::FaultMeshLines);
+
+      // ---------------------------------------------------------
+      m_crossSectionFaultGridLines = part;
     }
+  }
+
+  // -------------------------------------------------------------
   createPolyLineParts(useBufferObjects);
 
   // -------------------------------------------------------------
@@ -715,91 +765,114 @@ void RivIntersectionPartMgr::generatePartGeometry() {
 }
 
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void RivIntersectionPartMgr::createPolyLineParts(bool useBufferObjects)
-{
-  // Highlight line
+// ===============================================================
+void
+RivIntersectionPartMgr::createPolyLineParts(bool useBufferObjects) {
 
+  // ---------------------------------------------------------------
+  // Highlight line
   m_highlightLineAlongPolyline = nullptr;
   m_highlightPointsForPolyline = nullptr;
 
-  if (m_rimCrossSection->type == RimIntersection::CS_POLYLINE || m_rimCrossSection->type == RimIntersection::CS_AZIMUTHLINE)
-  {
+  // ---------------------------------------------------------------
+  if (m_rimCrossSection->type == RimIntersection::CS_POLYLINE
+      || m_rimCrossSection->type == RimIntersection::CS_AZIMUTHLINE) {
+
     {
-      cvf::ref<cvf::DrawableGeo> polylineGeo = m_crossSectionGenerator->createLineAlongPolylineDrawable();
-      if (polylineGeo.notNull())
-      {
-        if (useBufferObjects)
-        {
+      cvf::ref<cvf::DrawableGeo> polylineGeo =
+          m_crossSectionGenerator->createLineAlongPolylineDrawable();
+
+      if (polylineGeo.notNull()) {
+
+        // ---------------------------------------------------------
+        if (useBufferObjects) {
           polylineGeo->setRenderMode(cvf::DrawableGeo::BUFFER_OBJECT);
         }
 
+        // ---------------------------------------------------------
         cvf::ref<cvf::Part> part = new cvf::Part;
         part->setName("Cross Section Polyline");
         part->setDrawable(polylineGeo.p());
 
+        // ---------------------------------------------------------
         part->updateBoundingBox();
         part->setPriority(RivPartPriority::PartType::Highlight);
 
+        // ---------------------------------------------------------
         // Always show this part, also when mesh is turned off
+        //MBHACK
+        part->setEnableMask(meshFaultBit);
         //part->setEnableMask(meshFaultBit);
 
+        // ---------------------------------------------------------
         cvf::ref<cvf::Effect> eff;
         caf::MeshEffectGenerator lineEffGen(cvf::Color3::MAGENTA);
         eff = lineEffGen.generateUnCachedEffect();
 
+        // ---------------------------------------------------------
         cvf::ref<cvf::RenderStateDepth> depth = new cvf::RenderStateDepth;
         depth->enableDepthTest(false);
         eff->setRenderState(depth.p());
 
+        // ---------------------------------------------------------
         part->setEffect(eff.p());
 
         m_highlightLineAlongPolyline = part;
       }
     }
 
-    cvf::ref<cvf::DrawableGeo> polylinePointsGeo = m_crossSectionGenerator->createPointsFromPolylineDrawable();
-    if (polylinePointsGeo.notNull())
-    {
-      if (useBufferObjects)
-      {
+    // -------------------------------------------------------------
+    cvf::ref<cvf::DrawableGeo> polylinePointsGeo =
+        m_crossSectionGenerator->createPointsFromPolylineDrawable();
+
+    // -------------------------------------------------------------
+    if (polylinePointsGeo.notNull()) {
+
+      if (useBufferObjects) {
         polylinePointsGeo->setRenderMode(cvf::DrawableGeo::BUFFER_OBJECT);
       }
 
+      // -----------------------------------------------------------
       cvf::ref<cvf::Part> part = new cvf::Part;
       part->setName("Cross Section Polyline");
       part->setDrawable(polylinePointsGeo.p());
 
+      // -----------------------------------------------------------
       part->updateBoundingBox();
       part->setPriority(RivPartPriority::PartType::Highlight);
 
+      // -----------------------------------------------------------
       // Always show this part, also when mesh is turned off
-      //part->setEnableMask(meshFaultBit);
+      //MBHACK
+      part->setEnableMask(meshFaultBit);
+      // part->setEnableMask(meshFaultBit);
 
       cvf::ref<cvf::Effect> eff;
       caf::MeshEffectGenerator lineEffGen(cvf::Color3::MAGENTA);
       eff = lineEffGen.generateUnCachedEffect();
 
+      // ------------------------------------------------------------
       cvf::ref<cvf::RenderStateDepth> depth = new cvf::RenderStateDepth;
       depth->enableDepthTest(false);
       eff->setRenderState(depth.p());
 
-      cvf::ref<cvf::RenderStatePoint> pointRendState = new  cvf::RenderStatePoint(cvf::RenderStatePoint::FIXED_SIZE);
+      // ------------------------------------------------------------
+      cvf::ref<cvf::RenderStatePoint> pointRendState =
+          new cvf::RenderStatePoint(cvf::RenderStatePoint::FIXED_SIZE);
+
       pointRendState->setSize(5.0f);
       eff->setRenderState(pointRendState.p());
 
+      // -------------------------------------------------------------
       part->setEffect(eff.p());
 
+      // -------------------------------------------------------------
       m_highlightPointsForPolyline = part;
     }
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::createExtrusionDirParts(bool useBufferObjects)
 {
   m_highlightLineAlongExtrusionDir = nullptr;
@@ -808,7 +881,7 @@ void RivIntersectionPartMgr::createExtrusionDirParts(bool useBufferObjects)
   if (m_rimCrossSection->direction() == RimIntersection::CS_TWO_POINTS)
   {
     {
-            cvf::ref<cvf::DrawableGeo> polylineGeo = m_crossSectionGenerator->createLineAlongExtrusionLineDrawable(m_rimCrossSection->polyLinesForExtrusionDirection());
+      cvf::ref<cvf::DrawableGeo> polylineGeo = m_crossSectionGenerator->createLineAlongExtrusionLineDrawable(m_rimCrossSection->polyLinesForExtrusionDirection());
       if (polylineGeo.notNull())
       {
         if (useBufferObjects)
@@ -840,7 +913,7 @@ void RivIntersectionPartMgr::createExtrusionDirParts(bool useBufferObjects)
       }
     }
 
-        cvf::ref<cvf::DrawableGeo> polylinePointsGeo = m_crossSectionGenerator->createPointsFromExtrusionLineDrawable(m_rimCrossSection->polyLinesForExtrusionDirection());
+    cvf::ref<cvf::DrawableGeo> polylinePointsGeo = m_crossSectionGenerator->createPointsFromExtrusionLineDrawable(m_rimCrossSection->polyLinesForExtrusionDirection());
     if (polylinePointsGeo.notNull())
     {
       if (useBufferObjects)
@@ -877,9 +950,7 @@ void RivIntersectionPartMgr::createExtrusionDirParts(bool useBufferObjects)
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 cvf::ref<cvf::Part> createStdSurfacePart(cvf::DrawableGeo* geometry,
                                          const cvf::Color3f& color,
                                          cvf::String name,
@@ -901,9 +972,7 @@ cvf::ref<cvf::Part> createStdSurfacePart(cvf::DrawableGeo* geometry,
   return part;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 cvf::ref<cvf::Part> createStdLinePart(cvf::DrawableGeo* geometry,
                                       const cvf::Color3f& color,
                                       cvf::String name)
@@ -924,9 +993,7 @@ cvf::ref<cvf::Part> createStdLinePart(cvf::DrawableGeo* geometry,
   return part;
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::appendNativeCrossSectionFacesToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform)
 {
   if (m_crossSectionFaces.isNull())
@@ -942,9 +1009,7 @@ void RivIntersectionPartMgr::appendNativeCrossSectionFacesToModel(cvf::ModelBasi
 }
 
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::appendMeshLinePartsToModel(cvf::ModelBasicList* model, cvf::Transform* scaleTransform)
 {
   if (m_crossSectionGridLines.isNull())
@@ -958,22 +1023,20 @@ void RivIntersectionPartMgr::appendMeshLinePartsToModel(cvf::ModelBasicList* mod
     model->addPart(m_crossSectionGridLines.p());
   }
 
-    if (m_crossSectionFaultGridLines.notNull())
-    {
-        m_crossSectionFaultGridLines->setTransform(scaleTransform);
-        model->addPart(m_crossSectionFaultGridLines.p());
-    }
+  if (m_crossSectionFaultGridLines.notNull())
+  {
+    m_crossSectionFaultGridLines->setTransform(scaleTransform);
+    model->addPart(m_crossSectionFaultGridLines.p());
+  }
 }
 
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 void RivIntersectionPartMgr::appendPolylinePartsToModel(Rim3dView &view, cvf::ModelBasicList* model, cvf::Transform* scaleTransform)
 {
-    Rim2dIntersectionView* curr2dView = dynamic_cast<Rim2dIntersectionView*>(&view);
+  Rim2dIntersectionView* curr2dView = dynamic_cast<Rim2dIntersectionView*>(&view);
 
-    if (m_rimCrossSection->inputPolyLineFromViewerEnabled || (curr2dView && curr2dView->showDefiningPoints()))
+  if (m_rimCrossSection->inputPolyLineFromViewerEnabled || (curr2dView && curr2dView->showDefiningPoints()))
   {
     if (m_highlightLineAlongPolyline.notNull())
     {
@@ -1003,7 +1066,7 @@ void RivIntersectionPartMgr::appendPolylinePartsToModel(Rim3dView &view, cvf::Mo
     }
   }
 
-    if (m_rimCrossSection->inputTwoAzimuthPointsFromViewerEnabled || (curr2dView && curr2dView->showDefiningPoints()))
+  if (m_rimCrossSection->inputTwoAzimuthPointsFromViewerEnabled || (curr2dView && curr2dView->showDefiningPoints()))
   {
     if (m_highlightLineAlongPolyline.notNull())
     {
@@ -1019,25 +1082,19 @@ void RivIntersectionPartMgr::appendPolylinePartsToModel(Rim3dView &view, cvf::Mo
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 const RimIntersection* RivIntersectionPartMgr::intersection() const
 {
   return m_rimCrossSection.p();
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 cvf::Mat4d RivIntersectionPartMgr::unflattenTransformMatrix(const cvf::Vec3d& intersectionPointFlat)
 {
-    return m_crossSectionGenerator->unflattenTransformMatrix(intersectionPointFlat);
+  return m_crossSectionGenerator->unflattenTransformMatrix(intersectionPointFlat);
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+// ===============================================================
 cvf::ref<RivIntersectionHexGridInterface> RivIntersectionPartMgr::createHexGridInterface()
 {
   RimEclipseView* eclipseView;

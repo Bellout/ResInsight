@@ -25,7 +25,7 @@
 #include "cvfArray.h"
 #include <array>
 
-// ---------------------------------------------------------------
+// ===============================================================
 class RivIntersectionBoxGeometryGenerator;
 class RimIntersectionBox;
 
