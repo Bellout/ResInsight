@@ -231,7 +231,7 @@ void RiuMainWindow::cleanupGuiBeforeProjectClose() {
   cleanupGuiCaseClose();
 }
 
-// -----------------------------------------------------------------
+// ===============================================================
 void RiuMainWindow::closeEvent(QCloseEvent* event) {
 
   // ---------------------------------------------------------------
@@ -256,8 +256,9 @@ void RiuMainWindow::closeEvent(QCloseEvent* event) {
   app->closeProject();
 }
 
-// -----------------------------------------------------------------
+// ===============================================================
 void RiuMainWindow::createActions() {
+
   // ---------------------------------------------------------------
   // File actions
   m_mockModelAction = new QAction("&Mock Model", this);
