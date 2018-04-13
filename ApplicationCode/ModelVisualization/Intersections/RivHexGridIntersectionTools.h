@@ -1,17 +1,17 @@
 /////////////////////////////////////////////////////////////////////////////////
 //
 //  Copyright (C) Statoil ASA
-// 
+//
 //  ResInsight is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-// 
+//
 //  ResInsight is distributed in the hope that it will be useful, but WITHOUT ANY
 //  WARRANTY; without even the implied warranty of MERCHANTABILITY or
 //  FITNESS FOR A PARTICULAR PURPOSE.
-// 
-//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html> 
+//
+//  See the GNU General Public License at <http://www.gnu.org/licenses/gpl.html>
 //  for more details.
 //
 /////////////////////////////////////////////////////////////////////////////////
@@ -58,9 +58,14 @@ class RivIntersectionHexGridInterface : public cvf::Object
   virtual void cellCornerVertices(size_t cellIndex,
                                   cvf::Vec3d cellCorners[8]) const = 0;
 
-  virtual void cellCornerIndices(size_t cellIndex, size_t cornerIndices[8]) const = 0;
-    virtual const RigFault* findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex, 
-                                                              cvf::StructGridInterface::FaceType face) const = 0;
+  virtual void cellCornerIndices(size_t cellIndex,
+                                 size_t cornerIndices[8]) const = 0;
+
+  // -------------------------------------------------------------
+  virtual const RigFault*
+  findFaultFromCellIndexAndCellFace(
+      size_t reservoirCellIndex,
+      cvf::StructGridInterface::FaceType face) const = 0;
 };
 
 // ---------------------------------------------------------------
@@ -78,17 +83,25 @@ class RivEclipseIntersectionGrid : public RivIntersectionHexGridInterface
   virtual cvf::BoundingBox boundingBox() const;
 
   // -------------------------------------------------------------
-  virtual void findIntersectingCells(const cvf::BoundingBox& intersectingBB,
-                                     std::vector<size_t>* intersectedCells) const;
+  virtual void findIntersectingCells(
+      const cvf::BoundingBox& intersectingBB,
+      std::vector<size_t>* intersectedCells) const;
 
   // -------------------------------------------------------------
   virtual bool useCell(size_t cellIndex) const;
 
   // -------------------------------------------------------------
-  virtual void cellCornerVertices(size_t cellIndex, cvf::Vec3d cellCorners[8]) const;
-  virtual void cellCornerIndices(size_t cellIndex, size_t cornerIndices[8]) const;
-    virtual const RigFault* findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex, 
-                                                              cvf::StructGridInterface::FaceType face) const override;
+  virtual void cellCornerVertices(size_t cellIndex,
+                                  cvf::Vec3d cellCorners[8]) const;
+
+  virtual void cellCornerIndices(size_t cellIndex,
+                                 size_t cornerIndices[8]) const;
+
+  // -------------------------------------------------------------
+  virtual const RigFault*
+  findFaultFromCellIndexAndCellFace(
+      size_t reservoirCellIndex,
+      cvf::StructGridInterface::FaceType face) const override;
 
  private:
   // -------------------------------------------------------------
@@ -109,19 +122,28 @@ class RivFemIntersectionGrid : public RivIntersectionHexGridInterface
   virtual cvf::BoundingBox boundingBox() const;
 
   // -------------------------------------------------------------
-  virtual void findIntersectingCells(const cvf::BoundingBox& intersectingBB,
-                                     std::vector<size_t>* intersectedCells) const;
+  virtual void findIntersectingCells(
+      const cvf::BoundingBox& intersectingBB,
+      std::vector<size_t>* intersectedCells) const;
 
   // -------------------------------------------------------------
   virtual bool useCell(size_t cellIndex) const;
 
   // -------------------------------------------------------------
-  virtual void cellCornerVertices(size_t cellIndex, cvf::Vec3d cellCorners[8]) const;
-  virtual void cellCornerIndices(size_t cellIndex, size_t cornerIndices[8]) const;
-    virtual const RigFault* findFaultFromCellIndexAndCellFace(size_t reservoirCellIndex, 
-                                                              cvf::StructGridInterface::FaceType face) const override;
+  virtual void cellCornerVertices(size_t cellIndex,
+                                  cvf::Vec3d cellCorners[8]) const;
+
+  virtual void cellCornerIndices(size_t cellIndex,
+                                 size_t cornerIndices[8]) const;
+
+  // -------------------------------------------------------------
+  virtual const RigFault*
+  findFaultFromCellIndexAndCellFace(
+      size_t reservoirCellIndex,
+      cvf::StructGridInterface::FaceType face) const override;
 
  private:
+  // -------------------------------------------------------------
   cvf::cref<RigFemPart>      m_femPart;
 };
 
@@ -130,22 +152,24 @@ class RivFemIntersectionGrid : public RivIntersectionHexGridInterface
 class RivIntersectionVertexWeights
 {
  public:
+  // -------------------------------------------------------------
   explicit RivIntersectionVertexWeights(): m_count(0) {}
 
-/*    
+/*
 v111 k11 v11   v112  v211 k21  v21    v212
   +------+-----+      +--------+------+
-         |                     |        
-         |k1                   |k2 
+         |                     |
+         |k1                   |k2
          |   k                 |
        v1+--------+------------+v2
          |                     |
-         |                     | 
+         |                     |
          |                     |
   +------+----+       +--------+-------+
 v121 k12 v12  v122   v221 k22  v22   v222
 
-Where the k's are normalized distances along the edge, from the edge start vertex .
+Where the k's are normalized distances along the edge, from
+the edge start vertex .
 
 This is the interpolation sceme:
 
@@ -192,7 +216,6 @@ Substitution and reorganizing gives the expressions seen below.
     m_weights[2] = ((float)((k-1) * k1 * k12 + ( 1 - k ) * k1));
     m_weights[1] = ((float)(( (k-1) * k1 - k + 1 ) * k11));
     m_weights[0] = ((float)(( (1-k) * k1 + k - 1 ) * k11 + ( k - 1 ) * k1 - k + 1));
-
   }
 
   // ---------------------------------------------------------------
@@ -208,7 +231,9 @@ Substitution and reorganizing gives the expressions seen below.
     m_vxIds[3] = (edge2Vx2);
 
     // -------------------------------------------------------------
-    m_weights[0] = ((float)(1.0 - normDistFromE1V1 - normDistFromE1Cut + normDistFromE1V1*normDistFromE1Cut));
+    m_weights[0] = ((float)(1.0
+        - normDistFromE1V1 - normDistFromE1Cut + normDistFromE1V1*normDistFromE1Cut));
+
     m_weights[1] = ((float)(normDistFromE1V1 - normDistFromE1V1*normDistFromE1Cut));
     m_weights[2] = ((float)(normDistFromE1Cut - normDistFromE2V1*normDistFromE1Cut));
     m_weights[3] = ((float)(normDistFromE2V1*normDistFromE1Cut));
