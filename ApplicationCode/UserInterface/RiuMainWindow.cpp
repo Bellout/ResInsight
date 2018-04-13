@@ -260,102 +260,163 @@ void RiuMainWindow::closeEvent(QCloseEvent* event) {
 void RiuMainWindow::createActions() {
   // ---------------------------------------------------------------
   // File actions
-  m_mockModelAction           = new QAction("&Mock Model", this);
-  m_mockResultsModelAction    = new QAction("Mock Model With &Results", this);
+  m_mockModelAction = new QAction("&Mock Model", this);
+  m_mockResultsModelAction = new QAction("Mock Model With &Results", this);
+
   m_mockLargeResultsModelAction = new QAction("Large Mock Model", this);
   m_mockModelCustomizedAction = new QAction("Customized Mock Model", this);
-  m_mockInputModelAction      = new QAction("Input Mock Model", this);
+  m_mockInputModelAction = new QAction("Input Mock Model", this);
 
-  m_snapshotAllViewsToFile    = new QAction(QIcon(":/SnapShotSaveViews.png"), "Snapshot All Views To File", this);
+  m_snapshotAllViewsToFile = new QAction(QIcon(":/SnapShotSaveViews.png"),
+                                         "Snapshot All Views To File", this);
 
-  m_createCommandObject       = new QAction("Create Command Object", this);
+  m_createCommandObject = new QAction("Create Command Object", this);
   m_showRegressionTestDialog  = new QAction("Regression Test Dialog", this);
   m_executePaintEventPerformanceTest = new QAction("&Paint Event Performance Test", this);
 
   // ---------------------------------------------------------------
-  connect(m_mockModelAction,            SIGNAL(triggered()), SLOT(slotMockModel()));
-  connect(m_mockResultsModelAction,    SIGNAL(triggered()), SLOT(slotMockResultsModel()));
-  connect(m_mockLargeResultsModelAction,    SIGNAL(triggered()), SLOT(slotMockLargeResultsModel()));
-  connect(m_mockModelCustomizedAction,    SIGNAL(triggered()), SLOT(slotMockModelCustomized()));
-  connect(m_mockInputModelAction,        SIGNAL(triggered()), SLOT(slotInputMockModel()));
+  connect(m_mockModelAction,
+          SIGNAL(triggered()),
+          SLOT(slotMockModel()));
 
-  connect(m_snapshotAllViewsToFile,   SIGNAL(triggered()), SLOT(slotSnapshotAllViewsToFile()));
+  connect(m_mockResultsModelAction,
+          SIGNAL(triggered()),
+          SLOT(slotMockResultsModel()));
 
-  connect(m_createCommandObject,      SIGNAL(triggered()), SLOT(slotCreateCommandObject()));
-  connect(m_showRegressionTestDialog, SIGNAL(triggered()), SLOT(slotShowRegressionTestDialog()));
-  connect(m_executePaintEventPerformanceTest, SIGNAL(triggered()), SLOT(slotExecutePaintEventPerformanceTest()));
+  connect(m_mockLargeResultsModelAction,
+          SIGNAL(triggered()),
+          SLOT(slotMockLargeResultsModel()));
+
+  connect(m_mockModelCustomizedAction,
+          SIGNAL(triggered()),
+          SLOT(slotMockModelCustomized()));
+
+  connect(m_mockInputModelAction,
+          SIGNAL(triggered()),
+          SLOT(slotInputMockModel()));
+
+  connect(m_snapshotAllViewsToFile,
+          SIGNAL(triggered()),
+          SLOT(slotSnapshotAllViewsToFile()));
+
+  connect(m_createCommandObject,
+          SIGNAL(triggered()),
+          SLOT(slotCreateCommandObject()));
+
+  connect(m_showRegressionTestDialog,
+          SIGNAL(triggered()),
+          SLOT(slotShowRegressionTestDialog()));
+
+  connect(m_executePaintEventPerformanceTest,
+          SIGNAL(triggered()),
+          SLOT(slotExecutePaintEventPerformanceTest()));
 
   // ---------------------------------------------------------------
   // View actions
-  m_viewFromNorth                = new QAction(QIcon(":/SouthViewArrow.png"), "Look South", this);
+  m_viewFromNorth = new QAction(QIcon(":/SouthViewArrow.png"),
+                                "Look South", this);
   m_viewFromNorth->setToolTip("Look South");
-  m_viewFromSouth                = new QAction(QIcon(":/NorthViewArrow.png"),"Look North", this);
+
+  m_viewFromSouth = new QAction(QIcon(":/NorthViewArrow.png"),
+                                "Look North", this);
   m_viewFromSouth->setToolTip("Look North");
-  m_viewFromEast                 = new QAction(QIcon(":/WestViewArrow.png"),"Look West", this);
+
+  m_viewFromEast = new QAction(QIcon(":/WestViewArrow.png"),
+                               "Look West", this);
   m_viewFromEast->setToolTip("Look West");
-  m_viewFromWest                 = new QAction(QIcon(":/EastViewArrow.png"),"Look East", this);
+
+  m_viewFromWest = new QAction(QIcon(":/EastViewArrow.png"),
+                               "Look East", this);
   m_viewFromWest->setToolTip("Look East");
-  m_viewFromAbove                = new QAction(QIcon(":/DownViewArrow.png"),"Look Down", this);
+
+  m_viewFromAbove = new QAction(QIcon(":/DownViewArrow.png"),
+                                "Look Down", this);
   m_viewFromAbove->setToolTip("Look Down");
-  m_viewFromBelow                = new QAction(QIcon(":/UpViewArrow.png"),"Look Up", this);
+
+  m_viewFromBelow = new QAction(QIcon(":/UpViewArrow.png"),
+                                "Look Up", this);
   m_viewFromBelow->setToolTip("Look Up");
 
   // ---------------------------------------------------------------
-  connect(m_viewFromNorth,                SIGNAL(triggered()), SLOT(slotViewFromNorth()));
-  connect(m_viewFromSouth,                SIGNAL(triggered()), SLOT(slotViewFromSouth()));
-  connect(m_viewFromEast,                 SIGNAL(triggered()), SLOT(slotViewFromEast()));
-  connect(m_viewFromWest,                 SIGNAL(triggered()), SLOT(slotViewFromWest()));
-  connect(m_viewFromAbove,                SIGNAL(triggered()), SLOT(slotViewFromAbove()));
-  connect(m_viewFromBelow,                SIGNAL(triggered()), SLOT(slotViewFromBelow()));
+  connect(m_viewFromNorth, SIGNAL(triggered()), SLOT(slotViewFromNorth()));
+  connect(m_viewFromSouth, SIGNAL(triggered()), SLOT(slotViewFromSouth()));
+  connect(m_viewFromEast, SIGNAL(triggered()), SLOT(slotViewFromEast()));
+  connect(m_viewFromWest, SIGNAL(triggered()), SLOT(slotViewFromWest()));
+  connect(m_viewFromAbove, SIGNAL(triggered()), SLOT(slotViewFromAbove()));
+  connect(m_viewFromBelow, SIGNAL(triggered()), SLOT(slotViewFromBelow()));
 
   // ---------------------------------------------------------------
   // Debug actions
   m_newPropertyView = new QAction("New Project and Property View", this);
-  connect(m_newPropertyView, SIGNAL(triggered()), SLOT(slotNewObjectPropertyView()));
+  connect(m_newPropertyView,
+          SIGNAL(triggered()),
+          SLOT(slotNewObjectPropertyView()));
 
   // ---------------------------------------------------------------
   // Draw style actions
   m_dsActionGroup = new QActionGroup(this);
 
   // ---------------------------------------------------------------
-  m_drawStyleLinesAction                = new QAction(QIcon(":/draw_style_lines_24x24.png"), "&Mesh Only", this);
-  //connect(m_drawStyleLinesAction,        SIGNAL(triggered()), SLOT(slotDrawStyleLines()));
+  m_drawStyleLinesAction = new QAction(QIcon(":/draw_style_lines_24x24.png"),
+                                       "&Mesh Only", this);
+  //connect(m_drawStyleLinesAction, SIGNAL(triggered()), SLOT(slotDrawStyleLines()));
   m_dsActionGroup->addAction(m_drawStyleLinesAction);
 
-  m_drawStyleLinesSolidAction           = new QAction(QIcon(":/draw_style_meshlines_24x24.png"), "Mesh And Surfaces", this);
+  m_drawStyleLinesSolidAction = new QAction(QIcon(":/draw_style_meshlines_24x24.png"),
+                                            "Mesh And Surfaces", this);
   //connect(m_drawStyleLinesSolidAction,    SIGNAL(triggered()), SLOT(slotDrawStyleLinesSolid()));
   m_dsActionGroup->addAction(m_drawStyleLinesSolidAction);
 
-  m_drawStyleFaultLinesSolidAction           = new QAction(QIcon(":/draw_style_surface_w_fault_mesh_24x24.png"), "Fault Mesh And Surfaces", this);
+  m_drawStyleFaultLinesSolidAction =
+      new QAction(QIcon(":/draw_style_surface_w_fault_mesh_24x24.png"),
+                  "Fault Mesh And Surfaces", this);
   m_dsActionGroup->addAction(m_drawStyleFaultLinesSolidAction);
 
-  m_drawStyleSurfOnlyAction             = new QAction(QIcon(":/draw_style_surface_24x24.png"), "&Surface Only", this);
+  m_drawStyleSurfOnlyAction = new QAction(QIcon(":/draw_style_surface_24x24.png"),
+                                          "&Surface Only", this);
   //connect(m_drawStyleSurfOnlyAction,    SIGNAL(triggered()), SLOT(slotDrawStyleSurfOnly()));
   m_dsActionGroup->addAction(m_drawStyleSurfOnlyAction);
 
-
-  connect(m_dsActionGroup, SIGNAL(triggered(QAction*)), SLOT(slotDrawStyleChanged(QAction*)));
+  connect(m_dsActionGroup,
+          SIGNAL(triggered(QAction*)),
+          SLOT(slotDrawStyleChanged(QAction*)));
 
   // ---------------------------------------------------------------
-  m_disableLightingAction = new QAction(QIcon(":/disable_lighting_24x24.png"), "&Disable Results Lighting", this);
+  m_disableLightingAction =
+      new QAction(QIcon(":/disable_lighting_24x24.png"),
+                  "&Disable Results Lighting", this);
   m_disableLightingAction->setCheckable(true);
-  connect(m_disableLightingAction,    SIGNAL(toggled(bool)), SLOT(slotDisableLightingAction(bool)));
+  connect(m_disableLightingAction,
+          SIGNAL(toggled(bool)),
+          SLOT(slotDisableLightingAction(bool)));
 
   // ---------------------------------------------------------------
-  m_drawStyleHideGridCellsAction             = new QAction( QIcon(":/draw_style_faults_24x24.png"), "&Hide Grid Cells", this);
+  m_drawStyleHideGridCellsAction =
+      new QAction(QIcon(":/draw_style_faults_24x24.png"),
+                  "&Hide Grid Cells", this);
   m_drawStyleHideGridCellsAction->setCheckable(true);
-  connect(m_drawStyleHideGridCellsAction,    SIGNAL(toggled(bool)), SLOT(slotToggleHideGridCellsAction(bool)));
+  connect(m_drawStyleHideGridCellsAction,
+          SIGNAL(toggled(bool)),
+          SLOT(slotToggleHideGridCellsAction(bool)));
 
   // ---------------------------------------------------------------
-  m_toggleFaultsLabelAction             = new QAction( QIcon(":/draw_style_faults_label_24x24.png"), "&Show Fault Labels", this);
+  m_toggleFaultsLabelAction
+      = new QAction( QIcon(":/draw_style_faults_label_24x24.png"),
+                     "&Show Fault Labels", this);
   m_toggleFaultsLabelAction->setCheckable(true);
-  connect(m_toggleFaultsLabelAction,    SIGNAL(toggled(bool)), SLOT(slotToggleFaultLabelsAction(bool)));
+  connect(m_toggleFaultsLabelAction,
+          SIGNAL(toggled(bool)),
+          SLOT(slotToggleFaultLabelsAction(bool)));
 
   // ---------------------------------------------------------------
-  m_showWellCellsAction = new QAction(QIcon(":/draw_style_WellCellsToRangeFilter_24x24.png"), "&Show Well Cells", this);
+  m_showWellCellsAction =
+      new QAction(QIcon(":/draw_style_WellCellsToRangeFilter_24x24.png"),
+                  "&Show Well Cells", this);
   m_showWellCellsAction->setCheckable(true);
   m_showWellCellsAction->setToolTip("Show Well Cells");
-  connect(m_showWellCellsAction,    SIGNAL(toggled(bool)), SLOT(slotShowWellCellsAction(bool)));
+  connect(m_showWellCellsAction,
+          SIGNAL(toggled(bool)),
+          SLOT(slotShowWellCellsAction(bool)));
 }
 
 // -----------------------------------------------------------------
@@ -391,18 +452,23 @@ void RiuMainWindow::createMenus() {
     importMenu->addAction(cmdFeatureMgr->action("RicImportElementPropertyFeature"));
     importMenu->addSeparator();
 #endif
+  // ---------------------------------------------------------------
   importMenu->addAction(cmdFeatureMgr->action("RicImportSummaryCaseFeature"));
   importMenu->addAction(cmdFeatureMgr->action("RicImportSummaryCasesFeature"));
   importMenu->addAction(cmdFeatureMgr->action("RicImportObservedDataInMenuFeature"));
 
+  // ---------------------------------------------------------------
   importMenu->addSeparator();
   importMenu->addAction(cmdFeatureMgr->action("RicWellPathsImportFileFeature"));
   importMenu->addAction(cmdFeatureMgr->action("RicWellPathsImportSsihubFeature"));
   importMenu->addAction(cmdFeatureMgr->action("RicWellLogsImportFileFeature"));
+
+  // ---------------------------------------------------------------
   importMenu->addSeparator();
   importMenu->addAction(cmdFeatureMgr->action("RicImportFormationNamesFeature"));
   importMenu->addAction(cmdFeatureMgr->action("RicWellPathFormationsImportFileFeature"));
 
+  // ---------------------------------------------------------------
   QMenu* exportMenu = fileMenu->addMenu("&Export");
   exportMenu->addAction(cmdFeatureMgr->action("RicSnapshotViewToFileFeature"));
   exportMenu->addAction(m_snapshotAllViewsToFile);
@@ -410,26 +476,32 @@ void RiuMainWindow::createMenus() {
   exportMenu->addSeparator();
   exportMenu->addAction(cmdFeatureMgr->action("RicSaveEclipseInputActiveVisibleCellsFeature"));
 
+  // ---------------------------------------------------------------
   fileMenu->addSeparator();
   fileMenu->addAction(cmdFeatureMgr->action("RicSaveProjectFeature"));
   fileMenu->addAction(cmdFeatureMgr->action("RicSaveProjectAsFeature"));
 
-  std::vector<QAction*> recentFileActions = RiaApplication::instance()->recentFileActions();
-  for (auto act : recentFileActions)
-  {
+  // ---------------------------------------------------------------
+  std::vector<QAction*> recentFileActions =
+      RiaApplication::instance()->recentFileActions();
+  for (auto act : recentFileActions) {
     fileMenu->addAction(act);
   }
 
+  // ---------------------------------------------------------------
   fileMenu->addSeparator();
   QMenu* testMenu = fileMenu->addMenu("&Testing");
 
+  // ---------------------------------------------------------------
   fileMenu->addSeparator();
   fileMenu->addAction(cmdFeatureMgr->action("RicCloseProjectFeature"));
   fileMenu->addSeparator();
   fileMenu->addAction(cmdFeatureMgr->action("RicExitApplicationFeature"));
 
+  // ---------------------------------------------------------------
   connect(fileMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshFileActions()));
 
+  // ---------------------------------------------------------------
   // Edit menu
   QMenu* editMenu = menuBar()->addMenu("&Edit");
   editMenu->addAction(cmdFeatureMgr->action("RicSnapshotViewToClipboardFeature"));
@@ -438,7 +510,7 @@ void RiuMainWindow::createMenus() {
 
   connect(editMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
 
-
+  // ---------------------------------------------------------------
   // View menu
   QMenu* viewMenu = menuBar()->addMenu("&View");
   viewMenu->addAction(cmdFeatureMgr->action("RicViewZoomAllFeature"));
@@ -452,6 +524,7 @@ void RiuMainWindow::createMenus() {
 
   connect(viewMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshViewActions()));
 
+  // ---------------------------------------------------------------
   // Debug menu
   testMenu->addAction(m_mockModelAction);
   testMenu->addAction(m_mockResultsModelAction);
@@ -465,10 +538,14 @@ void RiuMainWindow::createMenus() {
   testMenu->addAction(m_executePaintEventPerformanceTest);
   testMenu->addAction(cmdFeatureMgr->action("RicLaunchUnitTestsFeature"));
 
+  // ---------------------------------------------------------------
   // Windows menu
   m_windowMenu = menuBar()->addMenu("&Windows");
-  connect(m_windowMenu, SIGNAL(aboutToShow()), SLOT(slotBuildWindowActions()));
+  connect(m_windowMenu,
+          SIGNAL(aboutToShow()),
+          SLOT(slotBuildWindowActions()));
 
+  // ---------------------------------------------------------------
   // Help menu
   QMenu* helpMenu = menuBar()->addMenu("&Help");
   helpMenu->addAction(cmdFeatureMgr->action("RicHelpAboutFeature"));
@@ -1298,43 +1375,63 @@ void RiuMainWindow::slotFramerateChanged(double frameRate)
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-RiuProcessMonitor* RiuMainWindow::processMonitor()
-{
+// ---------------------------------------------------------------
+RiuProcessMonitor* RiuMainWindow::processMonitor() {
   return m_processMonitor;
 }
 
-//--------------------------------------------------------------------------------------------------
-///
-//--------------------------------------------------------------------------------------------------
-void RiuMainWindow::slotBuildWindowActions()
-{
+// ---------------------------------------------------------------
+void RiuMainWindow::slotBuildWindowActions() {
+
+  // -------------------------------------------------------------
   m_windowMenu->clear();
   m_windowMenu->addAction(m_newPropertyView);
   m_windowMenu->addSeparator();
 
+  // -------------------------------------------------------------
   QList<QDockWidget*> dockWidgets = findChildren<QDockWidget*>();
 
+  dockWidgets.at(0)->activateWindow();
+
+
+  // -------------------------------------------------------------
   int i = 0;
-      foreach (QDockWidget* dock, dockWidgets)
-    {
-      if (dock)
-      {
+      foreach (QDockWidget* dock, dockWidgets) {
+
+      if (dock) {
+
         if (i == 4) m_windowMenu->addSeparator();
         m_windowMenu->addAction(dock->toggleViewAction());
+
+        if (dock->objectName() == "dockRelativePermeabilityPlotPanel"
+            || dock->objectName() == "dockPvtPlotPanel"
+            || dock->objectName() == "dockTimeHistoryPanel") {
+          dock->close();
+        } else if (dock->objectName() == "dockResultInfoPanel") {
+          m_windowMenu->addAction(dock->toggleViewAction());
+        }
+
         ++i;
       }
+
     }
 
+  // -------------------------------------------------------------
   m_windowMenu->addSeparator();
   QAction* cascadeWindowsAction = new QAction("Cascade Windows", this);
-  connect(cascadeWindowsAction, SIGNAL(triggered()), m_mdiArea, SLOT(cascadeSubWindows()));
+  connect(cascadeWindowsAction,
+          SIGNAL(triggered()),
+          m_mdiArea,
+          SLOT(cascadeSubWindows()));
 
+  // -------------------------------------------------------------
   QAction* closeAllSubWindowsAction = new QAction("Close All Windows", this);
-  connect(closeAllSubWindowsAction, SIGNAL(triggered()), m_mdiArea, SLOT(closeAllSubWindows()));
+  connect(closeAllSubWindowsAction,
+          SIGNAL(triggered()),
+          m_mdiArea,
+          SLOT(closeAllSubWindows()));
 
+  // -------------------------------------------------------------
   m_windowMenu->addAction(caf::CmdFeatureManager::instance()->action("RicTileWindowsFeature"));
   m_windowMenu->addAction(cascadeWindowsAction);
   m_windowMenu->addAction(closeAllSubWindowsAction);
