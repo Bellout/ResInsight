@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <QtCore/QString>
 #include <QtCore/QStringList>
+#include <cvfVector3.h>
 
 // ---------------------------------------------------------------
 using std::remove;
@@ -73,30 +74,61 @@ inline void set_str_frmt(ostringstream &dbg_msg) {
  *
  */
 inline void print_dbg_template(bool dbg_mode, bool append,
-                               const string dbg_file, string dbg_loc,
-                               const string dbg_msg) {
+                               const string file_name,
+                               string dbg_func,
+                               string dbg_file,
+                               string dbg_msgs) {
 
   // -------------------------------------------------------------
   fstream fs;
   if (dbg_mode) {
     if (append) {
-      fs.open(dbg_file, std::fstream::out | std::fstream::app);
+      fs.open(file_name, std::fstream::out | std::fstream::app);
     } else {
-      fs.open(dbg_file, std::fstream::out | std::fstream::trunc);
+      fs.open(file_name, std::fstream::out | std::fstream::trunc);
     }
 
     // -----------------------------------------------------------
+    // dbg_func
+    string dbg_func_fxd;
     string ts = get_time_stamp();
-    dbg_loc = "[" + ts + "] (" + dbg_loc + ") => ";
+    dbg_func_fxd = "[" + ts + "] (" + dbg_func + ") => ";
 
     // -----------------------------------------------------------
+    // dbg_file
     QStringList qt_str;
-    qt_str << QString::fromStdString(dbg_msg).split("/");
-    string dbg_msg_fxd = "[" + qt_str.last().toStdString() + "]\n";
+    qt_str << QString::fromStdString(dbg_file).split("/");
+    string dbg_file_fxd = "[" + qt_str.last().toStdString() + "]";
 
     // -----------------------------------------------------------
-    fs.write(dbg_loc.c_str(), dbg_loc.size());
-    fs.write(dbg_msg_fxd.c_str(), dbg_msg_fxd.size());
+    // write: dbg_func
+    if (!dbg_func.empty()) {
+      fs.write(dbg_func_fxd.c_str(), dbg_func_fxd.size());
+    }
+
+    // -----------------------------------------------------------
+    // write: dbg_file
+    if (!dbg_file.empty()) {
+      fs.write(dbg_file_fxd.c_str(), dbg_file_fxd.size());
+    }
+
+    // -----------------------------------------------------------
+    // write: dbg_msgs
+    if (!dbg_msgs.empty()) {
+      if (dbg_func.empty() && dbg_file.empty()) {
+        dbg_msgs = "-> " + dbg_msgs;
+      } else {
+        dbg_msgs = "\n-> " + dbg_msgs;
+      }
+      fs.write(dbg_msgs.c_str(), dbg_msgs.size());
+    }
+
+    // -----------------------------------------------------------
+    // write: end line
+    string endline = "\n";
+    fs.write(endline.c_str(), endline.size());
+
+    // -----------------------------------------------------------
     fs.close();
   }
 };
@@ -110,10 +142,30 @@ inline void print_dbg_template(bool dbg_mode, bool append,
   print_opt_dbg(true, true, dbg_loc, dbg_msg)
  *
  */
-inline void print_ri_hck(string dbg_loc, string dbg_msg,
-                         bool dbg_mode=true, bool append=true) {
-  print_dbg_template(dbg_mode, append, "ri.hck", dbg_loc, dbg_msg);
+inline void print_ri_hck(
+    string dbg_func, string dbg_file, string dbg_msgs = "",
+    bool dbg_mode = true, bool append = true) {
+
+  print_dbg_template(dbg_mode, append, "ri.hck",
+                     dbg_func, dbg_file, dbg_msgs);
 };
+
+// ---------------------------------------------------------------
+inline void print_ri_hck_vec(
+    string dbg_func, string dbg_file, string dbg_msgs = "",
+    cvf::Vec3d dbg_vec = cvf::Vec3d::ZERO,
+    bool dbg_mode = true, bool append = true) {
+
+  dbg_msgs = dbg_msgs
+      + "[ x = " + std::to_string(dbg_vec.x())
+      + ", y = " + std::to_string(dbg_vec.y())
+      + ", z = " + std::to_string(dbg_vec.z()) + " ]";
+
+  print_dbg_template(dbg_mode, append, "ri.hck",
+                     dbg_func, dbg_file, dbg_msgs);
+};
+
+
 
 // ---------------------------------------------------------------
 /*!
@@ -124,10 +176,10 @@ inline void print_ri_hck(string dbg_loc, string dbg_msg,
   print_grd_dbg(true, true, dbg_loc, dbg_msg)
  *
  */
-inline void print_grd_dbg(bool dbg_mode, bool append,
-                          string dbg_loc, string dbg_msg) {
-  print_dbg_template(dbg_mode, append, "grd.dbg", dbg_loc, dbg_msg);
-};
+//inline void print_grd_dbg(bool dbg_mode, bool append,
+//                          string dbg_loc, string dbg_msg) {
+//  print_dbg_template(dbg_mode, append, "grd.dbg", dbg_loc, dbg_msg);
+//};
 
 }
 
