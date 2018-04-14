@@ -40,20 +40,20 @@
 #include <cstddef>
 
 
-namespace caf 
+namespace caf
 {
 
 class PdmObjectHandle;
 
 //==================================================================================================
 /// Helper class for the PdmPointer class
-/// The add and removing of references is put into a pure static class to 
+/// The add and removing of references is put into a pure static class to
 /// resolve circular include problems.
 //
 /// Overall idea of the referencing system:
 /// The addressToObjectPointer is added to a std::set in the object pointed to.
-/// when the object pointed to is deleted, its destructor sets the object pointers 
-/// it has addresses to to NULL
+/// when the object pointed to is deleted, its destructor sets the object pointers
+/// it has addresses to NULL
 //==================================================================================================
 
 class PdmPointerImpl
@@ -66,7 +66,7 @@ private:
 
 //==================================================================================================
 /// Guarded pointer class to point at PdmObjects
-/// Use a PdmPointer<SomePdmObject> in the same way as a normal pointer. 
+/// Use a PdmPointer<SomePdmObject> in the same way as a normal pointer.
 /// The guarding sets the pointer to NULL if the object pointed to dies
 ///
 /// NOTE: This is not reference counting. The user is responsible to delete the objects pointed to.
@@ -80,7 +80,7 @@ class PdmPointer
 public :
     inline PdmPointer () : m_object(NULL)                { }
     inline PdmPointer ( T * p ) : m_object(p)            { PdmPointerImpl::addReference(&m_object); }
-    inline PdmPointer ( const PdmPointer<T> & p ) : m_object ( p.m_object ) 
+    inline PdmPointer ( const PdmPointer<T> & p ) : m_object ( p.m_object )
                                                          { PdmPointerImpl::addReference(&m_object); }
     inline ~PdmPointer ()                                { PdmPointerImpl::removeReference(&m_object); }
 
@@ -95,7 +95,7 @@ public :
 
     // Private methods used by PdmField<T*> and PdmPointersField<T*>. Do not use unless you mean it !
     PdmObjectHandle*      rawPtr() const                       { return m_object; }
-    void            setRawPtr( PdmObjectHandle* p)             { if (m_object != p) PdmPointerImpl::removeReference(&m_object); m_object = p;          PdmPointerImpl::addReference(&m_object);  }    
+    void            setRawPtr( PdmObjectHandle* p)             { if (m_object != p) PdmPointerImpl::removeReference(&m_object); m_object = p;          PdmPointerImpl::addReference(&m_object);  }
 };
 
 

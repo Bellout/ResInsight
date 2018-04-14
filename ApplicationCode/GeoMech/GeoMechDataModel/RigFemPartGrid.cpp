@@ -62,7 +62,8 @@ void RigFemPartGrid::generateStructGridData() {
   //       when starting on a new row
   //[ ]    (Need to find min, and offset IJK values if there exists such)
 
-  //[ ] 6. If IJK to elm idx is needed, allocate "grid" with maxI,maxJ,maxZ values
+  //[ ] 6. If IJK to elm idx is needed, allocate "grid" with
+  //       maxI,maxJ,maxZ values
   //[ ]    Loop over elms, assign elmIdx to IJK address in grid
 
   int elmIdxForIJK_000 = findElmIdxForIJK000();
