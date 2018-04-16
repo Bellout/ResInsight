@@ -1083,35 +1083,41 @@ void RivIntersectionPartMgr::appendPolylinePartsToModel(Rim3dView &view, cvf::Mo
 }
 
 // ===============================================================
-const RimIntersection* RivIntersectionPartMgr::intersection() const
-{
+const RimIntersection* RivIntersectionPartMgr::intersection() const {
   return m_rimCrossSection.p();
 }
 
 // ===============================================================
-cvf::Mat4d RivIntersectionPartMgr::unflattenTransformMatrix(const cvf::Vec3d& intersectionPointFlat)
-{
-  return m_crossSectionGenerator->unflattenTransformMatrix(intersectionPointFlat);
+cvf::Mat4d RivIntersectionPartMgr::
+unflattenTransformMatrix(const cvf::Vec3d& intersectionPointFlat) {
+  return m_crossSectionGenerator->
+      unflattenTransformMatrix(intersectionPointFlat);
 }
 
 // ===============================================================
-cvf::ref<RivIntersectionHexGridInterface> RivIntersectionPartMgr::createHexGridInterface()
-{
+cvf::ref<RivIntersectionHexGridInterface>
+RivIntersectionPartMgr::createHexGridInterface() {
+
+  // -------------------------------------------------------------
   RimEclipseView* eclipseView;
   m_rimCrossSection->firstAncestorOrThisOfType(eclipseView);
-  if (eclipseView)
-  {
+
+  // -------------------------------------------------------------
+  if (eclipseView) {
     RigMainGrid* grid = eclipseView->mainGrid();
     return new RivEclipseIntersectionGrid(grid,
                                           eclipseView->currentActiveCellInfo(),
                                           m_rimCrossSection->showInactiveCells());
   }
 
+  // -------------------------------------------------------------
   RimGeoMechView* geoView;
   m_rimCrossSection->firstAncestorOrThisOfType(geoView);
-  if (geoView)
-  {
-    RigFemPart* femPart = geoView->geoMechCase()->geoMechData()->femParts()->part(0);
+
+  // -------------------------------------------------------------
+  if (geoView) {
+    RigFemPart* femPart =
+        geoView->geoMechCase()->geoMechData()->femParts()->part(0);
     return new RivFemIntersectionGrid(femPart);
   }
 
