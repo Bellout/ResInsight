@@ -102,19 +102,19 @@ RivIntersectionPartMgr(RimIntersection* rimCrossSection,
       m_rimCrossSection->polyLines(&flattenedPolylineStartPoint);
 
   // -------------------------------------------------------------
-  RIHack::print_ri_hck_vec(__func__, __FILE__,
-                           "flattenedPolylineStartPoint: ",
-                           flattenedPolylineStartPoint);
+  RIHack::print_ri_hck_vec3d(__func__, __FILE__,
+                             "flattenedPolylineStartPoint: ",
+                             flattenedPolylineStartPoint);
 
   // -------------------------------------------------------------
   string dbg_str_ii, dbg_str_jj;
   for(size_t ii=0; ii < polyLines.size(); ++ii) {
     for (size_t jj = 0; jj < polyLines[ii].size(); ++jj) {
-      RIHack::print_ri_hck_vec("", "",
-                               "ii:" + std::to_string(ii)
-                                   + " jj:" + std::to_string(jj)
-                                   + " ",
-                               polyLines[ii][jj]);
+      RIHack::print_ri_hck_vec3d("", "",
+                                 "ii:" + std::to_string(ii)
+                                     + " jj:" + std::to_string(jj)
+                                     + " ",
+                                 polyLines[ii][jj]);
     }
   }
 
@@ -133,13 +133,7 @@ RivIntersectionPartMgr(RimIntersection* rimCrossSection,
                                              hexGrid.p(),
                                              m_isFlattened,
                                              flattenedPolylineStartPoint);
-
-
   }
-
-  // No use here
-  // m_crossSectionGenerator.p()->crossSection()->enableExtraDebugText(true);
-  // m_crossSectionGenerator.p()->crossSection()->showExtraDebugText();
 
 }
 

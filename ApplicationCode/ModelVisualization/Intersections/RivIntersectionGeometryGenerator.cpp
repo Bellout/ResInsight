@@ -465,6 +465,17 @@ cvf::ref<cvf::DrawableGeo>
 RivIntersectionGeometryGenerator::generateSurface() {
   calculateArrays();
 
+
+  // -------------------------------------------------------------
+  size_t vx_count = m_cellBorderLineVxes.p()->size();
+  RIHack::print_ri_hck_vec3f("", "", "", cvf::Vec3f::ZERO, true, false);
+
+  for (size_t ivx = 0; ivx < vx_count; ivx++) {
+    RIHack::print_ri_hck_vec3f(
+        "", "", "", m_cellBorderLineVxes.p()->val(ivx));
+  }
+
+  // -------------------------------------------------------------
   CVF_ASSERT(m_triangleVxes.notNull());
 
   // -----------------------------------------------------------

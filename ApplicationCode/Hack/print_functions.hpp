@@ -151,7 +151,7 @@ inline void print_ri_hck(
 };
 
 // ---------------------------------------------------------------
-inline void print_ri_hck_vec(
+inline void print_ri_hck_vec3d(
     string dbg_func, string dbg_file, string dbg_msgs = "",
     cvf::Vec3d dbg_vec = cvf::Vec3d::ZERO,
     bool dbg_mode = true, bool append = true) {
@@ -161,11 +161,24 @@ inline void print_ri_hck_vec(
       + ", y = " + std::to_string(dbg_vec.y())
       + ", z = " + std::to_string(dbg_vec.z()) + " ]";
 
-  print_dbg_template(dbg_mode, append, "ri.hck",
+  print_dbg_template(dbg_mode, append, "rix.hck",
                      dbg_func, dbg_file, dbg_msgs);
 };
 
+// ---------------------------------------------------------------
+inline void print_ri_hck_vec3f(
+    string dbg_func, string dbg_file, string dbg_msgs = "",
+    cvf::Vec3f dbg_vec = cvf::Vec3f::ZERO,
+    bool dbg_mode = true, bool append = true) {
 
+  dbg_msgs = dbg_msgs
+      + "[ x = " + std::to_string(dbg_vec.x())
+      + ", y = " + std::to_string(dbg_vec.y())
+      + ", z = " + std::to_string(dbg_vec.z()) + " ]";
+
+  print_dbg_template(dbg_mode, append, "vrx.dbg",
+                     dbg_func, dbg_file, dbg_msgs);
+};
 
 // ---------------------------------------------------------------
 /*!
