@@ -188,9 +188,10 @@ RigGridBase::cellIndexFromIJK(size_t i,
 }
 
 // ---------------------------------------------------------------
-void RigGridBase::cellMinMaxCordinates(size_t cellIndex,
-                                       cvf::Vec3d* minCoordinate,
-                                       cvf::Vec3d* maxCoordinate) const {
+void
+RigGridBase::cellMinMaxCordinates(size_t cellIndex,
+                                  cvf::Vec3d* minCoordinate,
+                                  cvf::Vec3d* maxCoordinate) const {
 
 }
 
