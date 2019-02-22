@@ -36,7 +36,7 @@
 class RifReaderSettings;
 
 // =========================================================
-class RiaPreferences : public caf::PdmObject
+class RiaFieldOpt : public caf::PdmObject
 {
  CAF_PDM_HEADER_INIT;
 
@@ -44,8 +44,8 @@ class RiaPreferences : public caf::PdmObject
   enum SummaryRestartFilesImportMode { ASK_USER, IMPORT, NOT_IMPORT, SEPARATE_CASES };
   typedef caf::AppEnum<SummaryRestartFilesImportMode> SummaryRestartFilesImportModeType;
 
-  RiaPreferences(void);
-  virtual ~RiaPreferences(void);
+  RiaFieldOpt(void);
+  virtual ~RiaFieldOpt(void);
 
   QStringList tabNames();
 

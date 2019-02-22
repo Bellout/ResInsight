@@ -19,7 +19,7 @@
 //
 ////////////////////////////////////////////////////////////
 
-#include "RicEditPreferencesFeature.h"
+#include "RicFieldOptFeature.h"
 
 #include "RiaApplication.h"
 #include "RiaPreferences.h"
@@ -30,15 +30,15 @@
 
 #include <QAction>
 
-CAF_CMD_SOURCE_INIT(RicEditPreferencesFeature, "RicEditPreferencesFeature");
+CAF_CMD_SOURCE_INIT(RicFieldOptFeature, "RicFieldOptFeature");
 
 //==========================================================
-bool RicEditPreferencesFeature::isCommandEnabled() {
+bool RicFieldOptFeature::isCommandEnabled() {
   return true;
 }
 
 //==========================================================
-void RicEditPreferencesFeature::onActionTriggered(bool isChecked) {
+void RicFieldOptFeature::onActionTriggered(bool isChecked) {
 
   // -------------------------------------------------------
   this->disableModelChangeContribution();
@@ -47,12 +47,13 @@ void RicEditPreferencesFeature::onActionTriggered(bool isChecked) {
 
   QStringList tabNames = app->preferences()->tabNames();
 
-  RiuPropertyViewTabWidget propertyDialog(nullptr, app->preferences(), "Preferences", tabNames);
+  RiuPropertyViewTabWidget propertyDialog(
+      nullptr, app->preferences(), "FieldOpt", tabNames);
 
   // -------------------------------------------------------
   if (propertyDialog.exec() == QDialog::Accepted) {
 
-    // Write preferences using QSettings  and apply them to the application
+    // Write preferences using QSettings and apply them to the application
     caf::PdmSettings::writeFieldsToApplicationStore(app->preferences());
     app->applyPreferences();
 
@@ -64,6 +65,6 @@ void RicEditPreferencesFeature::onActionTriggered(bool isChecked) {
 }
 
 //==========================================================
-void RicEditPreferencesFeature::setupActionLook(QAction* actionToSetup) {
-  actionToSetup->setText("&Preferences...");
+void RicFieldOptFeature::setupActionLook(QAction* actionToSetup) {
+  actionToSetup->setText("&FieldOpt...");
 }

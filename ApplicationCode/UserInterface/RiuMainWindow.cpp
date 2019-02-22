@@ -539,12 +539,19 @@ void RiuMainWindow::createMenus() {
   testMenu->addAction(m_executePaintEventPerformanceTest);
   testMenu->addAction(cmdFeatureMgr->action("RicLaunchUnitTestsFeature"));
 
-  // ---------------------------------------------------------------
+  // -------------------------------------------------------
   // Windows menu
   m_windowMenu = menuBar()->addMenu("&Windows");
   connect(m_windowMenu,
           SIGNAL(aboutToShow()),
           SLOT(slotBuildWindowActions()));
+
+  // ---------------------------------------------------------------
+  // FieldOpt menu
+  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt");
+  FieldOptMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
+
+  connect(FieldOptMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
 
   // ---------------------------------------------------------------
   // Help menu

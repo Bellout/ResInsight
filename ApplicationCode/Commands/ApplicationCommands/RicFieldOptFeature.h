@@ -24,7 +24,7 @@
 #include "cafCmdFeature.h"
 
 //==========================================================
-class RicEditPreferencesFeature : public caf::CmdFeature {
+class RicFieldOptFeature : public caf::CmdFeature {
  CAF_CMD_HEADER_INIT;
 
  protected:

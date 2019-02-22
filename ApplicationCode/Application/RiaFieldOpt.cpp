@@ -21,7 +21,7 @@
 //
 ////////////////////////////////////////////////////////////
 
-#include "RiaPreferences.h"
+#include "RiaFieldOpt.h"
 
 #include "RifReaderSettings.h"
 
@@ -34,19 +34,19 @@
 namespace caf
 {
 template<>
-void RiaPreferences::SummaryRestartFilesImportModeType::setUp() {
-  addItem(RiaPreferences::ASK_USER, "ASK_USER", "Ask user");
-  addItem(RiaPreferences::IMPORT, "IMPORT", "Always import");
-  addItem(RiaPreferences::NOT_IMPORT, "NOT_IMPORT", "Never import");
-  addItem(RiaPreferences::SEPARATE_CASES, "SEPARATE_CASES", "Import as separate summary cases");
-  setDefault(RiaPreferences::ASK_USER);
+void RiaFieldOpt::SummaryRestartFilesImportModeType::setUp() {
+  addItem(RiaFieldOpt::ASK_USER, "ASK_USER", "Ask user");
+  addItem(RiaFieldOpt::IMPORT, "IMPORT", "Always import");
+  addItem(RiaFieldOpt::NOT_IMPORT, "NOT_IMPORT", "Never import");
+  addItem(RiaFieldOpt::SEPARATE_CASES, "SEPARATE_CASES", "Import as separate summary cases");
+  setDefault(RiaFieldOpt::ASK_USER);
 }
 }
 
-CAF_PDM_SOURCE_INIT(RiaPreferences, "RiaPreferences");
+CAF_PDM_SOURCE_INIT(RiaFieldOpt, "RiaFieldOpt");
 
 // =========================================================
-RiaPreferences::RiaPreferences(void) {
+RiaFieldOpt::RiaFieldOpt(void) {
 
   CAF_PDM_InitField(
       &navigationPolicy, "navigationPolicy",
@@ -237,12 +237,12 @@ RiaPreferences::RiaPreferences(void) {
 }
 
 // =========================================================
-RiaPreferences::~RiaPreferences(void) {
+RiaFieldOpt::~RiaFieldOpt(void) {
   delete m_readerSettings;
 }
 
 // =========================================================
-void RiaPreferences::defineEditorAttribute(
+void RiaFieldOpt::defineEditorAttribute(
     const caf::PdmFieldHandle* field,
     QString uiConfigName,
     caf::PdmUiEditorAttribute * attribute) {
@@ -279,7 +279,7 @@ void RiaPreferences::defineEditorAttribute(
 }
 
 // =========================================================
-void RiaPreferences::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) {
+void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) {
 
   if (uiConfigName == m_tabNames[0]) {
 
@@ -308,7 +308,7 @@ void RiaPreferences::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& 
     newCaseBehaviourGroup->add(&autocomputeDepthRelatedProperties);
     newCaseBehaviourGroup->add(&loadAndShowSoil);
 
-    m_readerSettings->defineUiOrdering(uiConfigName, *newCaseBehaviourGroup);
+//    m_readerSettings2->defineUiOrdering(uiConfigName, *newCaseBehaviourGroup);
 
     caf::PdmUiGroup* restartBehaviourGroup = uiOrdering.addNewGroup("Summary Restart Files");
     restartBehaviourGroup->add(&summaryRestartFilesImportMode);
@@ -335,7 +335,7 @@ void RiaPreferences::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& 
 }
 
 // =========================================================
-QList<caf::PdmOptionItemInfo> RiaPreferences::calculateValueOptions(
+QList<caf::PdmOptionItemInfo> RiaFieldOpt::calculateValueOptions(
     const caf::PdmFieldHandle* fieldNeedingOptions,
     bool * useOptionsOnly) {
 
@@ -362,12 +362,12 @@ QList<caf::PdmOptionItemInfo> RiaPreferences::calculateValueOptions(
 }
 
 // =========================================================
-QStringList RiaPreferences::tabNames() {
+QStringList RiaFieldOpt::tabNames() {
   return m_tabNames;
 }
 
 // =========================================================
-const RifReaderSettings* RiaPreferences::readerSettings() const {
+const RifReaderSettings* RiaFieldOpt::readerSettings() const {
   return m_readerSettings;
 }
 

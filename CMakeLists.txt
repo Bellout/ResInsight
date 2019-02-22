@@ -1,7 +1,7 @@
 cmake_minimum_required (VERSION 2.8.12)
 
 include (CheckCSourceCompiles)
-project (ResInsight)
+project (ResInsight-mb)
 
 set (VIZ_MODULES_FOLDER_NAME Fwk/VizFwk)
 

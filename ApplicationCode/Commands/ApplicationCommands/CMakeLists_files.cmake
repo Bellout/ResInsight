@@ -11,7 +11,10 @@ ${CMAKE_CURRENT_LIST_DIR}/RicSaveProjectAsFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicExitApplicationFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicCloseProjectFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicHelpFeatures.h
+
 ${CMAKE_CURRENT_LIST_DIR}/RicEditPreferencesFeature.h
+${CMAKE_CURRENT_LIST_DIR}/RicFieldOptFeature.h
+
 ${CMAKE_CURRENT_LIST_DIR}/RicShowPlotDataFeature.h
 ${CMAKE_CURRENT_LIST_DIR}/RicLaunchRegressionTestsFeature.h
 )
@@ -28,7 +31,10 @@ ${CMAKE_CURRENT_LIST_DIR}/RicSaveProjectAsFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicExitApplicationFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicCloseProjectFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicHelpFeatures.cpp
+
 ${CMAKE_CURRENT_LIST_DIR}/RicEditPreferencesFeature.cpp
+${CMAKE_CURRENT_LIST_DIR}/RicFieldOptFeature.cpp
+
 ${CMAKE_CURRENT_LIST_DIR}/RicShowPlotDataFeature.cpp
 ${CMAKE_CURRENT_LIST_DIR}/RicLaunchRegressionTestsFeature.cpp
 )
