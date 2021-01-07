@@ -329,6 +329,10 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
     uiOrdering.add(&appendFieldKeywordToToolTipText);
     uiOrdering.add(&showTestToolbar);
     uiOrdering.add(&includeFractureDebugInfoFile);
+
+  } else if (uiConfigName == m_tabNames[4]) {
+    caf::PdmUiGroup* FOGlobalOptions = uiOrdering.addNewGroup("Global options");
+
   }
 
   uiOrdering.skipRemainingFields(true);

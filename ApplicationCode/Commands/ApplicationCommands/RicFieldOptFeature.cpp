@@ -45,6 +45,7 @@ void RicFieldOptFeature::onActionTriggered(bool isChecked) {
 
   RiaApplication* app = RiaApplication::instance();
 
+
   QStringList tabNames = app->preferences()->tabNames();
 
   RiuPropertyViewTabWidget propertyDialog(
@@ -66,5 +67,5 @@ void RicFieldOptFeature::onActionTriggered(bool isChecked) {
 
 //==========================================================
 void RicFieldOptFeature::setupActionLook(QAction* actionToSetup) {
-  actionToSetup->setText("&FieldOpt...");
+  actionToSetup->setText("&Optimization setup");
 }

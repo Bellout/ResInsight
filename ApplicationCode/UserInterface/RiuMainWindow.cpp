@@ -546,12 +546,18 @@ void RiuMainWindow::createMenus() {
           SIGNAL(aboutToShow()),
           SLOT(slotBuildWindowActions()));
 
+
+
+
   // ---------------------------------------------------------------
   // FieldOpt menu
-  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt");
+  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt-Research");
   FieldOptMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
+  FieldOptMenu->addSeparator();
 
   connect(FieldOptMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
+
+
 
   // ---------------------------------------------------------------
   // Help menu
