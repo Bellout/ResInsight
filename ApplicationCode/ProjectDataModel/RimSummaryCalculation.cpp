@@ -18,7 +18,7 @@
 
 #include "RimSummaryCalculation.h"
 
-#include "expressionparser/ExpressionParser.h"
+#include "../ThirdParty/expressionparser/ExpressionParser.h"
 
 #include "RiaSummaryCurveDefinition.h"
 #include "RiaSummaryTools.h"

@@ -56,7 +56,7 @@
 #include "cafPdmUiDoubleSliderEditor.h"
 #include "cafPdmUiTreeOrdering.h"
 
-#include "clipper/clipper.hpp"
+#include "../ThirdParty/clipper/clipper.hpp"
 
 #include "cvfBoundingBox.h"
 #include "cvfGeometryTools.h"
