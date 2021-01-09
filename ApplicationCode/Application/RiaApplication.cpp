@@ -30,6 +30,9 @@
 #include "RiaImportEclipseCaseTools.h"
 #include "RiaLogging.h"
 #include "RiaPreferences.h"
+#include "RiaFieldOpt.h"
+
+
 #include "RiaProjectModifier.h"
 #include "RiaSocketServer.h"
 #include "RiaVersionInfo.h"
@@ -138,6 +141,121 @@ void AppEnum< RiaApplication::RINavigationPolicy >::setUp() {
 
   setDefault(RiaApplication::NAVIGATION_POLICY_CEETRON);
 }
+
+template<>
+void AppEnum< RiaApplication::FOReOptTypeAll >::setUp() {
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_CS,
+          "Compass Search (CS)",
+          "Compass Search (CS)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_APPS,
+          "Asynchronous Paralell Pattern Search (APPS)",
+          "Asynchronous Paralell Pattern Search (APPS)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_DFTR,
+          "Derivative-Free Trust-Region Algorithm (DFTR)",
+          "Derivative-Free Trust-Region Algorithm (DFTR)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_GA,
+          "Genetic Algorithm (GA)",
+          "Genetic Algorithm (GA)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_PSO,
+          "Particle Swarm Optimization (PSO)",
+          "Particle Swarm Optimization (PSO)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_CMA_ES,
+          "Covariance Matrix Adaption Evolutionary Strategy (CMA-ES)",
+          "Covariance Matrix Adaption Evolutionary Strategy (CMA-ES)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_EGO,
+          "Bayesian Optimization (EGO)",
+          "Bayesian Optimization (EGO)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_SPSA,
+          "Simultaneous Perturbation Stochastic Approximation (SPSA)",
+          "Simultaneous Perturbation Stochastic Approximation (SPSA)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_MPSO,
+          "mPSO",
+          "mPSO");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_APPS_PSO_ML1,
+          "APPS/PSO + data-driven meta-optimization",
+          "APPS/PSO + data-driven meta-optimization");
+
+  addItem(RiaApplication::FORE_OPTTYPE_ALL_JNT_ROSP_CNTRL,
+          "Joint optimization using embedded reduced-order sub-routines",
+          "Joint optimization using embedded reduced-order sub-routines");
+
+  setDefault(RiaApplication::FORE_OPTTYPE_ALL_APPS);
+}
+
+
+template<>
+void AppEnum< RiaApplication::FOReOptTypeDet >::setUp() {
+
+  addItem(RiaApplication::FORE_OPTTYPE_DET_CS,
+          "Compass Search (CS)",
+          "Compass Search (CS)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_DET_APPS,
+          "Asynchronous Paralell Pattern Search (APPS)",
+          "Asynchronous Paralell Pattern Search (APPS)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_DET_DFTR,
+          "Derivative-Free Trust-Region Algorithm (DFTR)",
+          "Derivative-Free Trust-Region Algorithm (DFTR)");
+
+  setDefault(RiaApplication::FORE_OPTTYPE_DET_APPS);
+}
+
+template<>
+void AppEnum< RiaApplication::FOReOptTypeSto >::setUp() {
+
+  addItem(RiaApplication::FORE_OPTTYPE_STO_GA,
+          "Genetic Algorithm (GA)",
+          "Genetic Algorithm (GA)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_STO_PSO,
+          "Particle Swarm Optimization (PSO)",
+          "Particle Swarm Optimization (PSO)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_STO_CMA_ES,
+          "Covariance Matrix Adaption Evolutionary Strategy (CMA-ES)",
+          "Covariance Matrix Adaption Evolutionary Strategy (CMA-ES)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_STO_EGO,
+          "Bayesian Optimization (EGO)",
+          "Bayesian Optimization (EGO)");
+
+  addItem(RiaApplication::FORE_OPTTYPE_STO_SPSA,
+          "Simultaneous Perturbation Stochastic Approximation (SPSA)",
+          "Simultaneous Perturbation Stochastic Approximation (SPSA)");
+
+  setDefault(RiaApplication::FORE_OPTTYPE_STO_PSO);
+}
+
+template<>
+void AppEnum< RiaApplication::FOReOptTypeHyb >::setUp() {
+
+  addItem(RiaApplication::FORE_OPTTYPE_HYB_MPSO,
+          "mPSO",
+          "mPSO");
+
+  addItem(RiaApplication::FORE_OPTTYPE_HYB_APPS_PSO_ML1,
+          "APPS/PSO + data-driven meta-optimization",
+          "APPS/PSO + data-driven meta-optimization");
+
+  addItem(RiaApplication::FORE_OPTTYPE_HYB_JNT_ROSP_CNTRL,
+          "Joint optimization using embedded reduced-order sub-routines",
+          "Joint optimization using embedded reduced-order sub-routines");
+
+  setDefault(RiaApplication::FORE_OPTTYPE_HYB_APPS_PSO_ML1);
+}
+
+
 }
 
 // =========================================================
@@ -162,6 +280,10 @@ RiaApplication::RiaApplication(int& argc, char** argv)
   m_preferences = new RiaPreferences;
   caf::PdmSettings::readFieldsFromApplicationStore(m_preferences);
   applyPreferences();
+
+  m_fieldopt = new RiaFieldOpt;
+  caf::PdmSettings::readFieldsFromApplicationStore(m_fieldopt);
+  applyPrefsFieldOpt();
 
   // -------------------------------------------------------
   if (useShaders()) {
@@ -215,6 +337,7 @@ RiaApplication::~RiaApplication() {
   deleteMainPlotWindow();
 
   delete m_preferences;
+  delete m_fieldopt;
 }
 
 // =========================================================
@@ -420,6 +543,9 @@ bool RiaApplication::loadProject(const QString& projectFileName,
   // VL check regarding specific order mentioned in comment above...
   m_preferences->lastUsedProjectFileName = fullPathProjectFileName;
   caf::PdmSettings::writeFieldsToApplicationStore(m_preferences);
+
+  m_fieldopt->lastUsedProjectFileName = fullPathProjectFileName;
+  caf::PdmSettings::writeFieldsToApplicationStore(m_fieldopt);
 
   for (size_t oilFieldIdx = 0; oilFieldIdx < m_project->oilFields().size(); oilFieldIdx++) {
 
@@ -1599,6 +1725,79 @@ RiaPreferences* RiaApplication::preferences() {
   return m_preferences;
 }
 
+RiaFieldOpt* RiaApplication::prefs_fieldopt() {
+  return m_fieldopt;
+}
+
+//==========================================================
+void RiaApplication::applyPrefsFieldOpt() {
+
+  // -------------------------------------------------------
+  if (m_activeReservoirView && m_activeReservoirView->viewer()) {
+    m_activeReservoirView->viewer()->updateNavigationPolicy();
+    m_activeReservoirView->viewer()->enablePerfInfoHud(m_fieldopt->showHud());
+  }
+
+  // -------------------------------------------------------
+  if (useShaders()) {
+    caf::EffectGenerator::setRenderingMode(caf::EffectGenerator::SHADER_BASED);
+
+  } else {
+    caf::EffectGenerator::setRenderingMode(caf::EffectGenerator::FIXED_FUNCTION);
+  }
+
+  // -------------------------------------------------------
+  if (RiuMainWindow::instance() && RiuMainWindow::instance()->projectTreeView()) {
+    RiuMainWindow::instance()->projectTreeView()
+      ->enableAppendOfClassNameToUiItemText(m_fieldopt->appendClassNameToUiText());
+    if (mainPlotWindow()) mainPlotWindow()->projectTreeView()
+        ->enableAppendOfClassNameToUiItemText(m_fieldopt->appendClassNameToUiText());
+  }
+
+  // -------------------------------------------------------
+  caf::FixedAtlasFont::FontSize fontSizeType = caf::FixedAtlasFont::POINT_SIZE_16;
+  if (m_fieldopt->fontSizeInScene() == "8") {
+    fontSizeType = caf::FixedAtlasFont::POINT_SIZE_8;
+
+  } else if (m_fieldopt->fontSizeInScene() == "12") {
+    fontSizeType = caf::FixedAtlasFont::POINT_SIZE_12;
+
+  } else if (m_fieldopt->fontSizeInScene() == "16") {
+    fontSizeType = caf::FixedAtlasFont::POINT_SIZE_16;
+
+  } else if (m_fieldopt->fontSizeInScene() == "24") {
+    fontSizeType = caf::FixedAtlasFont::POINT_SIZE_24;
+
+  } else if (m_fieldopt->fontSizeInScene() == "32") {
+    fontSizeType = caf::FixedAtlasFont::POINT_SIZE_32;
+  }
+
+  // -------------------------------------------------------
+  m_customFont = new caf::FixedAtlasFont(fontSizeType);
+
+  if (this->project()) {
+
+    this->project()->setScriptDirectories(m_fieldopt->scriptDirectories());
+    this->project()->updateConnectedEditors();
+
+    std::vector<Rim3dView*> visibleViews;
+    this->project()->allVisibleViews(visibleViews);
+
+    // -----------------------------------------------------
+    for (auto view : visibleViews) {
+      RimEclipseView* eclipseView = dynamic_cast<RimEclipseView*>(view);
+
+      if (eclipseView) {
+        eclipseView->scheduleReservoirGridGeometryRegen();
+      }
+      view->scheduleCreateDisplayModelAndRedraw();
+    }
+  }
+
+  caf::PdmUiItem::enableExtraDebugText(
+    m_fieldopt->appendFieldKeywordToToolTipText());
+}
+
 //==========================================================
 void RiaApplication::applyPreferences() {
 
@@ -1838,7 +2037,7 @@ void RiaApplication::showFormattedTextInMessageBox(const QString& text) {
 
   QMessageBox msgBox;
   msgBox.setIcon(QMessageBox::Information);
-  msgBox.setWindowTitle("ResInsight");
+  msgBox.setWindowTitle("ResInsight - CHACO-HACK");
 
   helpText.replace("&", "&amp;");
   helpText.replace("<", "&lt;");

@@ -502,6 +502,11 @@ void RiuMainWindow::createMenus() {
   // ---------------------------------------------------------------
   connect(fileMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshFileActions()));
 
+
+
+
+
+
   // ---------------------------------------------------------------
   // Edit menu
   QMenu* editMenu = menuBar()->addMenu("&Edit");
@@ -510,6 +515,23 @@ void RiuMainWindow::createMenus() {
   editMenu->addAction(cmdFeatureMgr->action("RicEditPreferencesFeature"));
 
   connect(editMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
+
+  // ---------------------------------------------------------------
+  // FieldOpt menu
+  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt-Research");
+  FieldOptMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
+  FieldOptMenu->addSeparator();
+
+  connect(FieldOptMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
+
+
+
+
+
+
+
+
+
 
   // ---------------------------------------------------------------
   // View menu
@@ -549,13 +571,7 @@ void RiuMainWindow::createMenus() {
 
 
 
-  // ---------------------------------------------------------------
-  // FieldOpt menu
-  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt-Research");
-  FieldOptMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
-  FieldOptMenu->addSeparator();
 
-  connect(FieldOptMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
 
 
 

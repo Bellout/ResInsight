@@ -43,6 +43,8 @@ class Drawable;
 class RIProcess;
 
 class RiaPreferences;
+class RiaFieldOpt;
+
 class RiaProjectModifier;
 class RiaSocketServer;
 
@@ -84,6 +86,44 @@ class RiaApplication : public QApplication {
     PLA_NONE = 0,
     PLA_CALCULATE_STATISTICS = 1
   };
+
+
+//
+
+  enum FOReOptTypeAll {
+    FORE_OPTTYPE_ALL_CS,
+    FORE_OPTTYPE_ALL_APPS,
+    FORE_OPTTYPE_ALL_DFTR,
+    FORE_OPTTYPE_ALL_GA,
+    FORE_OPTTYPE_ALL_PSO,
+    FORE_OPTTYPE_ALL_CMA_ES,
+    FORE_OPTTYPE_ALL_EGO,
+    FORE_OPTTYPE_ALL_SPSA,
+    FORE_OPTTYPE_ALL_MPSO,
+    FORE_OPTTYPE_ALL_APPS_PSO_ML1,
+    FORE_OPTTYPE_ALL_JNT_ROSP_CNTRL
+  };
+
+  enum FOReOptTypeDet {
+    FORE_OPTTYPE_DET_CS,
+    FORE_OPTTYPE_DET_APPS,
+    FORE_OPTTYPE_DET_DFTR
+  };
+
+  enum FOReOptTypeSto {
+    FORE_OPTTYPE_STO_GA,
+    FORE_OPTTYPE_STO_PSO,
+    FORE_OPTTYPE_STO_CMA_ES,
+    FORE_OPTTYPE_STO_EGO,
+    FORE_OPTTYPE_STO_SPSA
+  };
+
+  enum FOReOptTypeHyb {
+    FORE_OPTTYPE_HYB_MPSO,
+    FORE_OPTTYPE_HYB_APPS_PSO_ML1,
+    FORE_OPTTYPE_HYB_JNT_ROSP_CNTRL
+  };
+
 
  public:
   // -------------------------------------------------------
@@ -164,8 +204,22 @@ class RiaApplication : public QApplication {
   void                terminateProcess();
   void                waitForProcess() const;
 
+
+
+
+
   RiaPreferences*     preferences();
   void                applyPreferences();
+
+  RiaFieldOpt*        prefs_fieldopt();
+  void                applyPrefsFieldOpt();
+
+
+
+
+
+
+
 
   cvf::Font*          standardFont();
   cvf::Font*          customFont();
@@ -242,6 +296,7 @@ class RiaApplication : public QApplication {
   QStringList                         m_currentArguments;
 
   RiaPreferences*                     m_preferences;
+  RiaFieldOpt*                        m_fieldopt;
 
   std::map<QString, QString>          m_fileDialogDefaultDirectories;
   QString                             m_startupDefaultDirectory;

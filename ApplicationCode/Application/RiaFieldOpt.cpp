@@ -49,191 +49,233 @@ CAF_PDM_SOURCE_INIT(RiaFieldOpt, "RiaFieldOpt");
 RiaFieldOpt::RiaFieldOpt(void) {
 
   CAF_PDM_InitField(
-      &navigationPolicy, "navigationPolicy",
-      caf::AppEnum<RiaApplication::RINavigationPolicy>(
-          RiaApplication::NAVIGATION_POLICY_RMS),
-      "Navigation Mode", "", "", "");
+    &navigationPolicy, "navigationPolicy",
+    caf::AppEnum<RiaApplication::RINavigationPolicy>(
+      RiaApplication::NAVIGATION_POLICY_RMS),
+    "Navigation Mode", "", "", "");
 
   CAF_PDM_InitFieldNoDefault(
-      &scriptDirectories, "scriptDirectory",
-      "Shared Script Folder(s)", "", "", "");
+    &scriptDirectories, "scriptDirectory",
+    "Shared Script Folder(s)", "", "", "");
 
   // -------------------------------------------------------
   scriptDirectories.uiCapability()->setUiEditorTypeName(
-      caf::PdmUiFilePathEditor::uiEditorTypeName());
+    caf::PdmUiFilePathEditor::uiEditorTypeName());
 
   CAF_PDM_InitField(
-      &scriptEditorExecutable, "scriptEditorExecutable",
-      QString("kate"), "Script Editor", "", "", "");
+    &scriptEditorExecutable, "scriptEditorExecutable",
+    QString("kate"), "Script Editor", "", "", "");
 
   scriptEditorExecutable.uiCapability()->setUiEditorTypeName(
-      caf::PdmUiFilePathEditor::uiEditorTypeName());
+    caf::PdmUiFilePathEditor::uiEditorTypeName());
 
   // -------------------------------------------------------
   CAF_PDM_InitField(
-      &octaveExecutable, "octaveExecutable",
-      QString("octave"), "Octave Executable Location", "", "", "");
+    &octaveExecutable, "octaveExecutable",
+    QString("octave"), "Octave Executable Location", "", "", "");
 
   octaveExecutable.uiCapability()->setUiEditorTypeName(
-      caf::PdmUiFilePathEditor::uiEditorTypeName());
+    caf::PdmUiFilePathEditor::uiEditorTypeName());
 
   octaveExecutable.uiCapability()->setUiLabelPosition(
-      caf::PdmUiItemInfo::TOP);
+    caf::PdmUiItemInfo::TOP);
 
   CAF_PDM_InitField(
-      &octaveShowHeaderInfoWhenExecutingScripts,
-      "octaveShowHeaderInfoWhenExecutingScripts", false,
-      "Show Text Header When Executing Scripts", "", "", "");
+    &octaveShowHeaderInfoWhenExecutingScripts,
+    "octaveShowHeaderInfoWhenExecutingScripts", false,
+    "Show Text Header When Executing Scripts", "", "", "");
 
   octaveShowHeaderInfoWhenExecutingScripts
-  .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+
+
+
+
+
+
+
+
+
+  CAF_PDM_InitField(
+    &globalName, "globalName",
+    QString("olympr37-msw-opt-aug-msw-scl"), "Name",
+    "", "", "");
+
+  CAF_PDM_InitField(
+    &optTypeAll, "optTypeAll",
+    caf::AppEnum<RiaApplication::FOReOptTypeAll>(
+      RiaApplication::FORE_OPTTYPE_ALL_APPS),
+    "Optimizer Type", "", "", "");
+
+  CAF_PDM_InitField(&optScaleVars,
+                    "ScaleVars",
+                    true,"Scale variables",
+                    "", "", "");
+
+
+
+
+
+
+
+
+
+
 
   // -------------------------------------------------------
   CAF_PDM_InitField(
-      &ssihubAddress, "ssihubAddress",
-      QString("http://"), "SSIHUB Address", "", "", "");
+    &ssihubAddress, "ssihubAddress",
+    QString("http://"), "SSIHUB Address",
+    "", "", "");
 
   ssihubAddress.uiCapability()->setUiLabelPosition(
-      caf::PdmUiItemInfo::TOP);
+    caf::PdmUiItemInfo::TOP);
 
   CAF_PDM_InitField(
-      &defaultGridLines, "defaultGridLines", true,
-      "Gridlines", "", "", "");
-
-  // -------------------------------------------------------
-  CAF_PDM_InitField(
-      &defaultGridLineColors,
-      "defaultGridLineColors",
-      cvf::Color3f(0.92f, 0.92f, 0.92f),
-      "Mesh Color", "", "", "");
-
-  CAF_PDM_InitField(
-      &defaultFaultGridLineColors,
-      "defaultFaultGridLineColors",
-      cvf::Color3f(0.08f, 0.08f, 0.08f),
-      "Mesh Color Along Faults", "", "", "");
-
-  CAF_PDM_InitField(
-      &defaultWellLabelColor,
-      "defaultWellLableColor",
-      cvf::Color3f(0.92f, 0.92f, 0.92f),
-      "Well Label Color", "",
-      "The default well label color in new views", "");
-
-  CAF_PDM_InitField(
-      &defaultViewerBackgroundColor,
-      "defaultViewerBackgroundColor",
-      cvf::Color3f(0.69f, 0.77f, 0.87f),
-      "Viewer Background", "",
-      "The viewer background color for new views", "");
+    &defaultGridLines, "defaultGridLines", true,
+    "Gridlines", "", "", "");
 
   // -------------------------------------------------------
   CAF_PDM_InitField(
-      &defaultScaleFactorZ, "defaultScaleFactorZ",
-      5, "Default Z Scale Factor", "", "", "");
+    &defaultGridLineColors,
+    "defaultGridLineColors",
+    cvf::Color3f(0.92f, 0.92f, 0.92f),
+    "Mesh Color", "", "", "");
 
   CAF_PDM_InitField(
-      &fontSizeInScene, "fontSizeInScene",
-      QString("8"), "Font Size", "", "", "");
+    &defaultFaultGridLineColors,
+    "defaultFaultGridLineColors",
+    cvf::Color3f(0.08f, 0.08f, 0.08f),
+    "Mesh Color Along Faults", "", "", "");
 
   CAF_PDM_InitField(
-      &showLasCurveWithoutTvdWarning,
-      "showLasCurveWithoutTvdWarning", true,
-      "Show LAS Curve Without TVD Warning", "", "", "");
+    &defaultWellLabelColor,
+    "defaultWellLableColor",
+    cvf::Color3f(0.92f, 0.92f, 0.92f),
+    "Well Label Color", "",
+    "The default well label color in new views", "");
+
+  CAF_PDM_InitField(
+    &defaultViewerBackgroundColor,
+    "defaultViewerBackgroundColor",
+    cvf::Color3f(0.69f, 0.77f, 0.87f),
+    "Viewer Background", "",
+    "The viewer background color for new views", "");
+
+  // -------------------------------------------------------
+  CAF_PDM_InitField(
+    &defaultScaleFactorZ, "defaultScaleFactorZ",
+    5, "Default Z Scale Factor", "", "", "");
+
+  CAF_PDM_InitField(
+    &fontSizeInScene, "fontSizeInScene",
+    QString("8"), "Font Size", "", "", "");
+
+  CAF_PDM_InitField(
+    &showLasCurveWithoutTvdWarning,
+    "showLasCurveWithoutTvdWarning", true,
+    "Show LAS Curve Without TVD Warning", "", "", "");
 
   // -------------------------------------------------------
   showLasCurveWithoutTvdWarning
-  .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
-      &useShaders, "useShaders", true,
-      "Use Shaders", "", "", "");
+    &useShaders, "useShaders", true,
+    "Use Shaders", "", "", "");
 
   useShaders.uiCapability()->setUiLabelPosition(
-      caf::PdmUiItemInfo::HIDDEN);
+    caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
-      &showHud, "showHud", false,
-      "Show 3D Information", "", "", "");
+    &showHud, "showHud", false,
+    "Show 3D Information", "", "", "");
 
   showHud.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   // -------------------------------------------------------
   CAF_PDM_InitField(
-      &appendClassNameToUiText, "appendClassNameToUiText", false,
-      "Show Class Names", "", "", "");
+    &appendClassNameToUiText, "appendClassNameToUiText", false,
+    "Show Class Names", "", "", "");
 
   appendClassNameToUiText
-  .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
-      &appendFieldKeywordToToolTipText,
-      "appendFieldKeywordToToolTipText", false,
-      "Show Field Keyword in ToolTip", "", "", "");
+    &appendFieldKeywordToToolTipText,
+    "appendFieldKeywordToToolTipText", false,
+    "Show Field Keyword in ToolTip", "", "", "");
 
   appendFieldKeywordToToolTipText
-  .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   // -------------------------------------------------------
   CAF_PDM_InitField(
-      &showTestToolbar, "showTestToolbar", false,
-      "Enable Test Toolbar", "", "", "");
+    &showTestToolbar, "showTestToolbar", false,
+    "Enable Test Toolbar", "", "", "");
 
   showTestToolbar.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
-      &includeFractureDebugInfoFile,
-      "includeFractureDebugInfoFile", false,
-      "Include Fracture Debug Info for Completion Export", "", "", "");
+    &includeFractureDebugInfoFile,
+    "includeFractureDebugInfoFile", false,
+    "Include Fracture Debug Info for Completion Export", "", "", "");
 
   includeFractureDebugInfoFile
-  .uiCapability()->setUiLabelPosition(
-      caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(
+    caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(&showLegendBackground,
-      "showLegendBackground", true,
-      "Enable Legend Background", "", "", "");
+                    "showLegendBackground",
+                    true,"Enable Legend Background",
+                    "", "", "");
 
   // -------------------------------------------------------
   CAF_PDM_InitFieldNoDefault(&lastUsedProjectFileName,
-      "lastUsedProjectFileName", "Last Used Project File",
-      "", "", "");
+                             "lastUsedProjectFileName", "Last Used Project File",
+                             "", "", "");
 
   lastUsedProjectFileName.uiCapability()->setUiHidden(true);
 
   CAF_PDM_InitField(
-      &autocomputeDepthRelatedProperties,
-      "autocomputeDepth", true,
-      "Compute DEPTH Related Properties", "",
-      "DEPTH, DX, DY, DZ, TOP, BOTTOM", "");
+    &autocomputeDepthRelatedProperties,
+    "autocomputeDepth", true,
+    "Compute DEPTH Related Properties", "",
+    "DEPTH, DX, DY, DZ, TOP, BOTTOM", "");
 
   autocomputeDepthRelatedProperties
-  .uiCapability()->setUiLabelPosition(
-      caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(
+    caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
-      &loadAndShowSoil, "loadAndShowSoil", true,
-      "Load and Show SOIL", "", "", "");
+    &loadAndShowSoil, "loadAndShowSoil", true,
+    "Load and Show SOIL", "", "", "");
 
   // -------------------------------------------------------
   loadAndShowSoil
-  .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitFieldNoDefault(&summaryRestartFilesImportMode,
-      "summaryRestartFilesImportMode",
-      "Import summary restart files", "", "", "");
+                             "summaryRestartFilesImportMode",
+                             "Import summary restart files", "", "", "");
 
   //loadAndShowSoil.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitFieldNoDefault(&m_readerSettings,
-      "readerSettings", "Reader Settings", "", "", "");
+                             "readerSettings", "Reader Settings", "", "", "");
 
   m_readerSettings = new RifReaderSettings;
 
-  m_tabNames << "General";
-  m_tabNames << "Eclipse";
-  m_tabNames << "Octave";
-  m_tabNames << "System";
+  m_tabNames << "Optimizer";
+  m_tabNames << "Model/Problem";
+  m_tabNames << "Constraints";
+
+  m_tabNames << "GENERAL";
+  m_tabNames << "ECLIPSE";
+  m_tabNames << "OCTAVE";
+  m_tabNames << "SYSTEM";
+
+
 }
 
 // =========================================================
@@ -243,9 +285,9 @@ RiaFieldOpt::~RiaFieldOpt(void) {
 
 // =========================================================
 void RiaFieldOpt::defineEditorAttribute(
-    const caf::PdmFieldHandle* field,
-    QString uiConfigName,
-    caf::PdmUiEditorAttribute * attribute) {
+  const caf::PdmFieldHandle* field,
+  QString uiConfigName,
+  caf::PdmUiEditorAttribute * attribute) {
 
   m_readerSettings->defineEditorAttribute(field, uiConfigName, attribute);
 
@@ -253,7 +295,7 @@ void RiaFieldOpt::defineEditorAttribute(
   if (field == &scriptDirectories) {
 
     caf::PdmUiFilePathEditorAttribute* myAttr =
-        dynamic_cast<caf::PdmUiFilePathEditorAttribute*>(attribute);
+      dynamic_cast<caf::PdmUiFilePathEditorAttribute*>(attribute);
 
     if (myAttr) {
       myAttr->m_selectDirectory = true;
@@ -261,15 +303,15 @@ void RiaFieldOpt::defineEditorAttribute(
     }
 
   } else if (field == &octaveShowHeaderInfoWhenExecutingScripts ||
-      field == &autocomputeDepthRelatedProperties ||
-      field == &loadAndShowSoil ||
-      field == &useShaders ||
-      field == &showHud ||
-      field == &appendClassNameToUiText ||
-      field == &appendFieldKeywordToToolTipText ||
-      field == &showTestToolbar ||
-      field == &includeFractureDebugInfoFile ||
-      field == &showLasCurveWithoutTvdWarning) {
+    field == &autocomputeDepthRelatedProperties ||
+    field == &loadAndShowSoil ||
+    field == &useShaders ||
+    field == &showHud ||
+    field == &appendClassNameToUiText ||
+    field == &appendFieldKeywordToToolTipText ||
+    field == &showTestToolbar ||
+    field == &includeFractureDebugInfoFile ||
+    field == &showLasCurveWithoutTvdWarning) {
 
     caf::PdmUiCheckBoxEditorAttribute* myAttr = dynamic_cast<caf::PdmUiCheckBoxEditorAttribute*>(attribute);
     if (myAttr) {
@@ -279,9 +321,41 @@ void RiaFieldOpt::defineEditorAttribute(
 }
 
 // =========================================================
-void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiOrdering) {
+void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
+                                   caf::PdmUiOrdering& uiOrdering) {
 
+  std::cout << "uiConfigName: " << uiConfigName.toStdString() << std::endl;
+
+  // "OPTIMIZER"
   if (uiConfigName == m_tabNames[0]) {
+    caf::PdmUiGroup* globalGrp = uiOrdering.addNewGroup("Global");
+    globalGrp->add(&globalName);
+
+    caf::PdmUiGroup* optGrp = uiOrdering.addNewGroup("Optimizer");
+    optGrp->add(&optTypeAll);
+
+//    optGrp->add(&optMode);
+
+    optGrp->add(&optScaleVars);
+
+    // MODEL/PROBLEM
+  } else if (uiConfigName == m_tabNames[1]) {
+
+    // CONSTRAINTS
+  } else if (uiConfigName == m_tabNames[2]) {
+
+
+
+
+
+
+
+
+
+
+
+    // GENERAL
+  } else if (uiConfigName == m_tabNames[3]) {
 
     caf::PdmUiGroup* defaultSettingsGroup = uiOrdering.addNewGroup("Default Settings");
     defaultSettingsGroup->add(&defaultViewerBackgroundColor);
@@ -303,7 +377,8 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
     otherGroup->add(&ssihubAddress);
     otherGroup->add(&showLasCurveWithoutTvdWarning);
 
-  } else if (uiConfigName == m_tabNames[1]) {
+    // ECLIPSE
+  } else if (uiConfigName == m_tabNames[4]) {
     caf::PdmUiGroup* newCaseBehaviourGroup = uiOrdering.addNewGroup("Behavior When Loading Data");
     newCaseBehaviourGroup->add(&autocomputeDepthRelatedProperties);
     newCaseBehaviourGroup->add(&loadAndShowSoil);
@@ -313,7 +388,8 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
     caf::PdmUiGroup* restartBehaviourGroup = uiOrdering.addNewGroup("Summary Restart Files");
     restartBehaviourGroup->add(&summaryRestartFilesImportMode);
 
-  } else if (uiConfigName == m_tabNames[2]) {
+    // OCTAVE
+  } else if (uiConfigName == m_tabNames[5]) {
 
     caf::PdmUiGroup* octaveGroup = uiOrdering.addNewGroup("Octave");
     octaveGroup->add(&octaveExecutable);
@@ -323,16 +399,13 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
     scriptGroup->add(&scriptDirectories);
     scriptGroup->add(&scriptEditorExecutable);
 
-  } else if (uiConfigName == m_tabNames[3]) {
+    // SYSTEM
+  } else if (uiConfigName == m_tabNames[6]) {
 
     uiOrdering.add(&appendClassNameToUiText);
     uiOrdering.add(&appendFieldKeywordToToolTipText);
     uiOrdering.add(&showTestToolbar);
     uiOrdering.add(&includeFractureDebugInfoFile);
-
-  } else if (uiConfigName == m_tabNames[4]) {
-    caf::PdmUiGroup* FOGlobalOptions = uiOrdering.addNewGroup("Global options");
-
   }
 
   uiOrdering.skipRemainingFields(true);
@@ -340,8 +413,8 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName, caf::PdmUiOrdering& uiO
 
 // =========================================================
 QList<caf::PdmOptionItemInfo> RiaFieldOpt::calculateValueOptions(
-    const caf::PdmFieldHandle* fieldNeedingOptions,
-    bool * useOptionsOnly) {
+  const caf::PdmFieldHandle* fieldNeedingOptions,
+  bool * useOptionsOnly) {
 
   QList<caf::PdmOptionItemInfo> options;
   *useOptionsOnly = true;
@@ -357,8 +430,8 @@ QList<caf::PdmOptionItemInfo> RiaFieldOpt::calculateValueOptions(
 
     for (int oIdx = 0; oIdx < fontSizes.size(); ++oIdx) {
       options.push_back(
-          caf::PdmOptionItemInfo(
-              fontSizes[oIdx], fontSizes[oIdx]));
+        caf::PdmOptionItemInfo(
+          fontSizes[oIdx], fontSizes[oIdx]));
     }
   }
 

@@ -41,8 +41,12 @@ class RiaFieldOpt : public caf::PdmObject
  CAF_PDM_HEADER_INIT;
 
  public:
-  enum SummaryRestartFilesImportMode { ASK_USER, IMPORT, NOT_IMPORT, SEPARATE_CASES };
-  typedef caf::AppEnum<SummaryRestartFilesImportMode> SummaryRestartFilesImportModeType;
+  enum SummaryRestartFilesImportMode {
+    ASK_USER, IMPORT, NOT_IMPORT, SEPARATE_CASES
+  };
+
+  typedef caf::AppEnum<SummaryRestartFilesImportMode>
+  SummaryRestartFilesImportModeType;
 
   RiaFieldOpt(void);
   virtual ~RiaFieldOpt(void);
@@ -60,29 +64,43 @@ class RiaFieldOpt : public caf::PdmObject
   caf::PdmField<QString>  octaveExecutable;
   caf::PdmField<bool>     octaveShowHeaderInfoWhenExecutingScripts;
 
-  caf::PdmField<QString>  ssihubAddress;
+  caf::PdmField<QString> ssihubAddress;
 
-  caf::PdmField<int>      defaultScaleFactorZ;
-  caf::PdmField<bool>     defaultGridLines;
+  caf::PdmField<int> defaultScaleFactorZ;
+  caf::PdmField<bool> defaultGridLines;
   caf::PdmField<cvf::Color3f> defaultGridLineColors;
   caf::PdmField<cvf::Color3f> defaultFaultGridLineColors;
   caf::PdmField<cvf::Color3f> defaultViewerBackgroundColor;
   caf::PdmField<cvf::Color3f> defaultWellLabelColor;
-  caf::PdmField<bool>     showLasCurveWithoutTvdWarning;
-  caf::PdmField<QString>  fontSizeInScene;
-  caf::PdmField<bool>     showLegendBackground;
 
-  caf::PdmField<bool>     useShaders;
-  caf::PdmField<bool>     showHud;
-  caf::PdmField<bool>     appendClassNameToUiText;
-  caf::PdmField<bool>     appendFieldKeywordToToolTipText;
-  caf::PdmField<bool>     showTestToolbar;
-  caf::PdmField<bool>     includeFractureDebugInfoFile;
+  caf::PdmField<bool> showLasCurveWithoutTvdWarning;
+  caf::PdmField<QString> fontSizeInScene;
+  caf::PdmField<bool> showLegendBackground;
 
-  caf::PdmField<QString>  lastUsedProjectFileName;
+  caf::PdmField<bool> useShaders;
+  caf::PdmField<bool> showHud;
+  caf::PdmField<bool> appendClassNameToUiText;
+  caf::PdmField<bool> appendFieldKeywordToToolTipText;
+  caf::PdmField<bool> showTestToolbar;
+  caf::PdmField<bool> includeFractureDebugInfoFile;
 
-  caf::PdmField<bool>     autocomputeDepthRelatedProperties;
-  caf::PdmField<bool>     loadAndShowSoil;
+  caf::PdmField<QString> lastUsedProjectFileName;
+
+  caf::PdmField<bool> autocomputeDepthRelatedProperties;
+  caf::PdmField<bool> loadAndShowSoil;
+
+
+  // FORe-Open JSON fields
+  caf::PdmField<QString>  globalName;
+
+  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeAll > > optTypeAll;
+//  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeDet > > optTypeDet;
+//  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeSto > > optTypeSto;
+//  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeHyb > > optTypeHyb;
+
+  caf::PdmField<QString>  optMode;
+  caf::PdmField<bool>  optScaleVars;
+
 
   caf::PdmField<SummaryRestartFilesImportModeType>
   summaryRestartFilesImportMode;

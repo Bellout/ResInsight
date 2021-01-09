@@ -23,6 +23,7 @@
 
 #include "RiaApplication.h"
 #include "RiaPreferences.h"
+#include "RiaFieldOpt.h"
 
 #include "RiuPropertyViewTabWidget.h"
 
@@ -46,10 +47,12 @@ void RicFieldOptFeature::onActionTriggered(bool isChecked) {
   RiaApplication* app = RiaApplication::instance();
 
 
-  QStringList tabNames = app->preferences()->tabNames();
+//  QStringList tabNames = app->preferences()->tabNames();
+  QStringList tabNames = app->prefs_fieldopt()->tabNames();
 
   RiuPropertyViewTabWidget propertyDialog(
-      nullptr, app->preferences(), "FieldOpt", tabNames);
+      nullptr, app->prefs_fieldopt(),
+      "FieldOpt-Researcher", tabNames);
 
   // -------------------------------------------------------
   if (propertyDialog.exec() == QDialog::Accepted) {
