@@ -5,9 +5,9 @@ namespace caf
 
 class PdmFieldCapability
 {
-public:
-    PdmFieldCapability() {}
-    virtual ~PdmFieldCapability() {}
+ public:
+  PdmFieldCapability() {}
+  virtual ~PdmFieldCapability() {}
 
 };
 

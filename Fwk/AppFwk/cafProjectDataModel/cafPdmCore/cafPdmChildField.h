@@ -19,49 +19,46 @@ template< typename T> class PdmFieldXmlCap;
 template<typename DataType>
 class PdmChildField : public PdmFieldHandle
 {
-public:
-    PdmChildField()
-    {
-        bool doNotUsePdmPtrFieldForAnythingButPointersToPdmObject = false; CAF_ASSERT(doNotUsePdmPtrFieldForAnythingButPointersToPdmObject);
-    }
+ public:
+  PdmChildField()
+  {
+    bool doNotUsePdmPtrFieldForAnythingButPointersToPdmObject = false;
+    CAF_ASSERT(doNotUsePdmPtrFieldForAnythingButPointersToPdmObject);
+  }
 };
 
 template<typename DataType >
 class PdmChildField <DataType*> : public PdmFieldHandle
 {
-    typedef DataType* DataTypePtr;
-public:
-    PdmChildField()                                                         { }
-    explicit PdmChildField(const DataTypePtr& fieldValue); 
-    virtual ~PdmChildField();
+  typedef DataType* DataTypePtr;
+ public:
+  PdmChildField() { }
+  explicit PdmChildField(const DataTypePtr& fieldValue);
+  virtual ~PdmChildField();
 
-    // Assignment 
+  // Assignment
+  PdmChildField& operator= (const DataTypePtr & fieldValue);
 
-    PdmChildField&              operator= (const DataTypePtr & fieldValue);
+  // Basic access
+  DataType* value() const { return m_fieldValue; }
+  void setValue(const DataTypePtr& fieldValue);
 
-    // Basic access 
+  // Access operators
+  /*Conversion*/ operator DataType* () const { return m_fieldValue; }
+  DataType* operator->() const { return m_fieldValue; }
 
-    DataType*                   value() const                               { return m_fieldValue; }
-    void                        setValue(const DataTypePtr& fieldValue);
+  const PdmPointer<DataType>& operator()() const { return m_fieldValue; }
+  const PdmPointer<DataType>& v() const { return m_fieldValue; }
 
-    // Access operators
+  // Child objects
+  virtual void childObjects(std::vector<PdmObjectHandle*>* objects);
+  virtual void removeChildObject(PdmObjectHandle* object);
 
-    /*Conversion*/              operator DataType* () const                 { return m_fieldValue; }
-    DataType*                   operator->() const                          { return m_fieldValue; }
+ private:
+  PDM_DISABLE_COPY_AND_ASSIGN(PdmChildField);
 
-    const PdmPointer<DataType>& operator()() const                          { return m_fieldValue; }
-    const PdmPointer<DataType>& v() const                                   { return m_fieldValue; }
-
-    // Child objects
-
-    virtual void                childObjects(std::vector<PdmObjectHandle*>* objects);
-    virtual void                removeChildObject(PdmObjectHandle* object);
-
-private:
-    PDM_DISABLE_COPY_AND_ASSIGN(PdmChildField);
-
-    friend class PdmFieldXmlCap< PdmChildField <DataType*> >;
-    PdmPointer<DataType>        m_fieldValue;
+  friend class PdmFieldXmlCap< PdmChildField <DataType*> >;
+  PdmPointer<DataType> m_fieldValue;
 };
 
 } // End of namespace caf

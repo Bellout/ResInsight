@@ -47,7 +47,9 @@ void RicEditPreferencesFeature::onActionTriggered(bool isChecked) {
 
   QStringList tabNames = app->preferences()->tabNames();
 
-  RiuPropertyViewTabWidget propertyDialog(nullptr, app->preferences(), "Preferences", tabNames);
+  RiuPropertyViewTabWidget propertyDialog(nullptr,
+                                          app->preferences(),
+                                          "Preferences", tabNames);
 
   // -------------------------------------------------------
   if (propertyDialog.exec() == QDialog::Accepted) {
