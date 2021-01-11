@@ -255,6 +255,32 @@ void AppEnum< RiaApplication::FOReOptTypeHyb >::setUp() {
   setDefault(RiaApplication::FORE_OPTTYPE_HYB_APPS_PSO_ML1);
 }
 
+template<>
+void AppEnum< RiaApplication::FOReOptMode >::setUp() {
+
+  addItem(RiaApplication::FORE_OPTMODE_MAXIMIZE,
+          "Maximize","Maximize");
+
+  addItem(RiaApplication::FORE_OPTMODE_MINIMIZE,
+          "Minimize","Minimize");
+
+  setDefault(RiaApplication::FORE_OPTMODE_MAXIMIZE);
+}
+
+template<>
+void AppEnum< RiaApplication::FORePrbStrc >::setUp() {
+
+  addItem(RiaApplication::FORE_PRBSTRC_CONCURRENT,
+          "Concurrent","Concurrent");
+
+  addItem(RiaApplication::FORE_PRBSTRC_SEQUENTIAL,
+          "Sequential","Sequential");
+
+  addItem(RiaApplication::FORE_PRBSTRC_EMBEDDED,
+          "Embedded","Embedded");
+
+  setDefault(RiaApplication::FORE_PRBSTRC_EMBEDDED);
+}
 
 }
 
@@ -439,7 +465,7 @@ RiaApplication::getVersionStringApp(bool includeCrtInfo) {
                        "%s%s%s",
                        STRPRODUCTVER,
                        crtInfo.toAscii().ptr(),
-                       " -- CHACO-HACKED-VERSION-0.1");
+                       " + FieldOpt-Research-Open-v2021.1");
 
   // -------------------------------------------------------
   return szBuf;
@@ -1694,7 +1720,9 @@ bool RiaApplication::launchProcess(const QString& program, const QStringList& ar
 
       RiuMainWindow::instance()->processMonitor()->stopMonitorWorkProcess();
 
-      QMessageBox::warning(RiuMainWindow::instance(), "Script execution", "Failed to start script executable located at\n" + program);
+      QMessageBox::warning(RiuMainWindow::instance(),"Script execution",
+                           "Failed to start script executable located at\n"
+                           + program);
 
       return false;
     }
@@ -1703,7 +1731,10 @@ bool RiaApplication::launchProcess(const QString& program, const QStringList& ar
   }
   else
   {
-    QMessageBox::warning(nullptr, "Script execution", "An Octave process is still running. Please stop this process before executing a new script.");
+    QMessageBox::warning(nullptr,
+                         "Script execution",
+                         "An Octave process is still running. Please stop "
+                         "this process before executing a new script.");
     return false;
   }
 }
@@ -2037,7 +2068,7 @@ void RiaApplication::showFormattedTextInMessageBox(const QString& text) {
 
   QMessageBox msgBox;
   msgBox.setIcon(QMessageBox::Information);
-  msgBox.setWindowTitle("ResInsight - CHACO-HACK");
+  msgBox.setWindowTitle("ResInsight - FieldOpt-Research-Open");
 
   helpText.replace("&", "&amp;");
   helpText.replace("<", "&lt;");

@@ -46,7 +46,7 @@ class RiaFieldOpt : public caf::PdmObject
   };
 
   typedef caf::AppEnum<SummaryRestartFilesImportMode>
-  SummaryRestartFilesImportModeType;
+    SummaryRestartFilesImportModeType;
 
   RiaFieldOpt(void);
   virtual ~RiaFieldOpt(void);
@@ -58,11 +58,11 @@ class RiaFieldOpt : public caf::PdmObject
  public: // Pdm Fields
   caf::PdmField<caf::AppEnum< RiaApplication::RINavigationPolicy > > navigationPolicy;
 
-  caf::PdmField<QString>  scriptDirectories;
-  caf::PdmField<QString>  scriptEditorExecutable;
+  caf::PdmField<QString> scriptDirectories;
+  caf::PdmField<QString> scriptEditorExecutable;
 
-  caf::PdmField<QString>  octaveExecutable;
-  caf::PdmField<bool>     octaveShowHeaderInfoWhenExecutingScripts;
+  caf::PdmField<QString> octaveExecutable;
+  caf::PdmField<bool> octaveShowHeaderInfoWhenExecutingScripts;
 
   caf::PdmField<QString> ssihubAddress;
 
@@ -89,8 +89,15 @@ class RiaFieldOpt : public caf::PdmObject
   caf::PdmField<bool> autocomputeDepthRelatedProperties;
   caf::PdmField<bool> loadAndShowSoil;
 
+  caf::PdmField<SummaryRestartFilesImportModeType>
+    summaryRestartFilesImportMode;
 
-  // FORe-Open JSON fields
+
+
+
+
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "OPTIMIZER"
   caf::PdmField<QString>  globalName;
 
   caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeAll > > optTypeAll;
@@ -98,26 +105,34 @@ class RiaFieldOpt : public caf::PdmObject
 //  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeSto > > optTypeSto;
 //  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeHyb > > optTypeHyb;
 
-  caf::PdmField<QString>  optMode;
+  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptMode > > optMode;
   caf::PdmField<bool>  optScaleVars;
 
 
-  caf::PdmField<SummaryRestartFilesImportModeType>
-  summaryRestartFilesImportMode;
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "MODEL/PROBLEM"
+  caf::PdmField<caf::AppEnum< RiaApplication::FORePrbStrc > > prbStrc;
+  caf::PdmField<bool>  prbAutoVarSegr;
+
+
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "CONSTRAINTS"
+
+
 
  protected:
   virtual void defineEditorAttribute(
-      const caf::PdmFieldHandle* field,
-      QString uiConfigName,
-      caf::PdmUiEditorAttribute* attribute);
+    const caf::PdmFieldHandle* field,
+    QString uiConfigName,
+    caf::PdmUiEditorAttribute* attribute);
 
   virtual void defineUiOrdering(
-      QString uiConfigName,
-      caf::PdmUiOrdering& uiOrdering);
+    QString uiConfigName,
+    caf::PdmUiOrdering& uiOrdering);
 
   virtual QList<caf::PdmOptionItemInfo> calculateValueOptions(
-      const caf::PdmFieldHandle* fieldNeedingOptions,
-      bool * useOptionsOnly);
+    const caf::PdmFieldHandle* fieldNeedingOptions,
+    bool * useOptionsOnly);
 
  private:
   caf::PdmChildField<RifReaderSettings*> m_readerSettings;

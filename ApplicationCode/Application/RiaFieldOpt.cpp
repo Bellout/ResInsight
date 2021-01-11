@@ -95,6 +95,7 @@ RiaFieldOpt::RiaFieldOpt(void) {
 
 
 
+  // FORe-Open JSON fields :: "OPTIMIZER"
 
   CAF_PDM_InitField(
     &globalName, "globalName",
@@ -112,11 +113,25 @@ RiaFieldOpt::RiaFieldOpt(void) {
                     true,"Scale variables",
                     "", "", "");
 
+  CAF_PDM_InitField(
+    &optMode, "optMode",
+    caf::AppEnum<RiaApplication::FOReOptMode>(
+      RiaApplication::FORE_OPTMODE_MAXIMIZE),
+    "Optimization Mode", "", "", "");
 
 
 
+  // FORe-Open JSON fields :: "MODEL/PROBLEM"
+  CAF_PDM_InitField(
+    &prbStrc, "prbStrc",
+    caf::AppEnum<RiaApplication::FORePrbStrc>(
+      RiaApplication::FORE_PRBSTRC_EMBEDDED),
+    "Optimization Mode", "", "", "");
 
-
+  CAF_PDM_InitField(&prbAutoVarSegr,
+                    "VarSegregation",
+                    true,"Automatic variable segregation",
+                    "", "", "");
 
 
 
@@ -313,7 +328,8 @@ void RiaFieldOpt::defineEditorAttribute(
     field == &includeFractureDebugInfoFile ||
     field == &showLasCurveWithoutTvdWarning) {
 
-    caf::PdmUiCheckBoxEditorAttribute* myAttr = dynamic_cast<caf::PdmUiCheckBoxEditorAttribute*>(attribute);
+    caf::PdmUiCheckBoxEditorAttribute* myAttr =
+      dynamic_cast<caf::PdmUiCheckBoxEditorAttribute*>(attribute);
     if (myAttr) {
       myAttr->m_useNativeCheckBoxLabel = true;
     }
@@ -333,13 +349,15 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
 
     caf::PdmUiGroup* optGrp = uiOrdering.addNewGroup("Optimizer");
     optGrp->add(&optTypeAll);
-
-//    optGrp->add(&optMode);
-
+    optGrp->add(&optMode);
     optGrp->add(&optScaleVars);
 
     // MODEL/PROBLEM
   } else if (uiConfigName == m_tabNames[1]) {
+
+    caf::PdmUiGroup* probGrp = uiOrdering.addNewGroup("Problem structure");
+    probGrp->add(&prbStrc);
+    probGrp->add(&prbAutoVarSegr);
 
     // CONSTRAINTS
   } else if (uiConfigName == m_tabNames[2]) {

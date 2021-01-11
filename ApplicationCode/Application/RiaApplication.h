@@ -124,6 +124,16 @@ class RiaApplication : public QApplication {
     FORE_OPTTYPE_HYB_JNT_ROSP_CNTRL
   };
 
+  enum FOReOptMode {
+    FORE_OPTMODE_MAXIMIZE,
+    FORE_OPTMODE_MINIMIZE
+  };
+
+  enum FORePrbStrc {
+    FORE_PRBSTRC_CONCURRENT,
+    FORE_PRBSTRC_SEQUENTIAL,
+    FORE_PRBSTRC_EMBEDDED
+  };
 
  public:
   // -------------------------------------------------------
