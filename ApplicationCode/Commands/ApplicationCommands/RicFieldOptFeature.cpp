@@ -45,14 +45,11 @@ void RicFieldOptFeature::onActionTriggered(bool isChecked) {
   this->disableModelChangeContribution();
 
   RiaApplication* app = RiaApplication::instance();
-
-
-//  QStringList tabNames = app->preferences()->tabNames();
   QStringList tabNames = app->prefs_fieldopt()->tabNames();
 
   RiuPropertyViewTabWidget propertyDialog(
       nullptr, app->prefs_fieldopt(),
-      "FieldOpt-Researcher", tabNames);
+      "Field Development Optimization Toolbox", tabNames);
 
   // -------------------------------------------------------
   if (propertyDialog.exec() == QDialog::Accepted) {

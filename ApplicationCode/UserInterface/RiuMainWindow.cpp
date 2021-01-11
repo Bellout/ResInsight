@@ -518,11 +518,11 @@ void RiuMainWindow::createMenus() {
 
   // ---------------------------------------------------------------
   // FieldOpt menu
-  QMenu* FieldOptMenu = menuBar()->addMenu("&FieldOpt-Research");
-  FieldOptMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
-  FieldOptMenu->addSeparator();
+  QMenu* FOMenu = menuBar()->addMenu("&FO-Optimization-Toolbox");
+  FOMenu->addAction(cmdFeatureMgr->action("RicFieldOptFeature"));
+  FOMenu->addSeparator();
 
-  connect(FieldOptMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
+  connect(FOMenu, SIGNAL(aboutToShow()), SLOT(slotRefreshEditActions()));
 
 
 
