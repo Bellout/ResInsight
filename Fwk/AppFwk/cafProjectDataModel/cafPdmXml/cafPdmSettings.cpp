@@ -1,129 +1,133 @@
-//##################################################################################################
+//##########################################################
 //
-//   Custom Visualization Core library
-//   Copyright (C) 2015 Ceetron Solutions AS
+// Custom Visualization Core library
+// Copyright (C) 2015 Ceetron AS
 //
-//   This library may be used under the terms of either the GNU General Public License or
-//   the GNU Lesser General Public License as follows:
+// This library may be used under the terms of either the
+// GNU General Public License or the GNU Lesser General
+// Public License as follows:
 //
-//   GNU General Public License Usage
-//   This library is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
+// GNU General Public License Usage
+// This library is free software: you can redistribute
+// it and/or modify it under the terms of the GNU General
+// Public License as published by the Free Software
+// Foundation, either version 3 of the License, or (at
+// your option) any later version.
 //
-//   This library is distributed in the hope that it will be useful, but WITHOUT ANY
-//   WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//   FITNESS FOR A PARTICULAR PURPOSE.
+// This library is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE.
 //
-//   See the GNU General Public License at <<http://www.gnu.org/licenses/gpl.html>>
-//   for more details.
+// See the GNU General Public License
+// at <<http://www.gnu.org/licenses/gpl.html>>
+// for more details.
 //
-//   GNU Lesser General Public License Usage
-//   This library is free software; you can redistribute it and/or modify
-//   it under the terms of the GNU Lesser General Public License as published by
-//   the Free Software Foundation; either version 2.1 of the License, or
-//   (at your option) any later version.
+// GNU Lesser General Public License Usage
+// This library is free software; you can redistribute
+// it and/or modify it under the terms of the GNU Lesser
+// General Public License as published by the Free Software
+// Foundation; either version 2.1 of the License, or (at
+// your option) any later version.
 //
-//   This library is distributed in the hope that it will be useful, but WITHOUT ANY
-//   WARRANTY; without even the implied warranty of MERCHANTABILITY or
-//   FITNESS FOR A PARTICULAR PURPOSE.
+// This library is distributed in the hope that it will
+// be useful, but WITHOUT ANY WARRANTY; without even the
+// implied warranty of MERCHANTABILITY or FITNESS FOR A
+// PARTICULAR PURPOSE.
 //
-//   See the GNU Lesser General Public License at <<http://www.gnu.org/licenses/lgpl-2.1.html>>
-//   for more details.
+// See the GNU Lesser General Public License
+// at <<http://www.gnu.org/licenses/lgpl-2.1.html>>
+// for more details.
 //
-//##################################################################################################
-
+//##########################################################
 
 #include "cafPdmSettings.h"
 
 #include "cafPdmField.h"
 #include "cafPdmXmlObjectHandle.h"
 
-
-
 namespace caf
 {
 
-
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void PdmSettings::readFieldsFromApplicationStore(caf::PdmObjectHandle* object, const QString context)
-{
+//----------------------------------------------------------
+void PdmSettings::
+readFieldsFromApplicationStore(caf::PdmObjectHandle* object,
+                               const QString context) {
   // Qt doc :
   //
-  // Constructs a QSettings object for accessing settings of the application and organization
-  // set previously with a call to QCoreApplication::setOrganizationName(),
-  // QCoreApplication::setOrganizationDomain(), and QCoreApplication::setApplicationName().
+  // Constructs a QSettings object for accessing settings of the
+  // application and organization set previously with a call to
+  // QCoreApplication::setOrganizationName(),
+  // QCoreApplication::setOrganizationDomain(), and
+  // QCoreApplication::setApplicationName().
   QSettings settings;
   std::vector<caf::PdmFieldHandle*> fields;
 
   object->fields(fields);
   size_t i;
-  for (i = 0; i < fields.size(); i++)
-  {
+  for (i = 0; i < fields.size(); i++) {
     caf::PdmFieldHandle* fieldHandle = fields[i];
 
     std::vector<caf::PdmObjectHandle*> children;
     fieldHandle->childObjects(&children);
-    for (size_t childIdx = 0; childIdx < children.size(); childIdx++)
-    {
+
+    for (size_t childIdx = 0; childIdx < children.size(); childIdx++) {
       caf::PdmObjectHandle* child = children[childIdx];
       caf::PdmXmlObjectHandle* xmlObjHandle = xmlObj(child);
 
       QString subContext = context + xmlObjHandle->classKeyword() + "/";
+
+      std::cout << "subContext [readFields]: " << subContext.toStdString() << std::endl;
       readFieldsFromApplicationStore(child, subContext);
     }
 
-    if (children.size() == 0)
-    {
+    if (children.size() == 0) {
       QString key = context + fieldHandle->keyword();
-      if (settings.contains(key))
-      {
+      if (settings.contains(key)) {
         QVariant val = settings.value(key);
 
-        caf::PdmValueField* valueField = dynamic_cast<caf::PdmValueField*>(fieldHandle);
+        caf::PdmValueField*
+        valueField = dynamic_cast<caf::PdmValueField*>(fieldHandle);
         CAF_ASSERT(valueField);
+        std::cout << "valueField [readFields]: " << valueField->keyword().toStdString() << std::endl;
         valueField->setFromQVariant(val);
       }
     }
   }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-void PdmSettings::writeFieldsToApplicationStore(const caf::PdmObjectHandle* object, const QString context)
-{
+//----------------------------------------------------------
+void PdmSettings::
+writeFieldsToApplicationStore(const caf::PdmObjectHandle* object,
+                              const QString context) {
   CAF_ASSERT(object);
 
   // Qt doc :
   //
-  // Constructs a QSettings object for accessing settings of the application and organization
-  // set previously with a call to QCoreApplication::setOrganizationName(),
-  // QCoreApplication::setOrganizationDomain(), and QCoreApplication::setApplicationName().
+  // Constructs a QSettings object for accessing settings of the
+  // application and organization set previously with a call to
+  // QCoreApplication::setOrganizationName(),
+  // QCoreApplication::setOrganizationDomain(), and
+  // QCoreApplication::setApplicationName().
   QSettings settings;
 
   std::vector<caf::PdmFieldHandle*> fields;
   object->fields(fields);
 
   size_t i;
-  for (i = 0; i < fields.size(); i++)
-  {
+  for (i = 0; i < fields.size(); i++) {
     caf::PdmFieldHandle* fieldHandle = fields[i];
 
     std::vector<caf::PdmObjectHandle*> children;
     fieldHandle->childObjects(&children);
-    for (size_t childIdx = 0; childIdx < children.size(); childIdx++)
-    {
+    for (size_t childIdx = 0; childIdx < children.size(); childIdx++) {
       caf::PdmObjectHandle* child = children[childIdx];
       QString subContext;
-      if (context.isEmpty())
-      {
+      if (context.isEmpty()) {
         caf::PdmXmlObjectHandle* xmlObjHandle = xmlObj(child);
 
         subContext = xmlObjHandle->classKeyword() + "/";
+        std::cout << "subContext [writeFields]: " << subContext.toStdString() << std::endl;
       }
 
       writeFieldsToApplicationStore(child, subContext);
@@ -131,12 +135,13 @@ void PdmSettings::writeFieldsToApplicationStore(const caf::PdmObjectHandle* obje
 
     if (children.size() == 0)
     {
-      caf::PdmValueField* valueField = dynamic_cast<caf::PdmValueField*>(fieldHandle);
+      caf::PdmValueField*
+      valueField = dynamic_cast<caf::PdmValueField*>(fieldHandle);
       CAF_ASSERT(valueField);
+      std::cout << "valueField [writeFields]: " << valueField->keyword().toStdString() << std::endl;
       settings.setValue(context + fieldHandle->keyword(), valueField->toQVariant());
     }
   }
 }
-
 
 } // namespace caf
