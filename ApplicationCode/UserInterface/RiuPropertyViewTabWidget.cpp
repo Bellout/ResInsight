@@ -28,21 +28,17 @@
 #include <QWidget>
 #include <QDebug>
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
+//==========================================================
 RiuPropertyViewTabWidget::RiuPropertyViewTabWidget(QWidget* parent,
                                                    caf::PdmObject* object,
                                                    const QString& windowTitle,
                                                    const QStringList& uiConfigNameForTabs)
-    : QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint)
-{
+    : QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint) {
     setWindowTitle(windowTitle);
 
     QTabWidget* tabWidget = new QTabWidget;
 
-    for (int i = 0; i < uiConfigNameForTabs.size(); i++)
-    {
+    for (int i = 0; i < uiConfigNameForTabs.size(); i++) {
         QHBoxLayout* widgetLayout = new QHBoxLayout;
         widgetLayout->setContentsMargins(0, 0, 0, 0);
 
@@ -73,27 +69,19 @@ RiuPropertyViewTabWidget::RiuPropertyViewTabWidget(QWidget* parent,
     dialogLayout->addWidget(buttonBox);
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-RiuPropertyViewTabWidget::~RiuPropertyViewTabWidget()
-{
-    for (auto w : m_pageWidgets)
-    {
+//==========================================================
+RiuPropertyViewTabWidget::~RiuPropertyViewTabWidget() {
+    for (auto w : m_pageWidgets) {
         w->showProperties(nullptr);
     }
 }
 
-//--------------------------------------------------------------------------------------------------
-/// 
-//--------------------------------------------------------------------------------------------------
-QSize RiuPropertyViewTabWidget::sizeHint() const
-{
+//==========================================================
+QSize RiuPropertyViewTabWidget::sizeHint() const {
     QSize maxSizeHint = QDialog::sizeHint();
     //qDebug() << "dialog size hint : " << maxSizeHint;
 
-    for (auto w : m_pageWidgets)
-    {
+    for (auto w : m_pageWidgets) {
         //qDebug() << "tab size hint" << w->sizeHint();
 
         QSize pageSize = w->sizeHint();

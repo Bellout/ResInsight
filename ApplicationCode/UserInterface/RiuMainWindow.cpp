@@ -575,7 +575,7 @@ void RiuMainWindow::createMenus() {
 
 
 
-  // ---------------------------------------------------------------
+  // ---------------------------------------------------------
   // Help menu
   QMenu* helpMenu = menuBar()->addMenu("&Help");
   helpMenu->addAction(cmdFeatureMgr->action("RicHelpAboutFeature"));

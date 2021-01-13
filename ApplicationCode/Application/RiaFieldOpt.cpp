@@ -359,6 +359,9 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
     probGrp->add(&prbStrc);
     probGrp->add(&prbAutoVarSegr);
 
+    probGrp->add(&test);
+
+
     // CONSTRAINTS
   } else if (uiConfigName == m_tabNames[2]) {
 

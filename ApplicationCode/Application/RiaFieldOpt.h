@@ -89,6 +89,8 @@ class RiaFieldOpt : public caf::PdmObject
   caf::PdmField<bool> autocomputeDepthRelatedProperties;
   caf::PdmField<bool> loadAndShowSoil;
 
+  caf::PdmOptionItemInfo test = caf::PdmOptionItemInfo("a","b");
+
   caf::PdmField<SummaryRestartFilesImportModeType>
     summaryRestartFilesImportMode;
 
