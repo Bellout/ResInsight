@@ -89,37 +89,46 @@ class RiaFieldOpt : public caf::PdmObject
   caf::PdmField<bool> autocomputeDepthRelatedProperties;
   caf::PdmField<bool> loadAndShowSoil;
 
-  caf::PdmOptionItemInfo test = caf::PdmOptionItemInfo("a","b");
-
   caf::PdmField<SummaryRestartFilesImportModeType>
     summaryRestartFilesImportMode;
 
 
-
-
-
   // -------------------------------------------------------
   // FORe-Open JSON fields :: "OPTIMIZER"
-  caf::PdmField<QString>  globalName;
+  caf::PdmField<QString> globalName;
+  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptMode > > optMode;
 
-  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeAll > > optTypeAll;
+//  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeAll > > optTypeAll;
 //  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeDet > > optTypeDet;
 //  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeSto > > optTypeSto;
 //  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptTypeHyb > > optTypeHyb;
 
-  caf::PdmField<caf::AppEnum< RiaApplication::FOReOptMode > > optMode;
-  caf::PdmField<bool>  optScaleVars;
+  caf::PdmField<std::vector<QString> > optTypeAllText;
+  caf::PdmField<std::vector<QString> > optTypeHybridsText;
+  caf::PdmField<bool> optScaleVars;
+
+  caf::PdmField<int> verbose;
+  caf::PdmField<int> maxEvals;
 
 
   // -------------------------------------------------------
   // FORe-Open JSON fields :: "MODEL/PROBLEM"
-  caf::PdmField<caf::AppEnum< RiaApplication::FORePrbStrc > > prbStrc;
-  caf::PdmField<bool>  prbAutoVarSegr;
+//  caf::PdmField<caf::AppEnum< RiaApplication::FORePrbStrc > > prbStrc;
+
+  caf::PdmField<std::vector<QString> > probTypes;
+  caf::PdmField<std::vector<QString> > probStructure;
+  caf::PdmField<std::vector<QString>> prbAutoVarSegr;
+
+  caf::PdmField<caf::AppEnum< RiaApplication::FOReObjType > > objType;
+
+  caf::PdmField<std::vector<QString> > augTerms;
 
 
   // -------------------------------------------------------
   // FORe-Open JSON fields :: "CONSTRAINTS"
 
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "RUNNER"
 
 
  protected:

@@ -54,8 +54,6 @@
 class QXmlStreamReader;
 class QXmlStreamWriter;
 
-
-
 #include "cafPdmObjectCapability.h"
 
 #include "cafPdmUiObjectHandle.h"
@@ -69,7 +67,7 @@ class QXmlStreamWriter;
 #include "cafPdmUiFieldSpecialization.h"
 
 
-namespace caf 
+namespace caf
 {
 
 class PdmFieldHandle;
@@ -82,8 +80,8 @@ class PdmObjectCapability;
 #define CAF_PDM_SOURCE_INIT CAF_PDM_XML_SOURCE_INIT
 #define CAF_PDM_ABSTRACT_SOURCE_INIT CAF_PDM_XML_ABSTRACT_SOURCE_INIT
 
-
-/// InitObject sets up the user interface related information for the object
+/// InitObject sets up the user interface related
+/// information for the object
 /// Placed in the constructor of your PdmObject
 
 #define CAF_PDM_InitObject(uiName, iconResourceName, toolTip, whatsThis) \
@@ -95,10 +93,10 @@ class PdmObjectCapability;
     this->setUiItemInfo(&objDescr); \
 }
 
-/// InitField sets the file keyword for the field, 
-/// adds the field to the internal data structure in the PdmObject, 
-/// sets the default value for the field, 
-/// and sets up the static user interface related information for the field
+/// InitField sets the file keyword for the field, adds the
+/// field to the internal data structure in the PdmObject,
+/// sets the default value for the field, and sets up the
+///  static user interface related information for the field
 
 #define CAF_PDM_InitField(field, keyword, default, uiName, iconResourceName, toolTip, whatsThis) \
 { \
@@ -134,42 +132,49 @@ class PdmObjectCapability;
     addFieldUiNoDefault(field, keyword, &objDescr); \
 }
 
-
-
 } // End of namespace caf
 
 
 namespace caf
 {
 
-class PdmObject : public PdmObjectHandle, public PdmXmlObjectHandle, public PdmUiObjectHandle
+class PdmObject : public PdmObjectHandle,
+                  public PdmXmlObjectHandle,
+                  public PdmUiObjectHandle
 {
-public:
-    PdmObject() : PdmObjectHandle(), PdmXmlObjectHandle(this, false), PdmUiObjectHandle(this, false) {}
-    virtual ~PdmObject() {}
+ public:
+  PdmObject() : PdmObjectHandle(),
+                PdmXmlObjectHandle(this, false),
+                PdmUiObjectHandle(this, false) {}
+  virtual ~PdmObject() {}
 
-    /// Adds field to the internal data structure and sets the file keyword and Ui information 
-    /// Consider this method private. Please use the CAF_PDM_InitField() macro instead
-    template< typename FieldDataType >
-    void addFieldUi(PdmField<FieldDataType>* field, const QString& keyword, const FieldDataType& defaultValue, PdmUiItemInfo * fieldDescription)
-    {
-        addFieldUiNoDefault(field, keyword, fieldDescription);
-        field->setDefaultValue(defaultValue);
-        *field = defaultValue;
+  /// Adds field to the internal data structure and sets
+  /// the file keyword and Ui information. Consider this
+  /// method private. Please use the CAF_PDM_InitField()
+  /// macro instead.
+  template< typename FieldDataType >
+  void addFieldUi(PdmField<FieldDataType>* field,
+                  const QString& keyword,
+                  const FieldDataType& defaultValue,
+                  PdmUiItemInfo * fieldDescription) {
+    addFieldUiNoDefault(field, keyword, fieldDescription);
+    field->setDefaultValue(defaultValue);
+    *field = defaultValue;
+  }
+
+  /// Does the same as the above method, but omits the
+  /// default value. Consider this method private. Please
+  /// use the CAF_PDM_InitFieldNoDefault() macro instead.
+  void addFieldUiNoDefault(PdmFieldHandle* field,
+                           const QString& keyword,
+                           PdmUiItemInfo * fieldDescription) {
+    addField(field, keyword);
+
+    PdmUiFieldHandle* uiFieldHandle = field->uiCapability();
+    if (uiFieldHandle) {
+      uiFieldHandle->setUiItemInfo(fieldDescription);
     }
-
-    /// Does the same as the above method, but omits the default value.
-    /// Consider this method private. Please use the CAF_PDM_InitFieldNoDefault() macro instead.
-    void addFieldUiNoDefault(PdmFieldHandle* field, const QString& keyword, PdmUiItemInfo * fieldDescription)
-    {
-        addField(field, keyword);
-
-        PdmUiFieldHandle* uiFieldHandle = field->uiCapability();
-        if (uiFieldHandle)
-        {
-            uiFieldHandle->setUiItemInfo(fieldDescription);
-        }
-    }
+  }
 
 };
 

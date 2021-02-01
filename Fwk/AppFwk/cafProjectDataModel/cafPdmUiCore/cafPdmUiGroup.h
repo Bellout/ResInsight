@@ -68,7 +68,7 @@ class PdmUiGroup : public PdmUiItem, public PdmUiOrdering
   /// any effect.
   void setCollapsedByDefault(bool doCollapse);
 
-  /// Forcifully set the collapsed state of the group,
+  /// Forcefully set the collapsed state of the group,
   /// overriding the previous user actions and the default
   void setCollapsed(bool doCollapse);
 

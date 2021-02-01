@@ -126,14 +126,14 @@ class PdmOptionItemInfo
                                         bool isReadOnly = false,
                                         QIcon anIcon = QIcon());
 
-  void            setLevel(int level);
+  void setLevel(int level);
 
-  const QString   optionUiText() const;
-  const QVariant  value() const;
-  bool            isReadOnly() const;
-  bool            isHeading() const;
-  const QIcon     icon() const;
-  int             level() const;
+  const QString optionUiText() const;
+  const QVariant value() const;
+  bool isReadOnly() const;
+  bool isHeading() const;
+  const QIcon icon() const;
+  int level() const;
 
 
   // Static utility methods to handle QList of PdmOptionItemInfo
@@ -141,16 +141,16 @@ class PdmOptionItemInfo
 
   static QStringList extractUiTexts(const QList<PdmOptionItemInfo>& optionList);
   template<typename T>
-  static bool findValues (const QList<PdmOptionItemInfo>& optionList,
-                          QVariant fieldValue,
-                          std::vector<unsigned int>& foundIndexes);
+  static bool findValues(const QList<PdmOptionItemInfo>& optionList,
+                         QVariant fieldValue,
+                         std::vector<unsigned int>& foundIndexes);
 
  private:
-  QString     m_optionUiText;
-  QVariant    m_value;
-  bool        m_isReadOnly;
-  QIcon       m_icon;
-  int         m_level;
+  QString m_optionUiText;
+  QVariant m_value;
+  bool m_isReadOnly;
+  QIcon m_icon;
+  int m_level;
 };
 
 class PdmUiEditorHandle;
@@ -230,60 +230,61 @@ class PdmUiItem
   virtual ~PdmUiItem();
 
   PdmUiItem(const PdmUiItem&) = delete;
-  PdmUiItem&       operator=(const PdmUiItem&) = delete;
+  PdmUiItem& operator=(const PdmUiItem&) = delete;
 
-  const QString    uiName(QString uiConfigName = "")      const;
-  void             setUiName(const QString& uiName, QString uiConfigName = "")           { m_configItemInfos[uiConfigName].m_uiName = uiName; }
+  const QString uiName(QString uiConfigName = "")      const;
+  void setUiName(const QString& uiName, QString uiConfigName = "")           { m_configItemInfos[uiConfigName].m_uiName = uiName; }
 
-  const QIcon      uiIcon(QString uiConfigName = "")      const;
-  void             setUiIcon(const QIcon& uiIcon, QString uiConfigName = "")             { m_configItemInfos[uiConfigName].m_icon = uiIcon; }
+  const QIcon uiIcon(QString uiConfigName = "")      const;
+  void setUiIcon(const QIcon& uiIcon, QString uiConfigName = "")             { m_configItemInfos[uiConfigName].m_icon = uiIcon; }
 
-  const QString    uiToolTip(QString uiConfigName = "")   const;
-  void             setUiToolTip(const QString& uiToolTip, QString uiConfigName = "")     { m_configItemInfos[uiConfigName].m_toolTip = uiToolTip; }
+  const QString uiToolTip(QString uiConfigName = "")   const;
+  void setUiToolTip(const QString& uiToolTip, QString uiConfigName = "")     { m_configItemInfos[uiConfigName].m_toolTip = uiToolTip; }
 
-  const QString    uiWhatsThis(QString uiConfigName = "") const;
-  void             setUiWhatsThis(const QString& uiWhatsThis, QString uiConfigName = "") { m_configItemInfos[uiConfigName].m_whatsThis = uiWhatsThis; }
+  const QString uiWhatsThis(QString uiConfigName = "") const;
+  void setUiWhatsThis(const QString& uiWhatsThis, QString uiConfigName = "") { m_configItemInfos[uiConfigName].m_whatsThis = uiWhatsThis; }
 
-  bool             isUiHidden(QString uiConfigName = "") const;
-  void             setUiHidden(bool isHidden, QString uiConfigName = "")                 { m_configItemInfos[uiConfigName].m_isHidden = isHidden; }
+  bool isUiHidden(QString uiConfigName = "") const;
+  void setUiHidden(bool isHidden, QString uiConfigName = "")                 { m_configItemInfos[uiConfigName].m_isHidden = isHidden; }
 
-  bool             isUiTreeHidden(QString uiConfigName = "") const;
-  void             setUiTreeHidden(bool isHidden, QString uiConfigName = "")              { m_configItemInfos[uiConfigName].m_isHidden = isHidden; }
+  bool isUiTreeHidden(QString uiConfigName = "") const;
+  void setUiTreeHidden(bool isHidden, QString uiConfigName = "")              { m_configItemInfos[uiConfigName].m_isHidden = isHidden; }
 
-  bool             isUiTreeChildrenHidden(QString uiConfigName = "") const;
-  void             setUiTreeChildrenHidden(bool isTreeChildrenHidden,
-                                           QString uiConfigName = "") {
+  bool isUiTreeChildrenHidden(QString uiConfigName = "") const;
+  void setUiTreeChildrenHidden(bool isTreeChildrenHidden,
+                               QString uiConfigName = "") {
     m_configItemInfos[uiConfigName].m_isTreeChildrenHidden = isTreeChildrenHidden;
   }
 
-  bool             isUiReadOnly(QString uiConfigName = "") const;
-  void             setUiReadOnly(bool isReadOnly, QString uiConfigName = "")             { m_configItemInfos[uiConfigName].m_isReadOnly = isReadOnly; }
+  bool isUiReadOnly(QString uiConfigName = "") const;
+  void setUiReadOnly(bool isReadOnly, QString uiConfigName = "")             { m_configItemInfos[uiConfigName].m_isReadOnly = isReadOnly; }
 
   PdmUiItemInfo::LabelPosType
   uiLabelPosition(QString uiConfigName = "") const;
-  void             setUiLabelPosition(PdmUiItemInfo::LabelPosType alignment,
-                                      QString uiConfigName = "") {
+
+  void setUiLabelPosition(PdmUiItemInfo::LabelPosType alignment,
+                          QString uiConfigName = "") {
     m_configItemInfos[uiConfigName].m_labelAlignment = alignment;
   }
 
-  QString          uiEditorTypeName(const QString& uiConfigName) const;
-  void             setUiEditorTypeName(const QString& editorTypeName, QString uiConfigName = "") { m_configItemInfos[uiConfigName].m_editorTypeName = editorTypeName; }
+  QString uiEditorTypeName(const QString& uiConfigName) const;
+  void setUiEditorTypeName(const QString& editorTypeName, QString uiConfigName = "") { m_configItemInfos[uiConfigName].m_editorTypeName = editorTypeName; }
 
-  virtual bool     isUiGroup()                                                           { return false; }
+  virtual bool isUiGroup()                                                           { return false; }
 
   /// Intended to be called when fields in an object has been changed
-  void             updateConnectedEditors();
+  void updateConnectedEditors();
 
   /// Intended to be called when an object has been created or deleted
-  void             updateAllRequiredEditors();
+  void updateAllRequiredEditors();
 
-  void             updateUiIconFromState(bool isActive,  QString uiConfigName = "");
+  void updateUiIconFromState(bool isActive,  QString uiConfigName = "");
 
   std::vector<PdmUiEditorHandle*>
   connectedEditors() const;
 
-  static bool     showExtraDebugText();
-  static void     enableExtraDebugText(bool enable);
+  static bool showExtraDebugText();
+  static void enableExtraDebugText(bool enable);
 
  public: // Pdm-Private only
   // =========================================================

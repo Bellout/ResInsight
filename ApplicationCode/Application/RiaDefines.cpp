@@ -73,31 +73,40 @@ void caf::AppEnum< RiaDefines::CompletionType >::setUp() {
 // ---------------------------------------------------------
 bool RiaDefines::isPerCellFaceResult(const QString& resultName) {
 
-  if (resultName.compare(RiaDefines::combinedTransmissibilityResultName(), Qt::CaseInsensitive) == 0) {
+  if (resultName.compare(RiaDefines::combinedTransmissibilityResultName(),
+                         Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedMultResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedMultResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::ternarySaturationResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::ternarySaturationResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedRiTranResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedRiTranResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedRiMultResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedRiMultResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedRiAreaNormTranResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedRiAreaNormTranResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedWaterFluxResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedWaterFluxResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedOilFluxResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedOilFluxResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
-  } else if (resultName.compare(RiaDefines::combinedGasFluxResultName(), Qt::CaseInsensitive) == 0) {
+  } else if (resultName.compare(RiaDefines::combinedGasFluxResultName(),
+                                Qt::CaseInsensitive) == 0) {
     return true;
 
   } else if (resultName.endsWith("IJK")) {

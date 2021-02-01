@@ -282,6 +282,15 @@ void AppEnum< RiaApplication::FORePrbStrc >::setUp() {
   setDefault(RiaApplication::FORE_PRBSTRC_EMBEDDED);
 }
 
+template<>
+void AppEnum< RiaApplication::FOReObjType >::setUp() {
+  addItem(RiaApplication::FORE_OBJTYPE_NPV,
+          "Net Present Value","Net Present Value");
+
+  addItem(RiaApplication::FORE_OBJTYPE_WEIGHTED,
+          "Weighted function","Weighted function");
+}
+
 }
 
 // =========================================================

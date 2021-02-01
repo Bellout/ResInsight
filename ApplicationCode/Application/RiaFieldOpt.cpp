@@ -94,7 +94,7 @@ RiaFieldOpt::RiaFieldOpt(void) {
 
 
 
-
+  // -------------------------------------------------------
   // FORe-Open JSON fields :: "OPTIMIZER"
 
   CAF_PDM_InitField(
@@ -102,15 +102,8 @@ RiaFieldOpt::RiaFieldOpt(void) {
     QString("olympr37-msw-opt-aug-msw-scl"), "Name",
     "", "", "");
 
-  CAF_PDM_InitField(
-    &optTypeAll, "optTypeAll",
-    caf::AppEnum<RiaApplication::FOReOptTypeAll>(
-      RiaApplication::FORE_OPTTYPE_ALL_APPS),
-    "Optimizer Type", "", "", "");
-
-  CAF_PDM_InitField(&optScaleVars,
-                    "ScaleVars",
-                    true,"Scale variables",
+  CAF_PDM_InitField(&verbose, "VerboseConf",
+                    5,"Verbose Configuration",
                     "", "", "");
 
   CAF_PDM_InitField(
@@ -119,20 +112,104 @@ RiaFieldOpt::RiaFieldOpt(void) {
       RiaApplication::FORE_OPTMODE_MAXIMIZE),
     "Optimization Mode", "", "", "");
 
+//  CAF_PDM_InitField(
+//    &optTypeAll, "optTypeAll",
+//    caf::AppEnum<RiaApplication::FOReOptTypeAll>(RiaApplication::FORE_OPTTYPE_ALL_APPS),
+//    "Optimizer Type", "", "", "");
 
+  std::vector<QString> optTypeAllTextData(0);
+  optTypeAllTextData.push_back("CS -- Compass Search (CS)");
+  optTypeAllTextData.push_back("APPS -- Asynchronous Paralell Pattern Search");
+  optTypeAllTextData.push_back("DFTR -- Derivative-Free Trust-Region Algorithm");
+  optTypeAllTextData.push_back("GA -- Genetic Algorithm");
+  optTypeAllTextData.push_back("PSO -- Particle Swarm Optimization");
+  optTypeAllTextData.push_back("CMA-ES -- Covariance Matrix Adaption Evolutionary Strategy");
+  optTypeAllTextData.push_back("EGO -- Bayesian Optimization");
+  optTypeAllTextData.push_back("SPSA -- Simultaneous Perturbation Stochastic Approximation");
+////  optTypeAllTextData.push_back("mPSO");
+////  optTypeAllTextData.push_back("APPS/PSO + data-driven meta-optimization");
+////  optTypeAllTextData.push_back("Joint optimization using embedded reduced-order sub-routines");
 
-  // FORe-Open JSON fields :: "MODEL/PROBLEM"
-  CAF_PDM_InitField(
-    &prbStrc, "prbStrc",
-    caf::AppEnum<RiaApplication::FORePrbStrc>(
-      RiaApplication::FORE_PRBSTRC_EMBEDDED),
-    "Optimization Mode", "", "", "");
-
-  CAF_PDM_InitField(&prbAutoVarSegr,
-                    "VarSegregation",
-                    true,"Automatic variable segregation",
+  CAF_PDM_InitField(&optTypeAllText, "optTypeAll",
+                    optTypeAllTextData,"Algorithms",
                     "", "", "");
 
+  std::vector<QString> optTypeHybridsData(0);
+  optTypeHybridsData.push_back("PSO + APPS");
+  optTypeHybridsData.push_back("APPS + ANN-ConfA");
+  optTypeHybridsData.push_back("APPS + ANN-ConfB");
+  optTypeHybridsData.push_back("DFTR + ANN");
+
+  CAF_PDM_InitField(&optTypeHybridsText, "optTypeHybrids",
+                    optTypeHybridsData,"Hybrid Procedures",
+                    "", "", "");
+
+  CAF_PDM_InitField(&optScaleVars,"ScaleVars",
+                    true,"Scale Variables",
+                    "", "", "");
+
+  CAF_PDM_InitField(&maxEvals, "OptMaxEvals",
+                    1000,"Max Evaluations",
+                    "", "", "");
+
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "MODEL/PROBLEM"
+
+//  CAF_PDM_InitField(
+//    &prbStrc, "prbStrc",
+//    caf::AppEnum<RiaApplication::FORePrbStrc>(
+//      RiaApplication::FORE_PRBSTRC_EMBEDDED),"Solution Approach","", "", "");
+
+  std::vector<QString> probTypesData(0);
+  probTypesData.push_back("Well Placement, Well Controls");
+  probTypesData.push_back("Inflow Control Valves, Well Controls");
+  probTypesData.push_back("Well Placement, Well Controls, Inflow Control Valves");
+
+  CAF_PDM_InitField(&probTypes, "probTypes",
+                    probTypesData,"Problem Types",
+                    "", "", "");
+
+  std::vector<QString> prbStrcAllTextData(0);
+  prbStrcAllTextData.push_back("Concurrent");
+  prbStrcAllTextData.push_back("Embedded");
+  prbStrcAllTextData.push_back("Sequential");
+
+  CAF_PDM_InitField(&probStructure, "probStructure",
+                    prbStrcAllTextData,"Solution Approach",
+                    "", "", "");
+
+  std::vector<QString> prbAutoVarSegrData(0);
+  prbAutoVarSegrData.push_back("None");
+  prbAutoVarSegrData.push_back("Manual");
+  prbAutoVarSegrData.push_back("Automatic");
+
+  CAF_PDM_InitField(&prbAutoVarSegr,
+                    "prbAutoVarSegr",
+                    prbAutoVarSegrData,"Variable Segregation",
+                    "", "", "");
+
+  CAF_PDM_InitField(
+    &objType, "objType",
+    caf::AppEnum<RiaApplication::FOReObjType>(
+      RiaApplication::FORE_OBJTYPE_NPV),
+    "Objective Function", "", "", "");
+
+  std::vector<QString> augTermsData(0);
+  augTermsData.push_back("Segment WCT [NPV scaled]");
+  augTermsData.push_back("Segment WCT [Well production scaled]");
+  augTermsData.push_back("Well Water Breakthrough Time");
+
+  CAF_PDM_InitField(&augTerms, "augTermsData",
+                    augTermsData,"Augmented Terms",
+                    "", "", "");
+
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "CONSTRAINTS"
+
+
+
+  // -------------------------------------------------------
+  // FORe-Open JSON fields :: "RUNNER"
 
 
 
@@ -229,15 +306,15 @@ RiaFieldOpt::RiaFieldOpt(void) {
     &showTestToolbar, "showTestToolbar", false,
     "Enable Test Toolbar", "", "", "");
 
-  showTestToolbar.uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
+  showTestToolbar
+    .uiCapability()->setUiLabelPosition(caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(
     &includeFractureDebugInfoFile,
     "includeFractureDebugInfoFile", false,
     "Include Fracture Debug Info for Completion Export", "", "", "");
 
-  includeFractureDebugInfoFile
-    .uiCapability()->setUiLabelPosition(
+  includeFractureDebugInfoFile.uiCapability()->setUiLabelPosition(
     caf::PdmUiItemInfo::HIDDEN);
 
   CAF_PDM_InitField(&showLegendBackground,
@@ -284,11 +361,12 @@ RiaFieldOpt::RiaFieldOpt(void) {
   m_tabNames << "Optimizer";
   m_tabNames << "Model/Problem";
   m_tabNames << "Constraints";
+  m_tabNames << "Runner";
 
-  m_tabNames << "GENERAL";
-  m_tabNames << "ECLIPSE";
-  m_tabNames << "OCTAVE";
-  m_tabNames << "SYSTEM";
+//  m_tabNames << "GENERAL";
+//  m_tabNames << "ECLIPSE";
+//  m_tabNames << "OCTAVE";
+//  m_tabNames << "SYSTEM";
 
 
 }
@@ -342,41 +420,55 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
 
   std::cout << "uiConfigName: " << uiConfigName.toStdString() << std::endl;
 
+  // -------------------------------------------------------
   // "OPTIMIZER"
   if (uiConfigName == m_tabNames[0]) {
     caf::PdmUiGroup* globalGrp = uiOrdering.addNewGroup("Global");
     globalGrp->add(&globalName);
+    globalGrp->add(&verbose);
 
     caf::PdmUiGroup* optGrp = uiOrdering.addNewGroup("Optimizer");
-    optGrp->add(&optTypeAll);
     optGrp->add(&optMode);
+    // optGrp->add(&optTypeAll);
+
+    optGrp->add(&optTypeAllText);
+    optGrp->add(&optTypeHybridsText);
     optGrp->add(&optScaleVars);
+    optGrp->add(&maxEvals);
 
+
+    // -----------------------------------------------------
     // MODEL/PROBLEM
-  } else if (uiConfigName == m_tabNames[1]) {
-
-    caf::PdmUiGroup* probGrp = uiOrdering.addNewGroup("Problem structure");
-    probGrp->add(&prbStrc);
+    caf::PdmUiGroup* probGrp = uiOrdering.addNewGroup("Problem Structure");
+    probGrp->add(&probTypes);
+    probGrp->add(&probStructure);
     probGrp->add(&prbAutoVarSegr);
 
-    probGrp->add(&test);
+    caf::PdmUiGroup* objGrp = uiOrdering.addNewGroup("Objective");
+    objGrp->add(&objType);
+    objGrp->add(&augTerms);
 
+  } else if (uiConfigName == m_tabNames[1]) {
 
+    // -----------------------------------------------------
     // CONSTRAINTS
   } else if (uiConfigName == m_tabNames[2]) {
+//    caf::PdmUiGroup* constGrp = uiOrdering.addNewGroup("Configuration");
+//    constGrp->add(&probStructure);
 
 
-
-
-
-
+    // -----------------------------------------------------
+    // CONSTRAINTS
+  } else if (uiConfigName == m_tabNames[3]) {
+//    caf::PdmUiGroup* rnnrGrp = uiOrdering.addNewGroup("Runner Type");
+//    rnnrGrp->add(&probStructure);
 
 
 
 
 
     // GENERAL
-  } else if (uiConfigName == m_tabNames[3]) {
+  } else if (uiConfigName == m_tabNames[4]) {
 
     caf::PdmUiGroup* defaultSettingsGroup = uiOrdering.addNewGroup("Default Settings");
     defaultSettingsGroup->add(&defaultViewerBackgroundColor);
@@ -399,7 +491,7 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
     otherGroup->add(&showLasCurveWithoutTvdWarning);
 
     // ECLIPSE
-  } else if (uiConfigName == m_tabNames[4]) {
+  } else if (uiConfigName == m_tabNames[5]) {
     caf::PdmUiGroup* newCaseBehaviourGroup = uiOrdering.addNewGroup("Behavior When Loading Data");
     newCaseBehaviourGroup->add(&autocomputeDepthRelatedProperties);
     newCaseBehaviourGroup->add(&loadAndShowSoil);
@@ -410,7 +502,7 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
     restartBehaviourGroup->add(&summaryRestartFilesImportMode);
 
     // OCTAVE
-  } else if (uiConfigName == m_tabNames[5]) {
+  } else if (uiConfigName == m_tabNames[6]) {
 
     caf::PdmUiGroup* octaveGroup = uiOrdering.addNewGroup("Octave");
     octaveGroup->add(&octaveExecutable);
@@ -421,7 +513,7 @@ void RiaFieldOpt::defineUiOrdering(QString uiConfigName,
     scriptGroup->add(&scriptEditorExecutable);
 
     // SYSTEM
-  } else if (uiConfigName == m_tabNames[6]) {
+  } else if (uiConfigName == m_tabNames[7]) {
 
     uiOrdering.add(&appendClassNameToUiText);
     uiOrdering.add(&appendFieldKeywordToToolTipText);
